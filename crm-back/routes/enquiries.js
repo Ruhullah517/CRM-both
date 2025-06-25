@@ -1,0 +1,26 @@
+const express = require('express');
+const router = express.Router();
+const {
+  getAllEnquiries,
+  getEnquiryById,
+  approveEnquiry,
+  rejectEnquiry,
+  assignEnquiry,
+} = require('../controllers/enquiryController');
+
+// List all enquiries
+router.get('/', getAllEnquiries);
+
+// Get a single enquiry by ID
+router.get('/:id', getEnquiryById);
+
+// Approve an enquiry
+router.post('/:id/approve', approveEnquiry);
+
+// Reject an enquiry
+router.post('/:id/reject', rejectEnquiry);
+
+// Assign an enquiry to a staff member
+router.post('/:id/assign', assignEnquiry);
+
+module.exports = router; 
