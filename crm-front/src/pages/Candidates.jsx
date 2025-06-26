@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   EyeIcon,
@@ -6,32 +6,7 @@ import {
   UserCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { mockCandidates } from "../utils/mockData";
-
-const initialCandidates = [
-  {
-    id: 1,
-    name: 'Alice Johnson',
-    stage: 'Assessment',
-    status: 'Active',
-    mentor: 'John Doe',
-    email: 'alice@example.com',
-    notes: 'Strong candidate.',
-    documents: [],
-    deadline: '2024-07-01',
-  },
-  {
-    id: 2,
-    name: 'Bob Smith',
-    stage: 'Application',
-    status: 'New',
-    mentor: 'Jane Lee',
-    email: 'bob@example.com',
-    notes: '',
-    documents: [],
-    deadline: '2024-07-10',
-  },
-];
+import { getCandidates, createCandidate, updateCandidate } from '../services/candidates';
 
 const stages = ['Inquiry', 'Application', 'Assessment', 'Mentoring', 'Final Approval'];
 const statuses = ['New', 'Active', 'Paused', 'Completed'];
@@ -99,9 +74,9 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => (
     <div className="mb-2"><span className="font-semibold">Mentor:</span> {candidate.mentor}</div>
     <div className="mb-2"><span className="font-semibold">Deadline:</span> {candidate.deadline}</div>
     <h3 className="font-semibold mt-4 mb-1">Notes</h3>
-    <ul className="mb-2 list-disc ml-6 text-sm">{candidate.notes.map(n => <li key={n.id}>{n.text} <span className="text-gray-400">({n.date})</span></li>)}</ul>
+    <ul className="mb-2 list-disc ml-6 text-sm">{(candidate.notes || []).map((n, i) => <li key={i}>{n.text} <span className="text-gray-400">({n.date})</span></li>)}</ul>
     <h3 className="font-semibold mb-1">Documents</h3>
-    <ul className="mb-2 text-sm">{candidate.documents.map(d => <li key={d.id}><a href={d.url} className="text-blue-700 hover:underline">{d.name}</a></li>)}</ul>
+    <ul className="mb-2 text-sm">{(candidate.documents || []).map((d, i) => <li key={i}><a href={d.url} className="text-blue-700 hover:underline">{d.name}</a></li>)}</ul>
     <button onClick={onEdit} className="mt-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
   </div>
 );
@@ -117,7 +92,7 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
       name,
       mentor,
       deadline,
-      id: candidate?.id || Date.now(),
+      id: candidate?.id,
       status: candidate?.status || "New",
       stage: candidate?.stage || "Inquiry",
       notes: candidate?.notes || [],
@@ -144,26 +119,56 @@ const Candidates = () => {
   const isAdminOrStaff = user?.role === 'admin' || user?.role === 'staff';
   const [view, setView] = useState("list");
   const [selected, setSelected] = useState(null);
-  const [candidates, setCandidates] = useState(mockCandidates);
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  function handleSaveCandidate(candidate) {
-    setCandidates(prev => {
-      const exists = prev.some(c => c.id === candidate.id);
-      if (exists) {
-        // Update existing candidate
-        return prev.map(c => c.id === candidate.id ? candidate : c);
+  useEffect(() => {
+    fetchCandidates();
+  }, []);
+
+  async function fetchCandidates() {
+    setLoading(true);
+    try {
+      const data = await getCandidates();
+      // Parse notes and documents fields if they are JSON strings
+      const parsed = data.map(c => ({
+        ...c,
+        notes: typeof c.notes === 'string' ? JSON.parse(c.notes) : c.notes,
+        documents: typeof c.documents === 'string' ? JSON.parse(c.documents) : c.documents,
+      }));
+      setCandidates(parsed);
+    } catch (err) {
+      setError('Failed to load candidates');
+    }
+    setLoading(false);
+  }
+
+  async function handleSaveCandidate(candidate) {
+    setError(null);
+    try {
+      if (candidate.id) {
+        await updateCandidate(candidate.id, candidate);
       } else {
-        // Add new candidate
-        return [...prev, candidate];
+        await createCandidate(candidate);
       }
-    });
-    setView("list");
+      fetchCandidates();
+      setView("list");
+    } catch (err) {
+      setError('Failed to save candidate');
+    }
   }
 
   if (view === "detail" && selected) return <CandidateDetail candidate={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} />;
   if (view === "edit" && selected) return <CandidateForm candidate={selected} onBack={() => setView("detail")} onSave={handleSaveCandidate} />;
   if (view === "add") return <CandidateForm onBack={() => setView("list")} onSave={handleSaveCandidate} />;
-  return <CandidateList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} candidates={candidates} />;
+  return (
+    <>
+      {error && <div className="mb-4 text-red-600">{error}</div>}
+      <CandidateList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} candidates={candidates} />
+      {loading && <div className="text-center py-4">Loading...</div>}
+    </>
+  );
 };
 
 export default Candidates;

@@ -1,34 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   PlusIcon,
   PencilSquareIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-
-const initialTemplates = [
-  {
-    id: 1,
-    name: 'Trainer Agreement',
-    role: 'Trainer',
-    body: 'This contract is made between BFCA and {{name}} for the role of Trainer at a rate of {{rate}}.',
-  },
-  {
-    id: 2,
-    name: 'Mentor Contract',
-    role: 'Mentor',
-    body: 'This contract is made between BFCA and {{name}} for the role of Mentor at a rate of {{rate}}.',
-  },
-];
+import { getContractTemplates, createContractTemplate, updateContractTemplate } from '../services/contractTemplates';
 
 const roles = ['Trainer', 'Mentor'];
 
 export default function ContractTemplates() {
   const { user } = useAuth();
   const isAdminOrStaff = user?.role === 'admin' || user?.role === 'staff';
-  const [templates, setTemplates] = useState(initialTemplates);
+  const [templates, setTemplates] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ id: null, name: '', role: roles[0], body: '' });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  async function fetchTemplates() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getContractTemplates();
+      setTemplates(data);
+    } catch (err) {
+      setError('Failed to load templates');
+    }
+    setLoading(false);
+  }
 
   function openAdd() {
     setForm({ id: null, name: '', role: roles[0], body: '' });
@@ -42,14 +47,21 @@ export default function ContractTemplates() {
     const { name, value } = e.target;
     setForm(f => ({ ...f, [name]: value }));
   }
-  function handleFormSubmit(e) {
+  async function handleFormSubmit(e) {
     e.preventDefault();
-    if (form.id) {
-      setTemplates(ts => ts.map(t => t.id === form.id ? { ...form } : t));
-    } else {
-      setTemplates(ts => [...ts, { ...form, id: Date.now() }]);
+    setSaving(true);
+    try {
+      if (form.id) {
+        await updateContractTemplate(form.id, form);
+      } else {
+        await createContractTemplate(form);
+      }
+      fetchTemplates();
+      setShowForm(false);
+    } catch (err) {
+      setError('Failed to save template');
     }
-    setShowForm(false);
+    setSaving(false);
   }
 
   return (
@@ -63,6 +75,7 @@ export default function ContractTemplates() {
           <PlusIcon className="w-5 h-5" /> Add Template
         </button>
       )}
+      {error && <div className="mb-4 text-red-600">{error}</div>}
       <div className="overflow-x-auto rounded">
         <table className="min-w-full bg-white rounded shadow mb-8">
           <thead>
@@ -91,6 +104,7 @@ export default function ContractTemplates() {
           </tbody>
         </table>
       </div>
+      {loading && <div className="text-center py-4">Loading...</div>}
       {/* Add/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 px-2">
@@ -117,7 +131,7 @@ export default function ContractTemplates() {
                 className="w-full px-4 py-2 border rounded min-h-[120px]"
                 required
               />
-              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow">{form.id ? 'Update' : 'Add'} Template</button>
+              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow" disabled={saving}>{form.id ? 'Update' : 'Add'} Template</button>
             </form>
           </div>
         </div>

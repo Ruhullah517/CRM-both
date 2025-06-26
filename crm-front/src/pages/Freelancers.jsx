@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   EyeIcon,
@@ -6,32 +6,7 @@ import {
   UserCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { mockFreelancers } from "../utils/mockData";
-
-const initialFreelancers = [
-  {
-    id: 1,
-    name: 'Anna White',
-    role: 'Trainer',
-    status: 'Active',
-    availability: 'Available',
-    email: 'anna@example.com',
-    skills: 'Training, Mentoring',
-    complianceDocs: ['dbs.pdf', 'id.pdf'],
-    assignments: ['Case 1'],
-  },
-  {
-    id: 2,
-    name: 'James Black',
-    role: 'Mentor',
-    status: 'Inactive',
-    availability: 'Unavailable',
-    email: 'james@example.com',
-    skills: 'Mentoring',
-    complianceDocs: [],
-    assignments: [],
-  },
-];
+import { getFreelancers, createFreelancer, updateFreelancer } from '../services/freelancers';
 
 const roles = ['Trainer', 'Mentor'];
 const statuses = ['Active', 'Inactive'];
@@ -46,9 +21,9 @@ const availabilityColors = {
   unavailable: 'bg-yellow-100 text-yellow-800',
 };
 
-const FreelancerList = ({ onSelect, onAdd }) => {
+const FreelancerList = ({ onSelect, onAdd, freelancers }) => {
   const [search, setSearch] = useState("");
-  const filtered = mockFreelancers.filter(f => f.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = freelancers.filter(f => f.name?.toLowerCase().includes(search.toLowerCase()));
   return (
     <div className="max-w-5xl mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
@@ -91,26 +66,49 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit }) => (
     <div className="mb-2"><span className="font-semibold">Availability:</span> <span className={`px-2 py-1 rounded text-xs font-semibold ${availabilityColors[freelancer.availability?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{freelancer.availability}</span></div>
     <div className="mb-2"><span className="font-semibold">Contract Date:</span> {freelancer.contractDate}</div>
     <h3 className="font-semibold mt-4 mb-1">Assignments</h3>
-    <ul className="mb-2 list-disc ml-6 text-sm">{freelancer.assignments.map((a, i) => <li key={i}>{a}</li>)}</ul>
+    <ul className="mb-2 list-disc ml-6 text-sm">{(freelancer.assignments || []).map((a, i) => <li key={i}>{a}</li>)}</ul>
     <h3 className="font-semibold mb-1">Uploads</h3>
-    <ul className="mb-2 text-sm">{freelancer.uploads.map(u => <li key={u.id}><a href={u.url} className="text-blue-700 hover:underline">{u.name}</a></li>)}</ul>
+    <ul className="mb-2 text-sm">{(freelancer.uploads || []).map(u => <li key={u.id}><a href={u.url} className="text-blue-700 hover:underline">{u.name}</a></li>)}</ul>
     <button onClick={onEdit} className="mt-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
   </div>
 );
 
-const FreelancerForm = ({ freelancer, onBack }) => (
-  <div className="max-w-xl mx-auto p-4 bg-white rounded shadow mt-6">
-    <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
-    <h2 className="text-xl font-bold mb-4">{freelancer ? "Edit" : "Add"} Freelancer</h2>
-    {/* Placeholder form fields */}
-    <form className="space-y-4">
-      <input placeholder="Name" defaultValue={freelancer?.name} className="w-full px-4 py-2 border rounded" />
-      <input placeholder="Role" defaultValue={freelancer?.role} className="w-full px-4 py-2 border rounded" />
-      <input placeholder="Availability" defaultValue={freelancer?.availability} className="w-full px-4 py-2 border rounded" />
-      <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold">{freelancer ? "Save" : "Add"}</button>
-    </form>
-  </div>
-);
+const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
+  const [form, setForm] = useState({
+    name: freelancer?.name || '',
+    role: freelancer?.role || roles[0],
+    availability: freelancer?.availability || availabilities[0],
+    contractDate: freelancer?.contractDate || '',
+    assignments: freelancer?.assignments || [],
+    uploads: freelancer?.uploads || [],
+  });
+
+  function handleChange(e) {
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: value }));
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    onSave({ ...freelancer, ...form });
+  }
+
+  return (
+    <div className="max-w-xl mx-auto p-4 bg-white rounded shadow mt-6">
+      <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
+      <h2 className="text-xl font-bold mb-4">{freelancer ? "Edit" : "Add"} Freelancer</h2>
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        <input name="name" placeholder="Name" value={form.name} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
+        <select name="role" value={form.role} onChange={handleChange} className="w-full px-4 py-2 border rounded">
+          {roles.map(r => <option key={r} value={r}>{r}</option>)}
+        </select>
+        <input name="availability" placeholder="Availability" value={form.availability} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
+        <input name="contractDate" type="date" value={form.contractDate} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
+        <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold" disabled={loading}>{loading ? 'Saving...' : (freelancer ? "Save" : "Add")}</button>
+      </form>
+    </div>
+  );
+};
 
 const Freelancers = () => {
   const { user } = useAuth();
@@ -118,49 +116,60 @@ const Freelancers = () => {
   const isFreelancer = user?.role === 'freelancer';
   const [view, setView] = useState("list");
   const [selected, setSelected] = useState(null);
-  const [freelancers, setFreelancers] = useState(initialFreelancers);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    id: null, name: '', role: roles[0], status: statuses[0], availability: availabilities[0], email: '', skills: '', complianceDocs: [], assignments: []
-  });
+  const [freelancers, setFreelancers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
-  function openAdd() {
-    setForm({ id: null, name: '', role: roles[0], status: statuses[0], availability: availabilities[0], email: '', skills: '', complianceDocs: [], assignments: [] });
-    setShowForm(true);
-  }
-  function openEdit(f) {
-    setForm(f);
-    setShowForm(true);
-  }
-  function handleFormChange(e) {
-    const { name, value, files } = e.target;
-    if (name === 'complianceDocs') {
-      setForm(f => ({ ...f, complianceDocs: files ? Array.from(files).map(f => f.name) : [] }));
-    } else {
-      setForm(f => ({ ...f, [name]: value }));
+  useEffect(() => {
+    fetchFreelancers();
+  }, []);
+
+  async function fetchFreelancers() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getFreelancers();
+      // Parse assignments and uploads if needed
+      const parsed = data.map(f => ({
+        ...f,
+        assignments: typeof f.assignments === 'string' ? JSON.parse(f.assignments) : (f.assignments || []),
+        uploads: typeof f.uploads === 'string' ? JSON.parse(f.uploads) : (f.uploads || []),
+      }));
+      setFreelancers(parsed);
+    } catch (err) {
+      setError('Failed to load freelancers');
     }
-  }
-  function handleFormSubmit(e) {
-    e.preventDefault();
-    if (form.id) {
-      setFreelancers(fs => fs.map(f => f.id === form.id ? { ...form } : f));
-    } else {
-      setFreelancers(fs => [...fs, { ...form, id: Date.now() }]);
-    }
-    setShowForm(false);
+    setLoading(false);
   }
 
-  // Freelancers can only edit their own profile
-  const canEdit = (freelancer) => {
-    if (isAdminOrStaff) return true;
-    if (isFreelancer && user.email === freelancer.email) return true;
-    return false;
-  };
+  async function handleSaveFreelancer(freelancer) {
+    setSaving(true);
+    setError(null);
+    try {
+      if (freelancer.id) {
+        await updateFreelancer(freelancer.id, freelancer);
+      } else {
+        await createFreelancer(freelancer);
+      }
+      fetchFreelancers();
+      setView("list");
+    } catch (err) {
+      setError('Failed to save freelancer');
+    }
+    setSaving(false);
+  }
 
   if (view === "detail" && selected) return <FreelancerDetail freelancer={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} />;
-  if (view === "edit" && selected) return <FreelancerForm freelancer={selected} onBack={() => { setView("detail"); }} />;
-  if (view === "add") return <FreelancerForm onBack={() => setView("list")} />;
-  return <FreelancerList onSelect={f => { setSelected(f); setView("detail"); }} onAdd={() => setView("add")} />;
+  if (view === "edit" && selected) return <FreelancerForm freelancer={selected} onBack={() => setView("detail")} onSave={handleSaveFreelancer} loading={saving} />;
+  if (view === "add") return <FreelancerForm onBack={() => setView("list")} onSave={handleSaveFreelancer} loading={saving} />;
+  return (
+    <>
+      {error && <div className="mb-4 text-red-600">{error}</div>}
+      <FreelancerList onSelect={f => { setSelected(f); setView("detail"); }} onAdd={() => setView("add")} freelancers={freelancers} />
+      {loading && <div className="text-center py-4">Loading...</div>}
+    </>
+  );
 };
 
 export default Freelancers;

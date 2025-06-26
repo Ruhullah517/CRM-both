@@ -1,11 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-
-const mockInitialUsers = [
-  { id: 1, email: 'admin@crm.com', role: 'admin' },
-  { id: 2, email: 'caseworker@crm.com', role: 'caseworker' },
-  { id: 3, email: 'freelancer@crm.com', role: 'freelancer' },
-];
+import { getUsers, createUser, updateUser, deleteUser } from '../services/users';
 
 const roles = [
   { label: 'Admin', value: 'admin' },
@@ -16,12 +11,30 @@ const roles = [
 
 export default function Users() {
   const { user } = useAuth();
-  const [users, setUsers] = useState(mockInitialUsers);
+  console.log('Current user:', user);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ email: '', role: roles[0].value });
+  const [form, setForm] = useState({ email: '', role: roles[0].value, name: '', password: '' });
   const [editId, setEditId] = useState(null);
+  const [error, setError] = useState(null);
 
-  if (user?.role !== 'admin') {
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  async function fetchUsers() {
+    setLoading(true);
+    try {
+      const data = await getUsers();
+      setUsers(data);
+    } catch (err) {
+      setError('Failed to load users');
+    }
+    setLoading(false);
+  }
+
+  if (user?.user.role !== 'admin') {
     return <div className="p-8 text-center text-red-600 font-bold">Access denied. Admins only.</div>;
   }
 
@@ -29,35 +42,52 @@ export default function Users() {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     if (!form.email) return;
-    if (editId) {
-      setUsers(prev => prev.map(u => u.id === editId ? { ...u, ...form } : u));
-    } else {
-      setUsers(prev => [
-        ...prev,
-        { id: Date.now(), email: form.email, role: form.role }
-      ]);
+    setError(null);
+    try {
+      const payload = { ...form };
+      if (!editId && !form.password) {
+        setError('Password is required for new users');
+        return;
+      }
+      if (editId && !form.password) {
+        delete payload.password; // Don't send password if not changing
+      }
+      if (editId) {
+        await updateUser(editId, payload);
+      } else {
+        await createUser(payload);
+      }
+      setForm({ email: '', role: roles[0].value, name: '', password: '' });
+      setShowForm(false);
+      setEditId(null);
+      fetchUsers();
+    } catch (err) {
+      setError('Failed to save user');
     }
-    setForm({ email: '', role: roles[0].value });
-    setShowForm(false);
-    setEditId(null);
   }
 
   function handleEdit(user) {
-    setForm({ email: user.email, role: user.role });
+    setForm({ email: user.email, role: user.role, name: user.name || '', password: '' });
     setEditId(user.id);
     setShowForm(true);
   }
 
-  function handleDelete(id) {
-    setUsers(prev => prev.filter(u => u.id !== id));
+  async function handleDelete(id) {
+    setError(null);
+    try {
+      await deleteUser(id);
+      fetchUsers();
+    } catch (err) {
+      setError('Failed to delete user');
+    }
   }
 
   function handleCloseForm() {
     setShowForm(false);
-    setForm({ email: '', role: roles[0].value });
+    setForm({ email: '', role: roles[0].value, name: '', password: '' });
     setEditId(null);
   }
 
@@ -66,10 +96,11 @@ export default function Users() {
       <h1 className="text-2xl font-bold mb-6">User Management</h1>
       <button
         className="mb-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800"
-        onClick={() => { setShowForm(true); setForm({ email: '', role: roles[0].value }); setEditId(null); }}
+        onClick={() => { setShowForm(true); setForm({ email: '', role: roles[0].value, name: '', password: '' }); setEditId(null); }}
       >
         Add User
       </button>
+      {error && <div className="mb-4 text-red-600">{error}</div>}
       <table className="w-full text-left bg-white rounded shadow mb-6">
         <thead>
           <tr className="bg-green-50">
@@ -79,7 +110,9 @@ export default function Users() {
           </tr>
         </thead>
         <tbody>
-          {users.map(u => (
+          {loading ? (
+            <tr><td colSpan={3} className="text-center py-4">Loading...</td></tr>
+          ) : users.map(u => (
             <tr key={u.id} className="border-t">
               <td className="py-2 px-4 font-semibold">{u.email}</td>
               <td className="py-2 px-4 capitalize">{u.role}</td>
@@ -126,6 +159,15 @@ export default function Users() {
                 required
                 disabled={!!editId}
               />
+              <input
+                type="text"
+                name="name"
+                placeholder="Name"
+                value={form.name}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded"
+                required
+              />
               <select
                 name="role"
                 value={form.role}
@@ -136,6 +178,15 @@ export default function Users() {
                   <option key={r.value} value={r.value}>{r.label}</option>
                 ))}
               </select>
+              <input
+                type="password"
+                name="password"
+                placeholder={editId ? "Leave blank to keep current password" : "Password"}
+                value={form.password}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded"
+                required={!editId}
+              />
               <button
                 type="submit"
                 className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold"

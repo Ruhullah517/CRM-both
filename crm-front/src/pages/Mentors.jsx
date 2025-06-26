@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   PlusIcon,
@@ -9,6 +9,8 @@ import {
   UserGroupIcon,
   AcademicCapIcon,
 } from '@heroicons/react/24/outline';
+import { getMentors, createMentor, updateMentor, deleteMentor } from '../services/mentors';
+import { getCandidates } from '../services/candidates';
 
 // Mocked candidate list for assignment UI
 const allCandidates = [
@@ -16,29 +18,6 @@ const allCandidates = [
   { id: 2, name: 'Bob Smith', mentor: 'David Mensah' },
   { id: 3, name: 'Sam Brown', mentor: '' },
   { id: 4, name: 'Lisa Green', mentor: '' },
-];
-
-const initialMentors = [
-  {
-    id: 1,
-    name: 'Angela Foster',
-    email: 'angela@bfca.org',
-    phone: '07700 900123',
-    skills: ['Trauma', 'Safeguarding'],
-    status: 'Active',
-    avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
-    mentees: [1, 4], // candidate IDs
-  },
-  {
-    id: 2,
-    name: 'David Mensah',
-    email: 'david@bfca.org',
-    phone: '07700 900456',
-    skills: ['Education', 'Behaviour'],
-    status: 'Inactive',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    mentees: [2],
-  },
 ];
 
 const statusColors = {
@@ -50,20 +29,55 @@ const statusColors = {
 export default function Mentors() {
   const { user } = useAuth();
   const isAdminOrStaff = user?.role === 'admin' || user?.role === 'staff';
-  const [mentors, setMentors] = useState(initialMentors);
+  const [mentors, setMentors] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(null);
   const [form, setForm] = useState({ id: null, name: '', email: '', phone: '', skills: '', status: 'Active', avatar: '', mentees: [] });
   const [showAssign, setShowAssign] = useState(false);
   const [assignMentees, setAssignMentees] = useState([]); // candidate IDs
-  const [candidates, setCandidates] = useState(allCandidates);
+  const [candidates, setCandidates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchMentors();
+    fetchCandidates();
+  }, []);
+
+  async function fetchMentors() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getMentors();
+      // Parse skills and mentees if needed
+      const parsed = data.map(m => ({
+        ...m,
+        skills: typeof m.skills === 'string' ? JSON.parse(m.skills) : (m.skills || []),
+        mentees: typeof m.mentees === 'string' ? JSON.parse(m.mentees) : (m.mentees || []),
+      }));
+      setMentors(parsed);
+    } catch (err) {
+      setError('Failed to load mentors');
+    }
+    setLoading(false);
+  }
+
+  async function fetchCandidates() {
+    try {
+      const data = await getCandidates();
+      setCandidates(data);
+    } catch (err) {
+      // Optionally handle error
+    }
+  }
 
   function openAdd() {
     setForm({ id: null, name: '', email: '', phone: '', skills: '', status: 'Active', avatar: '', mentees: [] });
     setShowForm(true);
   }
   function openEdit(m) {
-    setForm({ ...m, skills: m.skills.join(', ') });
+    setForm({ ...m, skills: Array.isArray(m.skills) ? m.skills.join(', ') : m.skills });
     setShowForm(true);
   }
   function openDetail(m) {
@@ -73,19 +87,33 @@ export default function Mentors() {
     const { name, value } = e.target;
     setForm(f => ({ ...f, [name]: value }));
   }
-  function handleFormSubmit(e) {
+  async function handleFormSubmit(e) {
     e.preventDefault();
+    setSaving(true);
     const skillsArr = form.skills.split(',').map(s => s.trim()).filter(Boolean);
-    if (form.id) {
-      setMentors(ms => ms.map(m => m.id === form.id ? { ...form, skills: skillsArr, mentees: m.mentees } : m));
-    } else {
-      setMentors(ms => [...ms, { ...form, id: Date.now(), skills: skillsArr, avatar: `https://randomuser.me/api/portraits/lego/${Math.floor(Math.random()*10)}.jpg`, mentees: [] }]);
+    try {
+      if (form.id) {
+        await updateMentor(form.id, { ...form, skills: skillsArr });
+      } else {
+        await createMentor({ ...form, skills: skillsArr, avatar: form.avatar || `https://randomuser.me/api/portraits/lego/${Math.floor(Math.random()*10)}.jpg` });
+      }
+      fetchMentors();
+      setShowForm(false);
+    } catch (err) {
+      setError('Failed to save mentor');
     }
-    setShowForm(false);
+    setSaving(false);
   }
-  function handleDelete(id) {
+  async function handleDelete(id) {
     if (window.confirm('Delete this mentor?')) {
-      setMentors(ms => ms.filter(m => m.id !== id));
+      setSaving(true);
+      try {
+        await deleteMentor(id);
+        fetchMentors();
+      } catch (err) {
+        setError('Failed to delete mentor');
+      }
+      setSaving(false);
     }
   }
 
@@ -100,29 +128,21 @@ export default function Mentors() {
       prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]
     );
   }
-  function handleAssignSave() {
-    // Update mentor's mentees
-    setMentors(ms => ms.map(m =>
-      m.id === showDetail.id ? { ...m, mentees: assignMentees } : m
-    ));
-    // Update candidates' mentor field
-    setCandidates(cs =>
-      cs.map(c => {
-        if (assignMentees.includes(c.id)) {
-          // Assign this candidate to this mentor
-          return { ...c, mentor: showDetail.name };
-        } else if (c.mentor === showDetail.name) {
-          // Remove this mentor if unassigned
-          return { ...c, mentor: '' };
-        }
-        return c;
-      })
-    );
-    setShowAssign(false);
+  async function handleAssignSave() {
+    // Update mentor's mentees in backend
+    setSaving(true);
+    try {
+      await updateMentor(showDetail.id, { ...showDetail, mentees: assignMentees });
+      fetchMentors();
+      setShowAssign(false);
+    } catch (err) {
+      setError('Failed to assign mentees');
+    }
+    setSaving(false);
   }
 
   function getMenteeNames(mentor) {
-    return mentor.mentees
+    return (mentor.mentees || [])
       .map(id => candidates.find(c => c.id === id)?.name)
       .filter(Boolean);
   }
@@ -138,6 +158,7 @@ export default function Mentors() {
           <PlusIcon className="w-5 h-5" /> Add Mentor
         </button>
       )}
+      {error && <div className="mb-4 text-red-600">{error}</div>}
       <table className="min-w-full bg-white rounded shadow mb-8">
         <thead>
           <tr className="bg-green-50">
@@ -159,7 +180,7 @@ export default function Mentors() {
               <td className="px-4 py-2 text-[12px]">{m.email}</td>
               <td className="px-4 py-2 text-[12px]">{m.phone}</td>
               <td className="px-4 py-2">
-                {m.skills.map(s => <span key={s} className="inline-block bg-green-100 text-[#2EAB2C] text-xs px-2 py-1 rounded mr-1 mb-1">{s}</span>)}
+                {(m.skills || []).map(s => <span key={s} className="inline-block bg-green-100 text-[#2EAB2C] text-xs px-2 py-1 rounded mr-1 mb-1">{s}</span>)}
               </td>
               <td className="px-4 py-2">
                 <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[m.status]}`}>{m.status}</span>
@@ -172,7 +193,7 @@ export default function Mentors() {
                   <button className="text-[#2EAB2C]  hover:underline flex items-center gap-1 mr-2" onClick={() => openEdit(m)}>
                     <PencilSquareIcon className="w-5 h-5" /> Edit
                   </button>
-                  <button className="text-red-600 hover:underline flex items-center gap-1 mr-2" onClick={() => handleDelete(m.id)}>
+                  <button className="text-red-600 hover:underline flex items-center gap-1 mr-2" onClick={() => handleDelete(m.id)} disabled={saving}>
                     <TrashIcon className="w-5 h-5" /> Delete
                   </button>
                   <button className="text-blue-700 hover:underline flex items-center gap-1" onClick={() => openAssignMentees(m)}>
@@ -184,6 +205,7 @@ export default function Mentors() {
           ))}
         </tbody>
       </table>
+      {loading && <div className="text-center py-4">Loading...</div>}
       {/* Add/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
@@ -228,7 +250,7 @@ export default function Mentors() {
                 <option value="Inactive">Inactive</option>
                 <option value="On Leave">On Leave</option>
               </select>
-              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow">{form.id ? 'Update' : 'Add'} Mentor</button>
+              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow" disabled={saving}>{form.id ? 'Update' : 'Add'} Mentor</button>
             </form>
           </div>
         </div>
@@ -247,7 +269,7 @@ export default function Mentors() {
             </div>
             <div className="mb-2"><span className="font-semibold">Email:</span> {showDetail.email}</div>
             <div className="mb-2"><span className="font-semibold">Phone:</span> {showDetail.phone}</div>
-            <div className="mb-2"><span className="font-semibold">Skills:</span> {showDetail.skills.map(s => <span key={s} className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1 mb-1">{s}</span>)}</div>
+            <div className="mb-2"><span className="font-semibold">Skills:</span> {(showDetail.skills || []).map(s => <span key={s} className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1 mb-1">{s}</span>)}</div>
             <div className="mb-2"><span className="font-semibold">Mentees:</span> {getMenteeNames(showDetail).length ? getMenteeNames(showDetail).join(', ') : <span className="text-gray-400">None</span>}</div>
             {isAdminOrStaff && (
               <button className="mt-4 bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 shadow" onClick={() => openAssignMentees(showDetail)}>
@@ -276,7 +298,7 @@ export default function Mentors() {
                   </label>
                 ))}
               </div>
-              <button type="submit" className="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800 shadow">Save Assignments</button>
+              <button type="submit" className="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800 shadow" disabled={saving}>Save Assignments</button>
             </form>
           </div>
         </div>

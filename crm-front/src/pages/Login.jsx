@@ -2,19 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const roles = [
-  { label: 'Admin', value: 'admin' },
-  { label: 'Staff', value: 'staff' },
-  { label: 'Caseworker', value: 'caseworker' },
-  { label: 'Freelancer', value: 'freelancer' },
-];
-
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState(roles[0].value);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -48,15 +40,6 @@ export default function Login() {
             onChange={e => setPassword(e.target.value)}
             required
           />
-          <select
-            className="w-full px-4 py-2 border rounded"
-            value={role}
-            onChange={e => setRole(e.target.value)}
-          >
-            {roles.map(r => (
-              <option key={r.value} value={r.value}>{r.label}</option>
-            ))}
-          </select>
           <button type="submit" className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Login</button>
         </form>
       </div>

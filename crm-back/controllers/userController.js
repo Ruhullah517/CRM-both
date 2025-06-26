@@ -91,8 +91,46 @@ const loginUser = async (req, res) => {
     }
 };
 
+// Update a user
+const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { name, email, role, password } = req.body;
+  try {
+    let query = 'UPDATE users SET name = ?, email = ?, role = ?';
+    let params = [name, email, role];
+    if (password) {
+      const bcrypt = require('bcryptjs');
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      query += ', password = ?';
+      params.push(hashedPassword);
+    }
+    query += ' WHERE id = ?';
+    params.push(id);
+    await db.query(query, params);
+    res.json({ msg: 'User updated' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Delete a user
+const deleteUser = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM users WHERE id = ?', [id]);
+    res.json({ msg: 'User deleted' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 module.exports = {
   getAllUsers,
   createUser,
   loginUser,
+  updateUser,
+  deleteUser,
 }; 

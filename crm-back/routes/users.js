@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllUsers, createUser, loginUser } = require('../controllers/userController');
+const { getAllUsers, createUser, loginUser, updateUser, deleteUser } = require('../controllers/userController');
 
 // @route   GET api/users
 // @desc    Get all users
@@ -16,5 +16,15 @@ router.post('/', createUser);
 // @desc    Authenticate user & get token
 // @access  Public
 router.post('/login', loginUser);
+
+// @route   PUT api/users/:id
+// @desc    Update a user
+// @access  Public (should be protected in production)
+router.put('/:id', updateUser);
+
+// @route   DELETE api/users/:id
+// @desc    Delete a user
+// @access  Public (should be protected in production)
+router.delete('/:id', deleteUser);
 
 module.exports = router;

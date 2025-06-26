@@ -24,6 +24,14 @@ app.use('/api/enquiries', require('./routes/enquiries'));
 app.use('/api/assessments', require('./routes/assessments'));
 app.use('/api/applications', require('./routes/applications'));
 app.use('/api/formf-sessions', require('./routes/formfSessions'));
+app.use('/api/candidates', require('./routes/candidates'));
+app.use('/api/cases', require('./routes/cases'));
+app.use('/api/contracts', require('./routes/contracts'));
+app.use('/api/freelancers', require('./routes/freelancers'));
+app.use('/api/contacts', require('./routes/contacts'));
+app.use('/api/mentors', require('./routes/mentors'));
+app.use('/api/email-templates', require('./routes/emailTemplates'));
+app.use('/api/contract-templates', require('./routes/contractTemplates'));
 
 app.listen(port, async () => {
   try {

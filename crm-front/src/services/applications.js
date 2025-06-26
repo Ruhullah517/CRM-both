@@ -32,4 +32,15 @@ export async function getFormFSessions(enquiryId) {
 export async function saveFormFSessions(enquiryId, sessions) {
   const res = await api.post(`/formf-sessions/${enquiryId}`, { sessions });
   return res.data;
+}
+
+// User management endpoints
+export async function updateUser(id, user) {
+  const res = await api.put(`/users/${id}`, user);
+  return res.data;
+}
+
+export async function deleteUser(id) {
+  const res = await api.delete(`/users/${id}`);
+  return res.data;
 } 
