@@ -8,6 +8,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { getContracts, createContract, updateContract } from '../services/contracts';
+import { getUsers } from '../services/users';
 
 const statuses = ['Signed', 'Pending', 'Expired'];
 const roles = ['Trainer', 'Mentor'];
@@ -68,9 +69,19 @@ const ContractDetail = ({ contract, onBack, onEdit }) => (
 
 const ContractForm = ({ contract, onBack, onSave }) => {
   const [name, setName] = useState(contract?.name || "");
-  const [role, setRole] = useState(contract?.role || "");
-  const [status, setStatus] = useState(contract?.status || "Pending");
+  const [role, setRole] = useState(contract?.role || roles[0]);
+  const [status, setStatus] = useState(contract?.status || statuses[1]);
   const [createdBy, setCreatedBy] = useState(contract?.createdBy || "");
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    async function fetchUsers() {
+      const data = await getUsers();
+      setUsers(data);
+    }
+    fetchUsers();
+  }, []);
+
   function handleSubmit(e) {
     e.preventDefault();
     onSave({
@@ -87,9 +98,22 @@ const ContractForm = ({ contract, onBack, onSave }) => {
       <h2 className="text-xl font-bold mb-4">{contract ? "Edit" : "Add"} Contract</h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 border rounded" />
-        <input placeholder="Role" value={role} onChange={e => setRole(e.target.value)} className="w-full px-4 py-2 border rounded" />
-        <input placeholder="Status" value={status} onChange={e => setStatus(e.target.value)} className="w-full px-4 py-2 border rounded" />
-        <input placeholder="Created By" value={createdBy} onChange={e => setCreatedBy(e.target.value)} className="w-full px-4 py-2 border rounded" />
+        <select value={role} onChange={e => setRole(e.target.value)} className="w-full px-4 py-2 border rounded">
+          {roles.map(r => (
+            <option key={r} value={r}>{r}</option>
+          ))}
+        </select>
+        <select value={status} onChange={e => setStatus(e.target.value)} className="w-full px-4 py-2 border rounded">
+          {statuses.map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <select value={createdBy} onChange={e => setCreatedBy(e.target.value)} className="w-full px-4 py-2 border rounded">
+          <option value="">Select Created By</option>
+          {users.map(u => (
+            <option key={u.id} value={u.name}>{u.name}</option>
+          ))}
+        </select>
         <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold">{contract ? "Save" : "Add"}</button>
       </form>
     </div>

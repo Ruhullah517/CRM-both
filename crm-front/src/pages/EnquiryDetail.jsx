@@ -5,6 +5,28 @@ import { getAssessmentByEnquiryId, createAssessment } from '../services/assessme
 import { getApplicationByEnquiryId, uploadApplication } from '../services/applications';
 import { useAuth } from '../contexts/AuthContext';
 import FormFAssessmentTracker from '../components/FormFAssessmentTracker';
+import { formatDate } from '../utils/dateUtils';
+import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
+
+const DetailSection = ({ title, children, isOpen, onToggle }) => (
+  <div className="mb-4 border rounded">
+    <button
+      onClick={onToggle}
+      className="w-full flex justify-between items-center p-3 bg-gray-50 hover:bg-gray-100 focus:outline-none"
+    >
+      <h2 className="text-xl font-bold">{title}</h2>
+      {isOpen ? <ChevronUpIcon className="h-6 w-6" /> : <ChevronDownIcon className="h-6 w-6" />}
+    </button>
+    {isOpen && <div className="p-4">{children}</div>}
+  </div>
+);
+
+const DetailRow = ({ label, value }) => (
+  <div className="mb-2 grid grid-cols-1 md:grid-cols-3 gap-2">
+    <b className="md:col-span-1">{label}:</b>
+    <span className="md:col-span-2">{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : (value || '-')}</span>
+  </div>
+);
 
 export default function EnquiryDetail() {
   const { id } = useParams();
@@ -15,6 +37,8 @@ export default function EnquiryDetail() {
   const [enquiry, setEnquiry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  const [openSection, setOpenSection] = useState('enquiry');
 
   // Action States
   const [rejecting, setRejecting] = useState(false);
@@ -137,20 +161,23 @@ export default function EnquiryDetail() {
   if (error) return <div>{error}</div>;
   if (!enquiry) return <div>Enquiry not found.</div>;
 
+  const toggleSection = (section) => {
+    setOpenSection(openSection === section ? null : section);
+  };
+
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white rounded shadow mt-8 mb-8">
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow mt-8 mb-8">
       <button className="mb-4 text-blue-600 hover:underline" onClick={() => navigate(-1)}>&larr; Back to List</button>
       
       {/* Enquiry Details Section */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold mb-4">Enquiry Details</h1>
-        <div className="mb-2"><b>Name:</b> {enquiry.name}</div>
-        <div className="mb-2"><b>Email:</b> {enquiry.email}</div>
-        <div className="mb-2"><b>Submission Date:</b> {new Date(enquiry.submission_date).toLocaleDateString()}</div>
-        <div className="mb-2"><b>Status:</b> {enquiry.status}</div>
-        <div className="mb-2"><b>Assigned To:</b> {enquiry.assigned_to || '-'}</div>
+      <DetailSection title="Enquiry Details" isOpen={openSection === 'enquiry'} onToggle={() => toggleSection('enquiry')}>
+        <DetailRow label="Name" value={enquiry.full_name} />
+        <DetailRow label="Email" value={enquiry.email_address} />
+        <DetailRow label="Submission Date" value={formatDate(enquiry.submission_date)} />
+        <DetailRow label="Status" value={enquiry.status} />
+        <DetailRow label="Assigned To" value={enquiry.assigned_to_name || '-'} />
         {enquiry.status === 'Rejected' && (
-          <div className="mb-2 text-red-600"><b>Rejection Reason:</b> {enquiry.rejection_reason}</div>
+          <DetailRow label="Rejection Reason" value={enquiry.rejection_reason} />
         )}
         <div className="flex gap-2 mt-4">
           <button className="bg-green-500 text-white px-3 py-1 rounded" onClick={handleApprove} disabled={enquiry.status === 'Approved'}>Approve</button>
@@ -171,23 +198,62 @@ export default function EnquiryDetail() {
             <button className="ml-1" onClick={() => setAssigning(false)}>Cancel</button>
           </div>
         )}
-      </div>
+      </DetailSection>
 
+      {/* Personal Details Section */}
+      <DetailSection title="Personal Details" isOpen={openSection === 'personal'} onToggle={() => toggleSection('personal')}>
+        <DetailRow label="Telephone" value={enquiry.telephone} />
+        <DetailRow label="Location" value={enquiry.location} />
+        <DetailRow label="Post Code" value={enquiry.post_code} />
+        <DetailRow label="Nationality" value={enquiry.nationality} />
+        <DetailRow label="Ethnicity" value={enquiry.ethnicity} />
+        <DetailRow label="Sexual Orientation" value={enquiry.sexual_orientation} />
+        <DetailRow label="Over 21?" value={enquiry.over_21} />
+        <DetailRow label="Date of Birth" value={formatDate(enquiry.dob)} />
+        <DetailRow label="Occupation" value={enquiry.occupation} />
+      </DetailSection>
+
+      {/* Fostering Details Section */}
+      <DetailSection title="Fostering Details" isOpen={openSection === 'fostering'} onToggle={() => toggleSection('fostering')}>
+        <DetailRow label="Foster as a couple?" value={enquiry.foster_as_couple} />
+        <DetailRow label="Has a spare room?" value={enquiry.has_spare_room} />
+        <DetailRow label="Property & Bedroom Details" value={enquiry.property_bedrooms_details} />
+      </DetailSection>
+      
+      {/* Experience & Checks Section */}
+      <DetailSection title="Experience & Checks" isOpen={openSection === 'experience'} onToggle={() => toggleSection('experience')}>
+        <DetailRow label="Children or caring responsibilities?" value={enquiry.has_children_or_caring_responsibilities} />
+        <DetailRow label="Previously investigated by social services?" value={enquiry.previous_investigation} />
+        <DetailRow label="Previous fostering/childcare experience?" value={enquiry.previous_experience} />
+      </DetailSection>
+
+      {/* Motivation & Support Section */}
+      <DetailSection title="Motivation & Support" isOpen={openSection === 'motivation'} onToggle={() => toggleSection('motivation')}>
+        <DetailRow label="Motivation for fostering" value={enquiry.motivation} />
+        <DetailRow label="Support needs" value={enquiry.support_needs} />
+      </DetailSection>
+
+      {/* Availability & Confirmation Section */}
+      <DetailSection title="Availability & Confirmation" isOpen={openSection === 'availability'} onToggle={() => toggleSection('availability')}>
+        <DetailRow label="Availability for follow-up call" value={enquiry.availability_for_call} />
+        <DetailRow label="How did you hear about us?" value={enquiry.how_did_you_hear} />
+        <DetailRow label="Information confirmed correct?" value={enquiry.information_correct_confirmation} />
+      </DetailSection>
+      
       {/* Initial Assessment Section */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold mb-2">Initial Assessment</h2>
+      <DetailSection title="Initial Assessment" isOpen={openSection === 'assessment'} onToggle={() => toggleSection('assessment')}>
         {assessmentLoading ? (
           <div>Loading assessment...</div>
         ) : assessment ? (
-          <div className="bg-gray-50 p-4 rounded">
-            <div><b>Staff ID:</b> {assessment.staff_id}</div>
-            <div><b>Notes:</b> {assessment.assessment_notes}</div>
-            <div><b>Date:</b> {assessment.assessment_date}</div>
-            <div><b>Attachment:</b> {assessment.attachments || '-'}</div>
-            <div><b>Status:</b> {assessment.status}</div>
+          <div>
+            <DetailRow label="Staff ID" value={assessment.staff_id} />
+            <DetailRow label="Notes" value={assessment.assessment_notes} />
+            <DetailRow label="Date" value={formatDate(assessment.assessment_date)} />
+            <DetailRow label="Attachment" value={assessment.attachments} />
+            <DetailRow label="Status" value={assessment.status} />
           </div>
         ) : (
-          <form className="bg-gray-50 p-4 rounded" onSubmit={handleAssessmentSubmit}>
+          <form onSubmit={handleAssessmentSubmit}>
             <div className="mb-2"><label className="block font-semibold mb-1">Assessment Notes</label><textarea className="w-full border rounded px-2 py-1" value={notes} onChange={e => setNotes(e.target.value)} required /></div>
             <div className="mb-2"><label className="block font-semibold mb-1">Date</label><input type="date" className="w-full border rounded px-2 py-1" value={date} onChange={e => setDate(e.target.value)} required /></div>
             <div className="mb-2"><label className="block font-semibold mb-1">Attachment (URL)</label><input type="text" className="w-full border rounded px-2 py-1" value={attachment} onChange={e => setAttachment(e.target.value)} /></div>
@@ -195,17 +261,17 @@ export default function EnquiryDetail() {
             <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded mt-2">Submit Assessment</button>
           </form>
         )}
-      </div>
-{/* Application Form Section */}
-<div>
-        <h2 className="text-xl font-bold mb-2">Application Form</h2>
+      </DetailSection>
+
+      {/* Application Form Section */}
+      <DetailSection title="Application Form" isOpen={openSection === 'application'} onToggle={() => toggleSection('application')}>
         {applicationLoading ? (
           <div>Loading application...</div>
         ) : (
-          <div className="bg-gray-50 p-4 rounded">
+          <div>
             {application ? (
               <div>
-                <p><b>Status:</b> {application.status}</p>
+                <DetailRow label="Status" value={application.status} />
                 <p><b>File:</b> <a href={`http://localhost:3001/${application.application_form_path}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{application.application_form_path}</a></p>
               </div>
             ) : (
@@ -217,10 +283,12 @@ export default function EnquiryDetail() {
             </form>
           </div>
         )}
-      </div>
-      {/* Form F Assessment Tracker Section */}
-      <FormFAssessmentTracker enquiryId={id} />
+      </DetailSection>
 
+      {/* Form F Assessment Tracker Section */}
+      <DetailSection title="Form F Assessment" isOpen={openSection === 'formf'} onToggle={() => toggleSection('formf')}>
+        <FormFAssessmentTracker enquiryId={id} />
+      </DetailSection>
       
     </div>
   );

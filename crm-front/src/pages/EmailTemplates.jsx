@@ -22,7 +22,7 @@ const initialTemplates = [
 
 export default function EmailTemplates() {
   const { user } = useAuth();
-  const isAdminOrStaff = user?.role === 'admin' || user?.role === 'staff';
+  const isAdminOrStaff = user.user?.role === 'admin' || user?.role === 'staff';
   const [templates, setTemplates] = useState(initialTemplates);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ id: null, name: '', subject: '', body: '' });

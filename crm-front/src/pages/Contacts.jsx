@@ -15,6 +15,8 @@ const tagColors = {
   client: 'bg-purple-100 text-purple-800',
 };
 
+const contactTypes = ['Partner', 'Client', 'Mentor', 'Trainer', 'Other'];
+
 const ContactList = ({ onSelect, onAdd, contacts }) => {
   const [search, setSearch] = useState("");
   const filtered = contacts.filter(c => c.name?.toLowerCase().includes(search.toLowerCase()));
@@ -108,7 +110,9 @@ const ContactForm = ({ contact, onBack, onSave, loading }) => {
         <input name="name" placeholder="Name" value={form.name} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
         <input name="email" placeholder="Email" value={form.email} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
         <input name="phone" placeholder="Phone" value={form.phone} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
-        <input name="type" placeholder="Type" value={form.type} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
+        <select name="type" value={form.type} onChange={handleChange} className="w-full px-4 py-2 border rounded">
+          {contactTypes.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
         <input name="tags" placeholder="Tags (comma separated)" value={form.tags.join(', ')} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
         <textarea name="notes" placeholder="Notes" value={form.notes} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
         <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold" disabled={loading}>{loading ? 'Saving...' : (contact ? "Save" : "Add")}</button>

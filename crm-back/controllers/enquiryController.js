@@ -14,7 +14,7 @@ const getAllEnquiries = async (req, res) => {
 // Get a single enquiry by ID
 const getEnquiryById = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM enquiries WHERE id = ?', [req.params.id]);
+    const [rows] = await db.query('SELECT e.*, u.name as assigned_to_name FROM enquiries e LEFT JOIN users u ON e.assigned_to = u.id WHERE e.id = ?', [req.params.id]);
     if (rows.length === 0) return res.status(404).json({ msg: 'Enquiry not found' });
     res.json(rows[0]);
   } catch (error) {
@@ -58,7 +58,42 @@ const assignEnquiry = async (req, res) => {
   }
 };
 
+const createEnquiry = async (req, res) => {
+  const {
+    full_name, email_address, telephone, location, post_code, nationality,
+    ethnicity, sexual_orientation, over_21, dob, occupation, foster_as_couple,
+    has_spare_room, property_bedrooms_details, has_children_or_caring_responsibilities,
+    previous_investigation, previous_experience, motivation, support_needs,
+    availability_for_call, how_did_you_hear, information_correct_confirmation
+  } = req.body;
+
+  const sql = `
+    INSERT INTO enquiries (
+      full_name, email_address, telephone, location, post_code, nationality,
+      ethnicity, sexual_orientation, over_21, dob, occupation, foster_as_couple,
+      has_spare_room, property_bedrooms_details, has_children_or_caring_responsibilities,
+      previous_investigation, previous_experience, motivation, support_needs,
+      availability_for_call, how_did_you_hear, information_correct_confirmation
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `;
+
+  try {
+    const [result] = await db.query(sql, [
+      full_name, email_address, telephone, location, post_code, nationality,
+      ethnicity, sexual_orientation, over_21, dob, occupation, foster_as_couple,
+      has_spare_room, property_bedrooms_details, has_children_or_caring_responsibilities,
+      previous_investigation, previous_experience, motivation, support_needs,
+      availability_for_call, how_did_you_hear, information_correct_confirmation
+    ]);
+    res.status(201).json({ id: result.insertId, msg: 'Enquiry created successfully' });
+  } catch (error) {
+    console.error('Error creating enquiry:', error);
+    res.status(500).send('Server error');
+  }
+};
+
 module.exports = {
+  createEnquiry,
   getAllEnquiries,
   getEnquiryById,
   approveEnquiry,

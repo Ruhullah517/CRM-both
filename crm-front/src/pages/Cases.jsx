@@ -8,10 +8,12 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline';
 import { getCases, createCase, updateCase } from '../services/cases';
+import { formatDate } from '../utils/dateUtils';
 
 const statuses = ['Open', 'In Progress', 'Closed'];
 const caseworkers = ['Sarah Brown', 'Mike Green', 'Jane Lee'];
 const individuals = ['Alice Johnson', 'Bob Smith'];
+const caseTypes = ['Support', 'Advocacy', 'Training', 'Other'];
 
 const statusColors = {
   active: 'bg-green-100 text-[#2EAB2C]',
@@ -48,7 +50,7 @@ const CaseList = ({ onSelect, onAdd, cases }) => {
                 <td className="px-4 py-2">{c.type}</td>
                 <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{c.status}</span></td>
                 <td className="px-4 py-2">{c.assignedCaseworker}</td>
-                <td className="px-4 py-2">{c.startDate}</td>
+                <td className="px-4 py-2">{formatDate(c.startDate)}</td>
                 <td className="px-4 py-2"><button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
               </tr>
             ))}
@@ -66,13 +68,13 @@ const CaseDetail = ({ caseItem, onBack, onEdit }) => (
     <div className="mb-2"><span className="font-semibold">Type:</span> {caseItem.type}</div>
     <div className="mb-2"><span className="font-semibold">Status:</span> <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[caseItem.status?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{caseItem.status}</span></div>
     <div className="mb-2"><span className="font-semibold">Caseworker:</span> {caseItem.assignedCaseworker}</div>
-    <div className="mb-2"><span className="font-semibold">Start Date:</span> {caseItem.startDate}</div>
+    <div className="mb-2"><span className="font-semibold">Start Date:</span> {formatDate(caseItem.startDate)}</div>
     <h3 className="font-semibold mt-4 mb-1">Activity Log</h3>
-    <ul className="mb-2 list-disc ml-6 text-sm">{(caseItem.activity || []).map((a, i) => <li key={i}>{a.action} <span className="text-gray-400">({a.date})</span></li>)}</ul>
+    <ul className="mb-2 list-disc ml-6 text-sm">{(caseItem.activity || []).map((a, i) => <li key={i}>{a.action} <span className="text-gray-400">({formatDate(a.date)})</span></li>)}</ul>
     <h3 className="font-semibold mb-1">Uploads</h3>
     <ul className="mb-2 text-sm">{(caseItem.uploads || []).map((u, i) => <li key={i}><a href={u.url} className="text-blue-700 hover:underline">{u.name}</a></li>)}</ul>
     <h3 className="font-semibold mb-1">Reminders</h3>
-    <ul className="mb-2 text-sm">{(caseItem.reminders || []).map((r, i) => <li key={i}>{r.text} <span className="text-gray-400">({r.date})</span></li>)}</ul>
+    <ul className="mb-2 text-sm">{(caseItem.reminders || []).map((r, i) => <li key={i}>{r.text} <span className="text-gray-400">({formatDate(r.date)})</span></li>)}</ul>
     <button onClick={onEdit} className="mt-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
   </div>
 );
@@ -102,8 +104,18 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
       <h2 className="text-xl font-bold mb-4">{caseItem ? "Edit" : "Add"} Case</h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <input placeholder="Person" value={person} onChange={e => setPerson(e.target.value)} className="w-full px-4 py-2 border rounded" />
-        <input placeholder="Type" value={type} onChange={e => setType(e.target.value)} className="w-full px-4 py-2 border rounded" />
-        <input placeholder="Caseworker" value={assignedCaseworker} onChange={e => setAssignedCaseworker(e.target.value)} className="w-full px-4 py-2 border rounded" />
+        <select value={type} onChange={e => setType(e.target.value)} className="w-full px-4 py-2 border rounded">
+          <option value="">Select Type</option>
+          {caseTypes.map(t => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+        <select value={assignedCaseworker} onChange={e => setAssignedCaseworker(e.target.value)} className="w-full px-4 py-2 border rounded">
+          <option value="">Select Caseworker</option>
+          {caseworkers.map(cw => (
+            <option key={cw} value={cw}>{cw}</option>
+          ))}
+        </select>
         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 border rounded" />
         <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold">{caseItem ? "Save" : "Add"}</button>
       </form>

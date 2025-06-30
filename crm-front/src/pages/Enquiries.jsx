@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getEnquiries, approveEnquiry, rejectEnquiry, assignEnquiry } from '../services/enquiries';
+import { formatDate } from '../utils/dateUtils';
 
 export default function Enquiries() {
   const [enquiries, setEnquiries] = useState([]);
@@ -68,7 +69,7 @@ export default function Enquiries() {
             <tr key={enq.id}>
               <td className="border px-4 py-2">{enq.name}</td>
               <td className="border px-4 py-2">{enq.email}</td>
-              <td className="border px-4 py-2">{new Date(enq.submission_date).toLocaleDateString()}</td>
+              <td className="border px-4 py-2">{formatDate(enq.submission_date)}</td>
               <td className="border px-4 py-2">{enq.status}</td>
               <td className="border px-4 py-2">{enq.assigned_to || '-'}</td>
               <td className="border px-4 py-2 space-x-2">

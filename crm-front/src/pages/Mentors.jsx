@@ -28,7 +28,7 @@ const statusColors = {
 
 export default function Mentors() {
   const { user } = useAuth();
-  const isAdminOrStaff = user?.role === 'admin' || user?.role === 'staff';
+  const isAdminOrStaff = user.user?.role === 'admin' || user?.role === 'staff';
   const [mentors, setMentors] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(null);

@@ -7,6 +7,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { getCandidates, createCandidate, updateCandidate } from '../services/candidates';
+import { formatDate } from '../utils/dateUtils';
 
 const stages = ['Inquiry', 'Application', 'Assessment', 'Mentoring', 'Final Approval'];
 const statuses = ['New', 'Active', 'Paused', 'Completed'];
@@ -54,7 +55,7 @@ const CandidateList = ({ onSelect, onAdd, candidates }) => {
                 <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status]}`}>{c.status}</span></td>
                 <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${stageColors[c.stage]}`}>{c.stage}</span></td>
                 <td className="px-4 py-2">{c.mentor}</td>
-                <td className="px-4 py-2">{c.deadline}</td>
+                <td className="px-4 py-2">{formatDate(c.deadline)}</td>
                 <td className="px-4 py-2"><button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
               </tr>
             ))}
@@ -72,7 +73,7 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => (
     <div className="mb-2"><span className="font-semibold">Status:</span> <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[candidate.status]}`}>{candidate.status}</span></div>
     <div className="mb-2"><span className="font-semibold">Stage:</span> <span className={`px-2 py-1 rounded text-xs font-semibold ${stageColors[candidate.stage]}`}>{candidate.stage}</span></div>
     <div className="mb-2"><span className="font-semibold">Mentor:</span> {candidate.mentor}</div>
-    <div className="mb-2"><span className="font-semibold">Deadline:</span> {candidate.deadline}</div>
+    <div className="mb-2"><span className="font-semibold">Deadline:</span> {formatDate(candidate.deadline)}</div>
     <h3 className="font-semibold mt-4 mb-1">Notes</h3>
     <ul className="mb-2 list-disc ml-6 text-sm">{(candidate.notes || []).map((n, i) => <li key={i}>{n.text} <span className="text-gray-400">({n.date})</span></li>)}</ul>
     <h3 className="font-semibold mb-1">Documents</h3>
@@ -106,7 +107,12 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
       <h2 className="text-xl font-bold mb-4">{candidate ? "Edit" : "Add"} Candidate</h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 border rounded" />
-        <input placeholder="Mentor" value={mentor} onChange={e => setMentor(e.target.value)} className="w-full px-4 py-2 border rounded" />
+        <select value={mentor} onChange={e => setMentor(e.target.value)} className="w-full px-4 py-2 border rounded">
+          <option value="">Select Mentor</option>
+          {mentors.map(m => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
         <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className="w-full px-4 py-2 border rounded" />
         <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold">{candidate ? "Save" : "Add"}</button>
       </form>

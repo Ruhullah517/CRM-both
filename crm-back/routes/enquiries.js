@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const {
+  createEnquiry,
   getAllEnquiries,
   getEnquiryById,
   approveEnquiry,
@@ -22,5 +23,7 @@ router.post('/:id/reject', rejectEnquiry);
 
 // Assign an enquiry to a staff member
 router.post('/:id/assign', assignEnquiry);
+
+router.post('/', createEnquiry);
 
 module.exports = router; 

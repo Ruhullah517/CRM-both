@@ -7,6 +7,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { getFreelancers, createFreelancer, updateFreelancer } from '../services/freelancers';
+import { formatDate } from '../utils/dateUtils';
 
 const roles = ['Trainer', 'Mentor'];
 const statuses = ['Active', 'Inactive'];
@@ -47,7 +48,7 @@ const FreelancerList = ({ onSelect, onAdd, freelancers }) => {
                 <td className="px-4 py-2 font-semibold">{f.name}</td>
                 <td className="px-4 py-2">{f.role}</td>
                 <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${availabilityColors[f.availability?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{f.availability}</span></td>
-                <td className="px-4 py-2">{f.contractDate}</td>
+                <td className="px-4 py-2">{formatDate(f.contractDate)}</td>
                 <td className="px-4 py-2"><button onClick={() => onSelect(f)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
               </tr>
             ))}
@@ -64,7 +65,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit }) => (
     <h2 className="text-xl font-bold mb-2">{freelancer.name}</h2>
     <div className="mb-2"><span className="font-semibold">Role:</span> {freelancer.role}</div>
     <div className="mb-2"><span className="font-semibold">Availability:</span> <span className={`px-2 py-1 rounded text-xs font-semibold ${availabilityColors[freelancer.availability?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{freelancer.availability}</span></div>
-    <div className="mb-2"><span className="font-semibold">Contract Date:</span> {freelancer.contractDate}</div>
+    <div className="mb-2"><span className="font-semibold">Contract Date:</span> {formatDate(freelancer.contractDate)}</div>
     <h3 className="font-semibold mt-4 mb-1">Assignments</h3>
     <ul className="mb-2 list-disc ml-6 text-sm">{(freelancer.assignments || []).map((a, i) => <li key={i}>{a}</li>)}</ul>
     <h3 className="font-semibold mb-1">Uploads</h3>
@@ -73,12 +74,22 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit }) => (
   </div>
 );
 
+function formatDateForInput(date) {
+  if (!date) return '';
+  // If already in YYYY-MM-DD, return as is
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+  // Try to parse and format
+  const d = new Date(date);
+  if (isNaN(d)) return '';
+  return d.toISOString().slice(0, 10);
+}
+
 const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
   const [form, setForm] = useState({
     name: freelancer?.name || '',
     role: freelancer?.role || roles[0],
     availability: freelancer?.availability || availabilities[0],
-    contractDate: freelancer?.contractDate || '',
+    contractDate: formatDateForInput(freelancer?.contractDate),
     assignments: freelancer?.assignments || [],
     uploads: freelancer?.uploads || [],
   });
@@ -102,7 +113,9 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
         <select name="role" value={form.role} onChange={handleChange} className="w-full px-4 py-2 border rounded">
           {roles.map(r => <option key={r} value={r}>{r}</option>)}
         </select>
-        <input name="availability" placeholder="Availability" value={form.availability} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
+        <select name="availability" value={form.availability} onChange={handleChange} className="w-full px-4 py-2 border rounded">
+          {availabilities.map(a => <option key={a} value={a}>{a}</option>)}
+        </select>
         <input name="contractDate" type="date" value={form.contractDate} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
         <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold" disabled={loading}>{loading ? 'Saving...' : (freelancer ? "Save" : "Add")}</button>
       </form>
