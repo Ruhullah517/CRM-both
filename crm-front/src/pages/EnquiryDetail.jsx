@@ -239,7 +239,7 @@ export default function EnquiryDetail() {
         <DetailRow label="How did you hear about us?" value={enquiry.how_did_you_hear} />
         <DetailRow label="Information confirmed correct?" value={enquiry.information_correct_confirmation} />
       </DetailSection>
-      
+
       {/* Initial Assessment Section */}
       <DetailSection title="Initial Assessment" isOpen={openSection === 'assessment'} onToggle={() => toggleSection('assessment')}>
         {assessmentLoading ? (
@@ -263,7 +263,7 @@ export default function EnquiryDetail() {
         )}
       </DetailSection>
 
-      {/* Application Form Section */}
+{/* Application Form Section */}
       <DetailSection title="Application Form" isOpen={openSection === 'application'} onToggle={() => toggleSection('application')}>
         {applicationLoading ? (
           <div>Loading application...</div>
@@ -287,7 +287,7 @@ export default function EnquiryDetail() {
 
       {/* Form F Assessment Tracker Section */}
       <DetailSection title="Form F Assessment" isOpen={openSection === 'formf'} onToggle={() => toggleSection('formf')}>
-        <FormFAssessmentTracker enquiryId={id} />
+      <FormFAssessmentTracker enquiryId={id} />
       </DetailSection>
       
     </div>
