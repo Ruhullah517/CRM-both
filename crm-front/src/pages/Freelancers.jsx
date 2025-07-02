@@ -6,7 +6,7 @@ import {
   UserCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { getFreelancers, createFreelancer, updateFreelancer } from '../services/freelancers';
+import { getFreelancers, createFreelancer, updateFreelancer, deleteFreelancer } from '../services/freelancers';
 import { formatDate } from '../utils/dateUtils';
 
 const roles = ['Trainer', 'Mentor'];
@@ -22,7 +22,7 @@ const availabilityColors = {
   unavailable: 'bg-yellow-100 text-yellow-800',
 };
 
-const FreelancerList = ({ onSelect, onAdd, freelancers }) => {
+const FreelancerList = ({ onSelect, onAdd, freelancers, onDelete }) => {
   const [search, setSearch] = useState("");
   const filtered = freelancers.filter(f => f.name?.toLowerCase().includes(search.toLowerCase()));
   return (
@@ -40,16 +40,18 @@ const FreelancerList = ({ onSelect, onAdd, freelancers }) => {
               <th className="px-4 py-2">Availability</th>
               <th className="px-4 py-2">Contract Date</th>
               <th className="px-4 py-2"></th>
+              <th className="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(f => (
-              <tr key={f.id} className="border-t hover:bg-green-50 transition">
+              <tr key={f._id} className="border-t hover:bg-green-50 transition">
                 <td className="px-4 py-2 font-semibold">{f.name}</td>
                 <td className="px-4 py-2">{f.role}</td>
                 <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${availabilityColors[f.availability?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{f.availability}</span></td>
                 <td className="px-4 py-2">{formatDate(f.contractDate)}</td>
                 <td className="px-4 py-2"><button onClick={() => onSelect(f)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
+                <td className="px-4 py-2"><button onClick={() => onDelete(f)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">Delete</button></td>
               </tr>
             ))}
           </tbody>
@@ -70,7 +72,9 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit }) => (
     <ul className="mb-2 list-disc ml-6 text-sm">{(freelancer.assignments || []).map((a, i) => <li key={i}>{a}</li>)}</ul>
     <h3 className="font-semibold mb-1">Uploads</h3>
     <ul className="mb-2 text-sm">{(freelancer.uploads || []).map(u => <li key={u.id}><a href={u.url} className="text-blue-700 hover:underline">{u.name}</a></li>)}</ul>
-    <button onClick={onEdit} className="mt-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
+    <div className="flex gap-2 mt-4">
+      <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
+    </div>
   </div>
 );
 
@@ -160,8 +164,8 @@ const Freelancers = () => {
     setSaving(true);
     setError(null);
     try {
-      if (freelancer.id) {
-        await updateFreelancer(freelancer.id, freelancer);
+      if (freelancer._id) {
+        await updateFreelancer(freelancer._id, freelancer);
       } else {
         await createFreelancer(freelancer);
       }
@@ -173,13 +177,27 @@ const Freelancers = () => {
     setSaving(false);
   }
 
+  async function handleDeleteFreelancer(freelancer) {
+    if (!window.confirm(`Delete freelancer '${freelancer.name}'?`)) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await deleteFreelancer(freelancer._id);
+      fetchFreelancers();
+      setView("list");
+    } catch (err) {
+      setError('Failed to delete freelancer');
+    }
+    setSaving(false);
+  }
+
   if (view === "detail" && selected) return <FreelancerDetail freelancer={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} />;
   if (view === "edit" && selected) return <FreelancerForm freelancer={selected} onBack={() => setView("detail")} onSave={handleSaveFreelancer} loading={saving} />;
   if (view === "add") return <FreelancerForm onBack={() => setView("list")} onSave={handleSaveFreelancer} loading={saving} />;
   return (
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
-      <FreelancerList onSelect={f => { setSelected(f); setView("detail"); }} onAdd={() => setView("add")} freelancers={freelancers} />
+      <FreelancerList onSelect={f => { setSelected(f); setView("detail"); }} onAdd={() => setView("add")} freelancers={freelancers} onDelete={handleDeleteFreelancer} />
       {loading && <div className="text-center py-4">Loading...</div>}
     </>
   );

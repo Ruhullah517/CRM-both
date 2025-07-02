@@ -33,12 +33,6 @@ app.use('/api/mentors', require('./routes/mentors'));
 app.use('/api/email-templates', require('./routes/emailTemplates'));
 app.use('/api/contract-templates', require('./routes/contractTemplates'));
 
-app.listen(port, async () => {
-  try {
-    await db.getConnection();
-    console.log('Database connected successfully!');
-  } catch (error) {
-    console.error('Unable to connect to the database:', error);
-  }
+app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
 });

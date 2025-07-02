@@ -1,15 +1,13 @@
-const db = require('../config/db');
+const Mentor = require('../models/Mentor');
 
 // List all mentors
 const getAllMentors = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM mentors');
-    // Map created_at to dateAdded and parse skills/mentees
-    const mapped = rows.map(m => ({
-      ...m,
+    const mentors = await Mentor.find();
+    // Map created_at to dateAdded for frontend compatibility
+    const mapped = mentors.map(m => ({
+      ...m.toObject(),
       dateAdded: m.created_at,
-      skills: m.skills ? JSON.parse(m.skills) : [],
-      mentees: m.mentees ? JSON.parse(m.mentees) : [],
     }));
     res.json(mapped);
   } catch (error) {
@@ -21,14 +19,11 @@ const getAllMentors = async (req, res) => {
 // Get a single mentor by ID
 const getMentorById = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM mentors WHERE id = ?', [req.params.id]);
-    if (rows.length === 0) return res.status(404).json({ msg: 'Mentor not found' });
-    const m = rows[0];
+    const m = await Mentor.findById(req.params.id);
+    if (!m) return res.status(404).json({ msg: 'Mentor not found' });
     res.json({
-      ...m,
+      ...m.toObject(),
       dateAdded: m.created_at,
-      skills: m.skills ? JSON.parse(m.skills) : [],
-      mentees: m.mentees ? JSON.parse(m.mentees) : [],
     });
   } catch (error) {
     console.error(error);
@@ -40,11 +35,17 @@ const getMentorById = async (req, res) => {
 const createMentor = async (req, res) => {
   const { name, email, phone, skills, status, avatar, mentees } = req.body;
   try {
-    const [result] = await db.query(
-      'INSERT INTO mentors (name, email, phone, skills, status, avatar, mentees) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [name, email, phone, JSON.stringify(skills || []), status, avatar, JSON.stringify(mentees || [])]
-    );
-    res.status(201).json({ id: result.insertId, name, email, phone, skills, status, avatar, mentees });
+    const mentor = new Mentor({
+      name,
+      email,
+      phone,
+      skills: skills || [],
+      status,
+      avatar,
+      mentees: mentees || [],
+    });
+    await mentor.save();
+    res.status(201).json(mentor);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -55,10 +56,15 @@ const createMentor = async (req, res) => {
 const updateMentor = async (req, res) => {
   const { name, email, phone, skills, status, avatar, mentees } = req.body;
   try {
-    await db.query(
-      'UPDATE mentors SET name = ?, email = ?, phone = ?, skills = ?, status = ?, avatar = ?, mentees = ? WHERE id = ?',
-      [name, email, phone, JSON.stringify(skills || []), status, avatar, JSON.stringify(mentees || []), req.params.id]
-    );
+    await Mentor.findByIdAndUpdate(req.params.id, {
+      name,
+      email,
+      phone,
+      skills: skills || [],
+      status,
+      avatar,
+      mentees: mentees || [],
+    });
     res.json({ msg: 'Mentor updated' });
   } catch (error) {
     console.error(error);
@@ -69,7 +75,7 @@ const updateMentor = async (req, res) => {
 // Delete a mentor
 const deleteMentor = async (req, res) => {
   try {
-    await db.query('DELETE FROM mentors WHERE id = ?', [req.params.id]);
+    await Mentor.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Mentor deleted' });
   } catch (error) {
     console.error(error);

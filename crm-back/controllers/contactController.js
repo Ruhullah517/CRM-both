@@ -1,15 +1,13 @@
-const db = require('../config/db');
+const Contact = require('../models/Contact');
 
 // List all contacts
 const getAllContacts = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM contacts');
-    // Map created_at to dateAdded and parse tags/emailHistory
-    const mapped = rows.map(c => ({
-      ...c,
+    const contacts = await Contact.find();
+    // Map created_at to dateAdded for compatibility
+    const mapped = contacts.map(c => ({
+      ...c.toObject(),
       dateAdded: c.created_at,
-      tags: c.tags ? JSON.parse(c.tags) : [],
-      emailHistory: c.emailHistory ? JSON.parse(c.emailHistory) : [],
     }));
     res.json(mapped);
   } catch (error) {
@@ -21,14 +19,11 @@ const getAllContacts = async (req, res) => {
 // Get a single contact by ID
 const getContactById = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM contacts WHERE id = ?', [req.params.id]);
-    if (rows.length === 0) return res.status(404).json({ msg: 'Contact not found' });
-    const c = rows[0];
+    const c = await Contact.findById(req.params.id);
+    if (!c) return res.status(404).json({ msg: 'Contact not found' });
     res.json({
-      ...c,
+      ...c.toObject(),
       dateAdded: c.created_at,
-      tags: c.tags ? JSON.parse(c.tags) : [],
-      emailHistory: c.emailHistory ? JSON.parse(c.emailHistory) : [],
     });
   } catch (error) {
     console.error(error);
@@ -40,11 +35,18 @@ const getContactById = async (req, res) => {
 const createContact = async (req, res) => {
   const { user_id, name, email, phone, type, tags, notes, emailHistory } = req.body;
   try {
-    const [result] = await db.query(
-      'INSERT INTO contacts (user_id, name, email, phone, type, tags, notes, emailHistory) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [user_id, name, email, phone, type, JSON.stringify(tags || []), notes || '', JSON.stringify(emailHistory || [])]
-    );
-    res.status(201).json({ id: result.insertId, user_id, name, email, phone, type, tags, notes, emailHistory });
+    const contact = new Contact({
+      user_id,
+      name,
+      email,
+      phone,
+      type,
+      tags: tags || [],
+      notes: notes || '',
+      emailHistory: emailHistory || [],
+    });
+    await contact.save();
+    res.status(201).json(contact);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -55,10 +57,15 @@ const createContact = async (req, res) => {
 const updateContact = async (req, res) => {
   const { name, email, phone, type, tags, notes, emailHistory } = req.body;
   try {
-    await db.query(
-      'UPDATE contacts SET name = ?, email = ?, phone = ?, type = ?, tags = ?, notes = ?, emailHistory = ? WHERE id = ?',
-      [name, email, phone, type, JSON.stringify(tags || []), notes || '', JSON.stringify(emailHistory || []), req.params.id]
-    );
+    await Contact.findByIdAndUpdate(req.params.id, {
+      name,
+      email,
+      phone,
+      type,
+      tags: tags || [],
+      notes: notes || '',
+      emailHistory: emailHistory || [],
+    });
     res.json({ msg: 'Contact updated' });
   } catch (error) {
     console.error(error);
@@ -69,7 +76,7 @@ const updateContact = async (req, res) => {
 // Delete a contact
 const deleteContact = async (req, res) => {
   try {
-    await db.query('DELETE FROM contacts WHERE id = ?', [req.params.id]);
+    await Contact.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Contact deleted' });
   } catch (error) {
     console.error(error);

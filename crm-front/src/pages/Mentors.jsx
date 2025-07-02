@@ -12,14 +12,6 @@ import {
 import { getMentors, createMentor, updateMentor, deleteMentor } from '../services/mentors';
 import { getCandidates } from '../services/candidates';
 
-// Mocked candidate list for assignment UI
-const allCandidates = [
-  { id: 1, name: 'Alice Johnson', mentor: 'Angela Foster' },
-  { id: 2, name: 'Bob Smith', mentor: 'David Mensah' },
-  { id: 3, name: 'Sam Brown', mentor: '' },
-  { id: 4, name: 'Lisa Green', mentor: '' },
-];
-
 const statusColors = {
   Active: 'bg-green-100 text-[#2EAB2C]',
   Inactive: 'bg-gray-100 text-gray-700',
@@ -32,7 +24,7 @@ export default function Mentors() {
   const [mentors, setMentors] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(null);
-  const [form, setForm] = useState({ id: null, name: '', email: '', phone: '', skills: '', status: 'Active', avatar: '', mentees: [] });
+  const [form, setForm] = useState({ _id: null, name: '', email: '', phone: '', skills: '', status: 'Active', avatar: '', mentees: [] });
   const [showAssign, setShowAssign] = useState(false);
   const [assignMentees, setAssignMentees] = useState([]); // candidate IDs
   const [candidates, setCandidates] = useState([]);
@@ -73,7 +65,7 @@ export default function Mentors() {
   }
 
   function openAdd() {
-    setForm({ id: null, name: '', email: '', phone: '', skills: '', status: 'Active', avatar: '', mentees: [] });
+    setForm({ _id: null, name: '', email: '', phone: '', skills: '', status: 'Active', avatar: '', mentees: [] });
     setShowForm(true);
   }
   function openEdit(m) {
@@ -92,8 +84,8 @@ export default function Mentors() {
     setSaving(true);
     const skillsArr = form.skills.split(',').map(s => s.trim()).filter(Boolean);
     try {
-      if (form.id) {
-        await updateMentor(form.id, { ...form, skills: skillsArr });
+      if (form._id) {
+        await updateMentor(form._id, { ...form, skills: skillsArr });
       } else {
         await createMentor({ ...form, skills: skillsArr, avatar: form.avatar || `https://randomuser.me/api/portraits/lego/${Math.floor(Math.random()*10)}.jpg` });
       }
@@ -104,11 +96,11 @@ export default function Mentors() {
     }
     setSaving(false);
   }
-  async function handleDelete(id) {
+  async function handleDelete(_id) {
     if (window.confirm('Delete this mentor?')) {
       setSaving(true);
       try {
-        await deleteMentor(id);
+        await deleteMentor(_id);
         fetchMentors();
       } catch (err) {
         setError('Failed to delete mentor');
@@ -123,16 +115,16 @@ export default function Mentors() {
     setAssignMentees(mentor.mentees);
     setShowAssign(true);
   }
-  function handleAssignChange(id) {
+  function handleAssignChange(_id) {
     setAssignMentees((prev) =>
-      prev.includes(id) ? prev.filter(mid => mid !== id) : [...prev, id]
+      prev.includes(_id) ? prev.filter(mid => mid !== _id) : [...prev, _id]
     );
   }
   async function handleAssignSave() {
     // Update mentor's mentees in backend
     setSaving(true);
     try {
-      await updateMentor(showDetail.id, { ...showDetail, mentees: assignMentees });
+      await updateMentor(showDetail._id, { ...showDetail, mentees: assignMentees });
       fetchMentors();
       setShowAssign(false);
     } catch (err) {
@@ -143,7 +135,7 @@ export default function Mentors() {
 
   function getMenteeNames(mentor) {
     return (mentor.mentees || [])
-      .map(id => candidates.find(c => c.id === id)?.name)
+      .map(_id => candidates.find(c => c._id === _id)?.name)
       .filter(Boolean);
   }
 
@@ -174,7 +166,7 @@ export default function Mentors() {
         </thead>
         <tbody>
           {mentors.map((m) => (
-            <tr key={m.id} className="border-t hover:bg-green-50 transition">
+            <tr key={m._id} className="border-t hover:bg-green-50 transition">
               <td className="px-4 py-2"><img src={m.avatar} alt={m.name} className="w-10 h-10 rounded-full" /></td>
               <td className="px-4 py-2 font-semibold cursor-pointer hover:underline" onClick={() => openDetail(m)}>{m.name}</td>
               <td className="px-4 py-2 text-[12px]">{m.email}</td>
@@ -193,7 +185,7 @@ export default function Mentors() {
                   <button className="text-[#2EAB2C]  hover:underline flex items-center gap-1 mr-2" onClick={() => openEdit(m)}>
                     <PencilSquareIcon className="w-5 h-5" /> Edit
                   </button>
-                  <button className="text-red-600 hover:underline flex items-center gap-1 mr-2" onClick={() => handleDelete(m.id)} disabled={saving}>
+                  <button className="text-red-600 hover:underline flex items-center gap-1 mr-2" onClick={() => handleDelete(m._id)} disabled={saving}>
                     <TrashIcon className="w-5 h-5" /> Delete
                   </button>
                   <button className="text-blue-700 hover:underline flex items-center gap-1" onClick={() => openAssignMentees(m)}>
@@ -211,7 +203,7 @@ export default function Mentors() {
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow-lg p-8 w-full max-w-lg relative">
             <button className="absolute top-2 right-2 text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center" onClick={() => setShowForm(false)}><XMarkIcon className="w-5 h-5" /></button>
-            <h2 className="text-xl font-bold mb-4">{form.id ? 'Edit' : 'Add'} Mentor</h2>
+            <h2 className="text-xl font-bold mb-4">{form._id ? 'Edit' : 'Add'} Mentor</h2>
             <form className="space-y-4" onSubmit={handleFormSubmit}>
               <input
                 name="name"
@@ -250,13 +242,13 @@ export default function Mentors() {
                 <option value="Inactive">Inactive</option>
                 <option value="On Leave">On Leave</option>
               </select>
-              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow" disabled={saving}>{form.id ? 'Update' : 'Add'} Mentor</button>
+              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow" disabled={saving}>{form._id ? 'Update' : 'Add'} Mentor</button>
             </form>
           </div>
         </div>
       )}
       {/* Detail Modal */}
-      {showDetail && (
+      {showDetail && !showAssign && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow-lg p-8 w-full max-w-md relative">
             <button className="absolute top-2 right-2 text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center" onClick={() => setShowDetail(null)}><XMarkIcon className="w-5 h-5" /></button>
@@ -270,8 +262,29 @@ export default function Mentors() {
             <div className="mb-2"><span className="font-semibold">Email:</span> {showDetail.email}</div>
             <div className="mb-2"><span className="font-semibold">Phone:</span> {showDetail.phone}</div>
             <div className="mb-2"><span className="font-semibold">Skills:</span> {(showDetail.skills || []).map(s => <span key={s} className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1 mb-1">{s}</span>)}</div>
-            <div className="mb-2"><span className="font-semibold">Mentees:</span> {getMenteeNames(showDetail).length ? getMenteeNames(showDetail).join(', ') : <span className="text-gray-400">None</span>}</div>
-            {isAdminOrStaff && (
+            <div className="mb-2">
+              <span className="font-semibold">Mentees:</span>
+              {isAdminOrStaff ? (
+                <form className="mt-2" onSubmit={e => { e.preventDefault(); handleAssignSave(); }}>
+                  <div className="space-y-2 max-h-40 overflow-y-auto mb-2">
+                    {candidates.map(c => (
+                      <label key={c._id} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={assignMentees.includes(c._id)}
+                          onChange={() => handleAssignChange(c._id)}
+                        />
+                        <span>{c.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <button type="submit" className="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800 shadow" disabled={saving}>Save Mentees</button>
+                </form>
+              ) : (
+                getMenteeNames(showDetail).length ? getMenteeNames(showDetail).join(', ') : <span className="text-gray-400">None</span>
+              )}
+            </div>
+            {isAdminOrStaff && !showAssign && (
               <button className="mt-4 bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 shadow" onClick={() => openAssignMentees(showDetail)}>
                 <span className="mr-2">🔗</span>Assign Mentees
               </button>
@@ -288,11 +301,11 @@ export default function Mentors() {
             <form onSubmit={e => { e.preventDefault(); handleAssignSave(); }}>
               <div className="space-y-2 mb-4 max-h-60 overflow-y-auto">
                 {candidates.map(c => (
-                  <label key={c.id} className="flex items-center gap-2 cursor-pointer">
+                  <label key={c._id} className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={assignMentees.includes(c.id)}
-                      onChange={() => handleAssignChange(c.id)}
+                      checked={assignMentees.includes(c._id)}
+                      onChange={() => handleAssignChange(c._id)}
                     />
                     <span>{c.name}</span>
                   </label>

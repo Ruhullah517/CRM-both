@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const FormFSession = require('../models/FormFSession');
 
 function toMysqlDate(val) {
   if (!val) return null;
@@ -8,8 +8,8 @@ function toMysqlDate(val) {
 // Get all Form F sessions for an enquiry
 const getSessionsByEnquiryId = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM formf_sessions WHERE enquiry_id = ? ORDER BY session_number', [req.params.enquiryId]);
-    res.json(rows);
+    const sessions = await FormFSession.find({ enquiry_id: req.params.enquiryId }).sort('session_number');
+    res.json(sessions);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -23,19 +23,14 @@ const upsertSessions = async (req, res) => {
   if (!Array.isArray(sessions)) return res.status(400).json({ msg: 'Sessions must be an array' });
   try {
     for (const s of sessions) {
-      const dateValue = toMysqlDate(s.date);
-      // Try update first
-      const [result] = await db.query(
-        'UPDATE formf_sessions SET notes = ?, date = ?, completed = ? WHERE enquiry_id = ? AND session_number = ?',
-        [s.notes, dateValue, s.completed, enquiryId, s.session_number]
-      );
-      if (result.affectedRows === 0) {
-        // Insert if not exists
-        await db.query(
-          'INSERT INTO formf_sessions (enquiry_id, session_number, notes, date, completed) VALUES (?, ?, ?, ?, ?)',
-          [enquiryId, s.session_number, s.notes, dateValue, s.completed]
-        );
-      }
+      const filter = { enquiry_id: enquiryId, session_number: s.session_number };
+      const update = {
+        notes: s.notes,
+        date: s.date ? new Date(s.date) : undefined,
+        completed: s.completed,
+        updated_at: new Date(),
+      };
+      await FormFSession.findOneAndUpdate(filter, update, { upsert: true, new: true, setDefaultsOnInsert: true });
     }
     res.json({ msg: 'Sessions upserted' });
   } catch (error) {

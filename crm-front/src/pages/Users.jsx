@@ -71,14 +71,14 @@ export default function Users() {
 
   function handleEdit(user) {
     setForm({ email: user.email, role: user.role, name: user.name || '', password: '' });
-    setEditId(user.id);
+    setEditId(user._id);
     setShowForm(true);
   }
 
-  async function handleDelete(id) {
+  async function handleDelete(_id) {
     setError(null);
     try {
-      await deleteUser(id);
+      await deleteUser(_id);
       fetchUsers();
     } catch (err) {
       setError('Failed to delete user');
@@ -113,7 +113,7 @@ export default function Users() {
           {loading ? (
             <tr><td colSpan={3} className="text-center py-4">Loading...</td></tr>
           ) : users.map(u => (
-            <tr key={u.id} className="border-t">
+            <tr key={u._id} className="border-t">
               <td className="py-2 px-4 font-semibold">{u.email}</td>
               <td className="py-2 px-4 capitalize">{u.role}</td>
               <td className="py-2 px-4">
@@ -127,7 +127,7 @@ export default function Users() {
                     </button>
                     <button
                       className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200"
-                      onClick={() => handleDelete(u.id)}
+                      onClick={() => handleDelete(u._id)}
                     >
                       Delete
                     </button>

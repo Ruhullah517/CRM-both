@@ -6,7 +6,8 @@ import {
   UserCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { getContacts, createContact, updateContact } from '../services/contacts';
+import { getContacts, createContact, updateContact, deleteContact } from '../services/contacts';
+import { getUsers } from '../services/users';
 
 const tagColors = {
   training: 'bg-green-100 text-[#2EAB2C]',
@@ -17,7 +18,7 @@ const tagColors = {
 
 const contactTypes = ['Partner', 'Client', 'Mentor', 'Trainer', 'Other'];
 
-const ContactList = ({ onSelect, onAdd, contacts }) => {
+const ContactList = ({ onSelect, onAdd, contacts, onDelete }) => {
   const [search, setSearch] = useState("");
   const filtered = contacts.filter(c => c.name?.toLowerCase().includes(search.toLowerCase()));
   return (
@@ -36,11 +37,12 @@ const ContactList = ({ onSelect, onAdd, contacts }) => {
               <th className="px-4 py-2">Email</th>
               <th className="px-4 py-2">Date Added</th>
               <th className="px-4 py-2"></th>
+              <th className="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(c => (
-              <tr key={c.id} className="border-t hover:bg-green-50 transition">
+              <tr key={c._id} className="border-t hover:bg-green-50 transition">
                 <td className="px-4 py-2 font-semibold">{c.name}</td>
                 <td className="px-4 py-2">{c.type}</td>
                 <td className="px-4 py-2 flex flex-wrap gap-1">
@@ -51,6 +53,7 @@ const ContactList = ({ onSelect, onAdd, contacts }) => {
                 <td className="px-4 py-2">{c.email}</td>
                 <td className="px-4 py-2">{c.dateAdded ? new Date(c.dateAdded).toLocaleDateString() : ''}</td>
                 <td className="px-4 py-2"><button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
+                <td className="px-4 py-2"><button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">Delete</button></td>
               </tr>
             ))}
           </tbody>
@@ -73,7 +76,9 @@ const ContactDetail = ({ contact, onBack, onEdit }) => (
     <div className="mb-2"><span className="font-semibold">Notes:</span> {contact.notes}</div>
     <h3 className="font-semibold mt-4 mb-1">Email History</h3>
     <ul className="mb-2 list-disc ml-6 text-sm">{(contact.emailHistory || []).map(e => <li key={e.id}>{e.subject} <span className="text-gray-400">({e.date})</span></li>)}</ul>
-    <button onClick={onEdit} className="mt-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
+    <div className="flex gap-2 mt-4">
+      <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
+    </div>
   </div>
 );
 
@@ -86,7 +91,17 @@ const ContactForm = ({ contact, onBack, onSave, loading }) => {
     tags: contact?.tags || [],
     notes: contact?.notes || '',
     emailHistory: contact?.emailHistory || [],
+    user_id: contact?.user_id || '',
   });
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    async function fetchUsers() {
+      const data = await getUsers();
+      setUsers(data);
+    }
+    fetchUsers();
+  }, []);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -107,6 +122,12 @@ const ContactForm = ({ contact, onBack, onSave, loading }) => {
       <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
       <h2 className="text-xl font-bold mb-4">{contact ? "Edit" : "Add"} Contact</h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
+        <select name="user_id" value={form.user_id} onChange={handleChange} className="w-full px-4 py-2 border rounded">
+          <option value="">Select User</option>
+          {users.map(u => (
+            <option key={u._id} value={u._id}>{u.name}</option>
+          ))}
+        </select>
         <input name="name" placeholder="Name" value={form.name} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
         <input name="email" placeholder="Email" value={form.email} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
         <input name="phone" placeholder="Phone" value={form.phone} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
@@ -156,16 +177,29 @@ const Contacts = () => {
     setSaving(true);
     setError(null);
     try {
-      if (contact.id) {
-        await updateContact(contact.id, contact);
+      if (contact._id) {
+        await updateContact(contact._id, contact);
       } else {
-        // For demo, assign user_id 1
-        await createContact({ ...contact, user_id: 1 });
+        await createContact(contact);
       }
       fetchContacts();
       setView("list");
     } catch (err) {
       setError('Failed to save contact');
+    }
+    setSaving(false);
+  }
+
+  async function handleDeleteContact(contact) {
+    if (!window.confirm(`Delete contact '${contact.name}'?`)) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await deleteContact(contact._id);
+      fetchContacts();
+      setView("list");
+    } catch (err) {
+      setError('Failed to delete contact');
     }
     setSaving(false);
   }
@@ -176,7 +210,7 @@ const Contacts = () => {
   return (
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
-      <ContactList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} contacts={contacts} />
+      <ContactList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} contacts={contacts} onDelete={handleDeleteContact} />
       {loading && <div className="text-center py-4">Loading...</div>}
     </>
   );

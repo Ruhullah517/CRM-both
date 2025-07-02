@@ -7,7 +7,7 @@ import {
   XMarkIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
-import { getCases, createCase, updateCase } from '../services/cases';
+import { getCases, createCase, updateCase, deleteCase } from '../services/cases';
 import { formatDate } from '../utils/dateUtils';
 
 const statuses = ['Open', 'In Progress', 'Closed'];
@@ -22,7 +22,7 @@ const statusColors = {
   closed: 'bg-blue-100 text-blue-800',
 };
 
-const CaseList = ({ onSelect, onAdd, cases }) => {
+const CaseList = ({ onSelect, onAdd, cases, onDelete }) => {
   const [search, setSearch] = useState("");
   const filtered = cases.filter(c => c.person.toLowerCase().includes(search.toLowerCase()));
   return (
@@ -41,17 +41,19 @@ const CaseList = ({ onSelect, onAdd, cases }) => {
               <th className="px-4 py-2">Caseworker</th>
               <th className="px-4 py-2">Start Date</th>
               <th className="px-4 py-2"></th>
+              <th className="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(c => (
-              <tr key={c.id} className="border-t hover:bg-green-50 transition">
+              <tr key={c._id} className="border-t hover:bg-green-50 transition">
                 <td className="px-4 py-2 font-semibold">{c.person}</td>
                 <td className="px-4 py-2">{c.type}</td>
                 <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{c.status}</span></td>
                 <td className="px-4 py-2">{c.assignedCaseworker}</td>
                 <td className="px-4 py-2">{formatDate(c.startDate)}</td>
                 <td className="px-4 py-2"><button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
+                <td className="px-4 py-2"><button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">Delete</button></td>
               </tr>
             ))}
           </tbody>
@@ -155,8 +157,8 @@ const Cases = () => {
   async function handleSaveCase(caseData) {
     setError(null);
     try {
-      if (caseData.id) {
-        await updateCase(caseData.id, caseData);
+      if (caseData._id) {
+        await updateCase(caseData._id, caseData);
       } else {
         await createCase(caseData);
       }
@@ -167,13 +169,25 @@ const Cases = () => {
     }
   }
 
+  async function handleDeleteCase(caseItem) {
+    if (!window.confirm(`Delete case for '${caseItem.person}'?`)) return;
+    setError(null);
+    try {
+      await deleteCase(caseItem._id);
+      fetchCases();
+      setView("list");
+    } catch (err) {
+      setError('Failed to delete case');
+    }
+  }
+
   if (view === "detail" && selected) return <CaseDetail caseItem={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} />;
   if (view === "edit" && selected) return <CaseForm caseItem={selected} onBack={() => setView("detail")} onSave={handleSaveCase} />;
   if (view === "add") return <CaseForm onBack={() => setView("list")} onSave={handleSaveCase} />;
   return (
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
-      <CaseList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} cases={cases} />
+      <CaseList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} cases={cases} onDelete={handleDeleteCase} />
       {loading && <div className="text-center py-4">Loading...</div>}
     </>
   );

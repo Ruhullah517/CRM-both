@@ -1,10 +1,10 @@
-const db = require('../config/db');
+const EmailTemplate = require('../models/EmailTemplate');
 
 // List all email templates
 const getAllEmailTemplates = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM email_templates');
-    res.json(rows);
+    const templates = await EmailTemplate.find();
+    res.json(templates);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -14,9 +14,9 @@ const getAllEmailTemplates = async (req, res) => {
 // Get a single email template by ID
 const getEmailTemplateById = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM email_templates WHERE id = ?', [req.params.id]);
-    if (rows.length === 0) return res.status(404).json({ msg: 'Email template not found' });
-    res.json(rows[0]);
+    const template = await EmailTemplate.findById(req.params.id);
+    if (!template) return res.status(404).json({ msg: 'Email template not found' });
+    res.json(template);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -27,11 +27,9 @@ const getEmailTemplateById = async (req, res) => {
 const createEmailTemplate = async (req, res) => {
   const { name, subject, body } = req.body;
   try {
-    const [result] = await db.query(
-      'INSERT INTO email_templates (name, subject, body) VALUES (?, ?, ?)',
-      [name, subject, body]
-    );
-    res.status(201).json({ id: result.insertId, name, subject, body });
+    const template = new EmailTemplate({ name, subject, body });
+    await template.save();
+    res.status(201).json(template);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -42,10 +40,7 @@ const createEmailTemplate = async (req, res) => {
 const updateEmailTemplate = async (req, res) => {
   const { name, subject, body } = req.body;
   try {
-    await db.query(
-      'UPDATE email_templates SET name = ?, subject = ?, body = ? WHERE id = ?',
-      [name, subject, body, req.params.id]
-    );
+    await EmailTemplate.findByIdAndUpdate(req.params.id, { name, subject, body });
     res.json({ msg: 'Email template updated' });
   } catch (error) {
     console.error(error);
@@ -56,7 +51,7 @@ const updateEmailTemplate = async (req, res) => {
 // Delete an email template
 const deleteEmailTemplate = async (req, res) => {
   try {
-    await db.query('DELETE FROM email_templates WHERE id = ?', [req.params.id]);
+    await EmailTemplate.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Email template deleted' });
   } catch (error) {
     console.error(error);

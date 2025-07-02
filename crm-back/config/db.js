@@ -1,16 +1,16 @@
 const dotenv = require('dotenv');
-const mysql = require('mysql2/promise');
+const mongoose = require('mongoose');
 
 dotenv.config();
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/crm';
+
+mongoose.connect(MONGODB_URI);
+
+const db = mongoose.connection;
+db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+db.once('open', () => {
+  console.log('Connected to MongoDB');
 });
 
-module.exports = pool; 
+module.exports = mongoose; 

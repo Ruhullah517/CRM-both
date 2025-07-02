@@ -6,7 +6,7 @@ import {
   UserCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { getCandidates, createCandidate, updateCandidate } from '../services/candidates';
+import { getCandidates, createCandidate, updateCandidate, deleteCandidate } from '../services/candidates';
 import { formatDate } from '../utils/dateUtils';
 
 const stages = ['Inquiry', 'Application', 'Assessment', 'Mentoring', 'Final Approval'];
@@ -27,7 +27,7 @@ const stageColors = {
   Approval: 'bg-green-100 text-[#2EAB2C]',
 };
 
-const CandidateList = ({ onSelect, onAdd, candidates }) => {
+const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
   const [search, setSearch] = useState("");
   const filtered = candidates.filter(c => c.name.toLowerCase().includes(search.toLowerCase()));
   return (
@@ -46,17 +46,19 @@ const CandidateList = ({ onSelect, onAdd, candidates }) => {
               <th className="px-4 py-2">Mentor</th>
               <th className="px-4 py-2">Deadline</th>
               <th className="px-4 py-2"></th>
+              <th className="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody>
             {filtered.map(c => (
-              <tr key={c.id} className="border-t hover:bg-green-50 transition">
+              <tr key={c._id} className="border-t hover:bg-green-50 transition">
                 <td className="px-4 py-2 font-semibold">{c.name}</td>
                 <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status]}`}>{c.status}</span></td>
                 <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${stageColors[c.stage]}`}>{c.stage}</span></td>
                 <td className="px-4 py-2">{c.mentor}</td>
                 <td className="px-4 py-2">{formatDate(c.deadline)}</td>
                 <td className="px-4 py-2"><button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
+                <td className="px-4 py-2"><button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">Delete</button></td>
               </tr>
             ))}
           </tbody>
@@ -93,7 +95,7 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
       name,
       mentor,
       deadline,
-      id: candidate?.id,
+      _id: candidate?._id,
       status: candidate?.status || "New",
       stage: candidate?.stage || "Inquiry",
       notes: candidate?.notes || [],
@@ -153,8 +155,8 @@ const Candidates = () => {
   async function handleSaveCandidate(candidate) {
     setError(null);
     try {
-      if (candidate.id) {
-        await updateCandidate(candidate.id, candidate);
+      if (candidate._id) {
+        await updateCandidate(candidate._id, candidate);
       } else {
         await createCandidate(candidate);
       }
@@ -165,13 +167,25 @@ const Candidates = () => {
     }
   }
 
+  async function handleDeleteCandidate(candidate) {
+    if (!window.confirm(`Delete candidate '${candidate.name}'?`)) return;
+    setError(null);
+    try {
+      await deleteCandidate(candidate._id);
+      fetchCandidates();
+      setView("list");
+    } catch (err) {
+      setError('Failed to delete candidate');
+    }
+  }
+
   if (view === "detail" && selected) return <CandidateDetail candidate={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} />;
   if (view === "edit" && selected) return <CandidateForm candidate={selected} onBack={() => setView("detail")} onSave={handleSaveCandidate} />;
   if (view === "add") return <CandidateForm onBack={() => setView("list")} onSave={handleSaveCandidate} />;
   return (
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
-      <CandidateList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} candidates={candidates} />
+      <CandidateList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} candidates={candidates} onDelete={handleDeleteCandidate} />
       {loading && <div className="text-center py-4">Loading...</div>}
     </>
   );

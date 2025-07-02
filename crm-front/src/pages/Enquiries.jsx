@@ -66,18 +66,18 @@ export default function Enquiries() {
         </thead>
         <tbody>
           {enquiries.map(enq => (
-            <tr key={enq.id}>
-              <td className="border px-4 py-2">{enq.name}</td>
-              <td className="border px-4 py-2">{enq.email}</td>
+            <tr key={enq._id}>
+              <td className="border px-4 py-2">{enq.full_name}</td>
+              <td className="border px-4 py-2">{enq.email_address}</td>
               <td className="border px-4 py-2">{formatDate(enq.submission_date)}</td>
               <td className="border px-4 py-2">{enq.status}</td>
-              <td className="border px-4 py-2">{enq.assigned_to || '-'}</td>
+              <td className="border px-4 py-2">{enq.assigned_to_name || '-'}</td>
               <td className="border px-4 py-2 space-x-2">
-                <button className="bg-blue-500 text-white px-2 py-1 rounded" onClick={() => navigate(`/enquiries/${enq.id}`)}>View</button>
-                <button className="bg-green-500 text-white px-2 py-1 rounded" onClick={() => handleApprove(enq.id)} disabled={enq.status === 'Approved'}>Approve</button>
-                <button className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => setRejectingId(enq.id)} disabled={enq.status === 'Rejected'}>Reject</button>
-                <button className="bg-yellow-500 text-white px-2 py-1 rounded" onClick={() => setAssigningId(enq.id)}>Assign</button>
-                {rejectingId === enq.id && (
+                <button className="bg-blue-500 text-white px-2 py-1 rounded" onClick={() => navigate(`/enquiries/${enq._id}`)}>View</button>
+                <button className="bg-green-500 text-white px-2 py-1 rounded" onClick={() => handleApprove(enq._id)} disabled={enq.status === 'Approved'}>Approve</button>
+                <button className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => setRejectingId(enq._id)} disabled={enq.status === 'Rejected'}>Reject</button>
+                <button className="bg-yellow-500 text-white px-2 py-1 rounded" onClick={() => setAssigningId(enq._id)}>Assign</button>
+                {rejectingId === enq._id && (
                   <span className="ml-2">
                     <input
                       type="text"
@@ -86,11 +86,11 @@ export default function Enquiries() {
                       onChange={e => setRejectReason(e.target.value)}
                       className="border px-2 py-1 rounded"
                     />
-                    <button className="bg-red-700 text-white px-2 py-1 rounded ml-1" onClick={() => handleReject(enq.id)}>Confirm</button>
+                    <button className="bg-red-700 text-white px-2 py-1 rounded ml-1" onClick={() => handleReject(enq._id)}>Confirm</button>
                     <button className="ml-1" onClick={() => setRejectingId(null)}>Cancel</button>
                   </span>
                 )}
-                {assigningId === enq.id && (
+                {assigningId === enq._id && (
                   <span className="ml-2">
                     <input
                       type="text"
@@ -99,7 +99,7 @@ export default function Enquiries() {
                       onChange={e => setStaffId(e.target.value)}
                       className="border px-2 py-1 rounded"
                     />
-                    <button className="bg-yellow-700 text-white px-2 py-1 rounded ml-1" onClick={() => handleAssign(enq.id)}>Confirm</button>
+                    <button className="bg-yellow-700 text-white px-2 py-1 rounded ml-1" onClick={() => handleAssign(enq._id)}>Confirm</button>
                     <button className="ml-1" onClick={() => setAssigningId(null)}>Cancel</button>
                   </span>
                 )}
