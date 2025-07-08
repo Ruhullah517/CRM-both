@@ -14,7 +14,7 @@ import {
   AcademicCapIcon,
   QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
-
+import img1 from '../assets/img1.jpg';
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', roles: ['admin', 'staff', 'caseworker', 'freelancer'], icon: HomeIcon },
   { name: 'Recruitment Pipeline', path: '/pipeline', roles: ['admin', 'staff'], icon: Squares2X2Icon },
@@ -35,7 +35,15 @@ export default function Sidebar() {
 
   return (
     <aside className="h-screen w-20 md:w-56 bg-black text-white flex flex-col py-6 px-2 md:px-4 transition-all duration-200 overflow-y-auto">
-      <div className="mb-8 text-2xl font-bold text-center hidden md:block">BFCA CRM</div>
+      <div className="relative w-full flex justify-center items-center mb-8">
+        <img
+          src={img1}
+          alt=""
+          className="w-16 h-16 md:w-full md:h-32 object-cover md:rounded-none"
+          style={{ maxWidth: '100%', height: 'auto' }}
+        />
+      </div>
+      {/* <div className="mb-8 text-2xl font-bold text-center hidden md:block">BFCA CRM</div> */}
       <nav className="flex flex-col gap-0.5">
         {navItems
           .filter(item => role && item.roles.includes(role))

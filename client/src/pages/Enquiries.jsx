@@ -21,6 +21,8 @@ export default function Enquiries() {
     setLoading(true);
     try {
       const data = await getEnquiries();
+      console.log(data);
+
       setEnquiries(data);
     } catch (err) {
       setError('Failed to fetch enquiries');

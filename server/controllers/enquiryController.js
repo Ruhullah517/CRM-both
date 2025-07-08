@@ -64,6 +64,7 @@ const assignEnquiry = async (req, res) => {
 // Create a new enquiry
 const createEnquiry = async (req, res) => {
   try {
+    console.log(req.body);
     const enquiry = new Enquiry(req.body);
     await enquiry.save();
     res.status(201).json({ id: enquiry._id, msg: 'Enquiry created successfully' });
