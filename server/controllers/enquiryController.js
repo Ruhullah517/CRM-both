@@ -65,14 +65,27 @@ const assignEnquiry = async (req, res) => {
 const createEnquiry = async (req, res) => {
   try {
     console.log(req.body);
-    const enquiry = new Enquiry(req.body);
-    await enquiry.save();
-    res.status(201).json({ id: enquiry._id, msg: 'Enquiry created successfully' });
+    res.status(201).json({ msg: 'Enquiry created successfully' });
   } catch (error) {
     console.error('Error creating enquiry:', error);
-    res.status(500).send('Server error');
-  }
+    res.status(500).send('Server error');
+  }
 };
+
+
+
+// Create a new enquiry
+// const createEnquiry = async (req, res) => {
+//   try {
+//     console.log(req.body);
+//     const enquiry = new Enquiry(req.body);
+//     await enquiry.save();
+//     res.status(201).json({ id: enquiry._id, msg: 'Enquiry created successfully' });
+//   } catch (error) {
+//     console.error('Error creating enquiry:', error);
+//     res.status(500).send('Server error');
+//   }
+// };
 
 module.exports = {
   createEnquiry,
