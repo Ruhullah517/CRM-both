@@ -65,7 +65,7 @@ const assignEnquiry = async (req, res) => {
 const createEnquiry = async (req, res) => {
   try {
     console.log(req.body);
-    res.status(201).json({ msg: 'Enquiry created successfully' });
+    res.status(201).json({ msg: 'Enquiry created successfully', bdy: req.body });
   } catch (error) {
     console.error('Error creating enquiry:', error);
     res.status(500).send('Server error');
