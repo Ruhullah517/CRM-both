@@ -125,6 +125,7 @@ function formatDateForInput(date) {
 
 const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
   const [form, setForm] = useState({
+    _id: freelancer?._id || undefined,
     // Section 1: Personal Information
     fullName: freelancer?.fullName || '',
     homeAddress: freelancer?.homeAddress || '',
