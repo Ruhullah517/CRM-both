@@ -7,11 +7,12 @@ const {
   updateFreelancer,
   deleteFreelancer,
 } = require('../controllers/freelancerController');
+const freelancerUploads = require('../middleware/freelancerUploads');
 
 router.get('/', getAllFreelancers);
 router.get('/:id', getFreelancerById);
-router.post('/', createFreelancer);
-router.put('/:id', updateFreelancer);
+router.post('/', freelancerUploads, createFreelancer);
+router.put('/:id', freelancerUploads, updateFreelancer);
 router.delete('/:id', deleteFreelancer);
 
 module.exports = router; 
