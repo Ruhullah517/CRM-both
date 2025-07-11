@@ -23,4 +23,9 @@ export async function deleteUser(id) {
 export async function loginUser(credentials) {
   const res = await api.post('/users/login', credentials);
   return res.data;
+}
+
+export async function getUserById(id) {
+  const res = await api.get(`/users/${id}`);
+  return res.data;
 } 

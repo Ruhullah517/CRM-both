@@ -81,9 +81,10 @@ const loginUser = async (req, res) => {
 // Update a user
 const updateUser = async (req, res) => {
   const { id } = req.params;
-  const { name, email, role, password } = req.body;
+  const { name, email, role, password, avatar } = req.body;
   try {
     const update = { name, email, role };
+    if (avatar !== undefined) update.avatar = avatar;
     if (password) {
       const salt = await bcrypt.genSalt(10);
       update.password = await bcrypt.hash(password, salt);
@@ -108,10 +109,24 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// Get a single user by ID
+const getUserById = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const user = await User.findById(id, 'id name email role avatar created_at');
+    if (!user) return res.status(404).json({ msg: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 module.exports = {
   getAllUsers,
   createUser,
   loginUser,
   updateUser,
   deleteUser,
+  getUserById,
 }; 

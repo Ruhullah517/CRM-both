@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllUsers, createUser, loginUser, updateUser, deleteUser } = require('../controllers/userController');
+const { getAllUsers, createUser, loginUser, updateUser, deleteUser, getUserById } = require('../controllers/userController');
 
 // @route   GET api/users
 // @desc    Get all users
@@ -16,6 +16,11 @@ router.post('/', createUser);
 // @desc    Authenticate user & get token
 // @access  Public
 router.post('/login', loginUser);
+
+// @route   GET api/users/:id
+// @desc    Get a single user by ID
+// @access  Public (should be protected in production)
+router.get('/:id', getUserById);
 
 // @route   PUT api/users/:id
 // @desc    Update a user

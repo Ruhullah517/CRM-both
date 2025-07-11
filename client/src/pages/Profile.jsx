@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { getUserById, updateUser } from '../services/users';
 
 const defaultAvatar = 'https://randomuser.me/api/portraits/lego/1.jpg';
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, userInfo } = useAuth();
   const [profile, setProfile] = useState({
-    name: user?.name || 'User Name',
-    email: user?.email || '',
-    role: user?.role || '',
-    avatar: user?.avatar || defaultAvatar,
+    name: userInfo?.name || 'User Name',
+    email: userInfo?.email || '',
+    role: userInfo?.role || '',
+    avatar: userInfo?.avatar || defaultAvatar,
   });
   const [editMode, setEditMode] = useState(false);
   const [editProfile, setEditProfile] = useState(profile);
@@ -21,7 +22,30 @@ export default function Profile() {
   const [error, setError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState(false);
 
-  function handlePasswordChange(e) {
+  // Fetch user profile from backend
+  useEffect(() => {
+    async function fetchProfile() {
+      if (userInfo?.id) {
+        const data = await getUserById(userInfo.id);
+        setProfile({
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          avatar: data.avatar || defaultAvatar,
+        });
+        setEditProfile({
+          name: data.name,
+          email: data.email,
+          role: data.role,
+          avatar: data.avatar || defaultAvatar,
+        });
+      }
+    }
+    fetchProfile();
+    // eslint-disable-next-line
+  }, [userInfo?.id]);
+
+  async function handlePasswordChange(e) {
     e.preventDefault();
     setError('');
     setSuccess(false);
@@ -29,11 +53,16 @@ export default function Profile() {
       setError('New passwords do not match.');
       return;
     }
-    // Mocked: would call backend to change password
-    setSuccess(true);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    // Update password in backend
+    try {
+      await updateUser(userInfo.id, { password: newPassword });
+      setSuccess(true);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setError('Failed to update password.');
+    }
   }
 
   function handleEditProfileChange(e) {
@@ -47,12 +76,21 @@ export default function Profile() {
     }
   }
 
-  function handleProfileSave(e) {
+  async function handleProfileSave(e) {
     e.preventDefault();
+    // If avatarFile is set, upload to a file server or handle as base64 (for now, just use preview)
+    let avatarUrl = editProfile.avatar;
+    // Update backend
+    await updateUser(userInfo.id, {
+      name: editProfile.name,
+      email: editProfile.email,
+      avatar: avatarUrl,
+    });
     setProfile(editProfile);
     setEditMode(false);
     setProfileSuccess(true);
     setTimeout(() => setProfileSuccess(false), 2000);
+    // Optionally, refresh AuthContext user info here
   }
 
   function handleProfileCancel() {
