@@ -23,4 +23,13 @@ export async function updateCase(id, caseData) {
 export async function deleteCase(id) {
   const res = await api.delete(`/cases/${id}`);
   return res.data;
+}
+
+export async function uploadCaseFile(file) {
+  const formData = new FormData();
+  formData.append('applicationForm', file);
+  const res = await api.post('/cases/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
 } 

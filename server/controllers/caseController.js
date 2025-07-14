@@ -77,10 +77,29 @@ const deleteCase = async (req, res) => {
   }
 };
 
+// Upload a file for a case
+const uploadCaseFile = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ msg: 'No file uploaded' });
+    }
+    // Return file info for use in uploads array
+    res.json({
+      name: req.file.originalname,
+      url: req.file.path.replace('\\', '/'), // for Windows compatibility
+      msg: 'File uploaded successfully',
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 module.exports = {
   getAllCases,
   getCaseById,
   createCase,
   updateCase,
   deleteCase,
+  uploadCaseFile,
 }; 

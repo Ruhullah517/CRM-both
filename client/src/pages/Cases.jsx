@@ -7,7 +7,7 @@ import {
   XMarkIcon,
   ClockIcon,
 } from '@heroicons/react/24/outline';
-import { getCases, createCase, updateCase, deleteCase } from '../services/cases';
+import { getCases, createCase, updateCase, deleteCase, uploadCaseFile } from '../services/cases';
 import { formatDate } from '../utils/dateUtils';
 
 const statuses = ['Open', 'In Progress', 'Closed'];
@@ -86,6 +86,21 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
   const [type, setType] = useState(caseItem?.type || "");
   const [assignedCaseworker, setAssignedCaseworker] = useState(caseItem?.assignedCaseworker || "");
   const [startDate, setStartDate] = useState(caseItem?.startDate || "");
+  // New: Activity, Uploads, Reminders
+  const [activity, setActivity] = useState(caseItem?.activity || []);
+  const [uploads, setUploads] = useState(caseItem?.uploads || []);
+  const [reminders, setReminders] = useState(caseItem?.reminders || []);
+  // Temp states for adding new items
+  const [newAction, setNewAction] = useState("");
+  const [newActionDate, setNewActionDate] = useState("");
+  const [newUploadName, setNewUploadName] = useState("");
+  const [newUploadUrl, setNewUploadUrl] = useState("");
+  const [newUploadFile, setNewUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const [newReminderText, setNewReminderText] = useState("");
+  const [newReminderDate, setNewReminderDate] = useState("");
+
   function handleSubmit(e) {
     e.preventDefault();
     onSave({
@@ -95,11 +110,48 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
       assignedCaseworker,
       startDate,
       status: caseItem?.status || "Open",
-      activity: caseItem?.activity || [],
-      uploads: caseItem?.uploads || [],
-      reminders: caseItem?.reminders || [],
+      activity,
+      uploads,
+      reminders,
     });
   }
+
+  // Add/Remove handlers
+  const addActivity = () => {
+    if (newAction && newActionDate) {
+      setActivity([...activity, { action: newAction, date: newActionDate }]);
+      setNewAction(""); setNewActionDate("");
+    }
+  };
+  const removeActivity = idx => setActivity(activity.filter((_, i) => i !== idx));
+
+  const addUpload = async () => {
+    if (newUploadFile) {
+      setUploading(true);
+      setUploadError("");
+      try {
+        const result = await uploadCaseFile(newUploadFile);
+        setUploads([...uploads, { name: result.name, url: result.url }]);
+        setNewUploadFile(null); setNewUploadName(""); setNewUploadUrl("");
+      } catch (err) {
+        setUploadError("File upload failed");
+      }
+      setUploading(false);
+    } else if (newUploadName && newUploadUrl) {
+      setUploads([...uploads, { name: newUploadName, url: newUploadUrl }]);
+      setNewUploadName(""); setNewUploadUrl("");
+    }
+  };
+  const removeUpload = idx => setUploads(uploads.filter((_, i) => i !== idx));
+
+  const addReminder = () => {
+    if (newReminderText && newReminderDate) {
+      setReminders([...reminders, { text: newReminderText, date: newReminderDate }]);
+      setNewReminderText(""); setNewReminderDate("");
+    }
+  };
+  const removeReminder = idx => setReminders(reminders.filter((_, i) => i !== idx));
+
   return (
     <div className="max-w-xl mx-auto p-4 bg-white rounded shadow mt-6">
       <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
@@ -119,6 +171,67 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
           ))}
         </select>
         <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-2 border rounded" />
+
+        {/* Activity Log Section */}
+        <div className="border rounded p-3">
+          <div className="font-semibold mb-2">Activity Log</div>
+          <ul className="mb-2">
+            {activity.map((a, i) => (
+              <li key={i} className="flex items-center gap-2 text-sm mb-1">
+                <span>{a.action} <span className="text-gray-400">({formatDate(a.date)})</span></span>
+                <button type="button" className="text-red-500 ml-2" onClick={() => removeActivity(i)}>Remove</button>
+              </li>
+            ))}
+          </ul>
+          <div className="flex gap-2 mb-2">
+            <input placeholder="Action" value={newAction} onChange={e => setNewAction(e.target.value)} className="px-2 py-1 border rounded w-1/2" />
+            <input type="date" value={newActionDate} onChange={e => setNewActionDate(e.target.value)} className="px-2 py-1 border rounded w-1/2" />
+            <button type="button" className="bg-green-500 text-white px-2 py-1 rounded" onClick={addActivity}>Add</button>
+          </div>
+        </div>
+
+        {/* Uploads Section */}
+        <div className="border rounded p-3">
+          <div className="font-semibold mb-2">Uploads</div>
+          <ul className="mb-2">
+            {uploads.map((u, i) => (
+              <li key={i} className="flex items-center gap-2 text-sm mb-1">
+                <span><a href={u.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">{u.name}</a></span>
+                <button type="button" className="text-red-500 ml-2" onClick={() => removeUpload(i)}>Remove</button>
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-col gap-2 mb-2">
+            <div className="flex gap-2">
+              <input placeholder="File Name (optional)" value={newUploadName} onChange={e => setNewUploadName(e.target.value)} className="px-2 py-1 border rounded w-1/2" />
+              <input placeholder="File URL (optional)" value={newUploadUrl} onChange={e => setNewUploadUrl(e.target.value)} className="px-2 py-1 border rounded w-1/2" />
+            </div>
+            <div className="flex gap-2 items-center">
+              <input type="file" onChange={e => setNewUploadFile(e.target.files[0])} className="px-2 py-1 border rounded w-1/2" />
+              <button type="button" className="bg-green-500 text-white px-2 py-1 rounded" onClick={addUpload} disabled={uploading}>{uploading ? 'Uploading...' : 'Add'}</button>
+            </div>
+            {uploadError && <div className="text-red-500 text-sm">{uploadError}</div>}
+          </div>
+        </div>
+
+        {/* Reminders Section */}
+        <div className="border rounded p-3">
+          <div className="font-semibold mb-2">Reminders</div>
+          <ul className="mb-2">
+            {reminders.map((r, i) => (
+              <li key={i} className="flex items-center gap-2 text-sm mb-1">
+                <span>{r.text} <span className="text-gray-400">({formatDate(r.date)})</span></span>
+                <button type="button" className="text-red-500 ml-2" onClick={() => removeReminder(i)}>Remove</button>
+              </li>
+            ))}
+          </ul>
+          <div className="flex gap-2 mb-2">
+            <input placeholder="Reminder" value={newReminderText} onChange={e => setNewReminderText(e.target.value)} className="px-2 py-1 border rounded w-1/2" />
+            <input type="date" value={newReminderDate} onChange={e => setNewReminderDate(e.target.value)} className="px-2 py-1 border rounded w-1/2" />
+            <button type="button" className="bg-green-500 text-white px-2 py-1 rounded" onClick={addReminder}>Add</button>
+          </div>
+        </div>
+
         <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold">{caseItem ? "Save" : "Add"}</button>
       </form>
     </div>
