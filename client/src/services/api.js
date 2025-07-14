@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'https://crm-backend-0v14.onrender.com/api',
+  baseURL: 'http://localhost:3001/api',
   withCredentials: false,
 });
 

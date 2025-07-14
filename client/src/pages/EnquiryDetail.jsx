@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getEnquiryById, approveEnquiry, rejectEnquiry, assignEnquiry } from '../services/enquiries';
 import { getAssessmentByEnquiryId, createAssessment } from '../services/assessments';
 import { getApplicationByEnquiryId, uploadApplication } from '../services/applications';
+import { getUsers } from '../services/users';
 import { useAuth } from '../contexts/AuthContext';
 import FormFAssessmentTracker from '../components/FormFAssessmentTracker';
 import { formatDate } from '../utils/dateUtils';
@@ -45,6 +46,7 @@ export default function EnquiryDetail() {
   const [rejectReason, setRejectReason] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [staffId, setStaffId] = useState('');
+  const [staffList, setStaffList] = useState([]);
 
   // Assessment State
   const [assessment, setAssessment] = useState(null);
@@ -63,6 +65,7 @@ export default function EnquiryDetail() {
     fetchEnquiry();
     fetchAssessment();
     fetchApplication();
+    fetchStaff();
     // eslint-disable-next-line
   }, [id]);
 
@@ -103,6 +106,15 @@ export default function EnquiryDetail() {
       setApplication(null); // No application yet
     }
     setApplicationLoading(false);
+  }
+
+  async function fetchStaff() {
+    try {
+      const users = await getUsers();
+      setStaffList(users.filter(u => u.role === 'staff'));
+    } catch (err) {
+      setStaffList([]);
+    }
   }
 
   async function handleApprove() {
@@ -193,8 +205,19 @@ export default function EnquiryDetail() {
         )}
         {assigning && (
           <div className="mt-4 flex gap-2 items-center">
-            <input type="text" placeholder="Staff ID" value={staffId} onChange={e => setStaffId(e.target.value)} className="border px-2 py-1 rounded" />
-            <button className="bg-yellow-700 text-white px-2 py-1 rounded" onClick={handleAssign}>Confirm</button>
+            <select
+              value={staffId}
+              onChange={e => setStaffId(e.target.value)}
+              className="border px-2 py-1 rounded"
+            >
+              <option value="">Select Staff</option>
+              {staffList.map(staff => (
+                <option key={staff.id || staff._id} value={staff.id || staff._id}>
+                  {staff.name}
+                </option>
+              ))}
+            </select>
+            <button className="bg-yellow-700 text-white px-2 py-1 rounded" onClick={handleAssign} disabled={!staffId}>Confirm</button>
             <button className="ml-1" onClick={() => setAssigning(false)}>Cancel</button>
           </div>
         )}

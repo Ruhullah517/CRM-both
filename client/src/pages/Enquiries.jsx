@@ -21,9 +21,12 @@ export default function Enquiries() {
     setLoading(true);
     try {
       const data = await getEnquiries();
-      console.log(data);
-
-      setEnquiries(data);
+      // Add assigned_to_name for each enquiry
+      const mapped = data.map(enq => ({
+        ...enq,
+        assigned_to_name: enq.assigned_to?.name || '',
+      }));
+      setEnquiries(mapped);
     } catch (err) {
       setError('Failed to fetch enquiries');
     }
