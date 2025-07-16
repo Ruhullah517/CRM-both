@@ -1,4 +1,5 @@
 const Case = require('../models/Case');
+const { v4: uuidv4 } = require('uuid');
 
 // List all cases
 const getAllCases = async (req, res) => {
@@ -25,17 +26,53 @@ const getCaseById = async (req, res) => {
 
 // Create a new case
 const createCase = async (req, res) => {
-  const { person, type, status, assignedCaseworker, startDate, activity, uploads, reminders } = req.body;
   try {
-    const caseItem = new Case({
-      person,
-      type,
+    const {
+      clientFullName,
+      dateOfBirth,
+      gender,
+      ethnicity,
+      contactInfo,
+      address,
+      referralSource,
+      caseType,
+      presentingIssues,
+      assignedCaseworkers,
+      riskLevel,
+      keyDates,
       status,
-      assignedCaseworker,
-      startDate,
-      activity: activity || [],
-      uploads: uploads || [],
-      reminders: reminders || []
+      pausedReason,
+      notes,
+      outcomeAchieved,
+      supportingDocuments,
+      totalTimeLogged,
+      invoiceableHours
+    } = req.body;
+
+    // Auto-generate unique case reference number
+    const caseReferenceNumber = 'CASE-' + uuidv4().split('-')[0].toUpperCase();
+
+    const caseItem = new Case({
+      caseReferenceNumber,
+      clientFullName,
+      dateOfBirth,
+      gender,
+      ethnicity,
+      contactInfo,
+      address,
+      referralSource,
+      caseType,
+      presentingIssues,
+      assignedCaseworkers,
+      riskLevel,
+      keyDates,
+      status,
+      pausedReason,
+      notes,
+      outcomeAchieved,
+      supportingDocuments,
+      totalTimeLogged,
+      invoiceableHours
     });
     await caseItem.save();
     res.status(201).json(caseItem);
@@ -47,18 +84,9 @@ const createCase = async (req, res) => {
 
 // Update a case
 const updateCase = async (req, res) => {
-  const { person, type, status, assignedCaseworker, startDate, activity, uploads, reminders } = req.body;
   try {
-    await Case.findByIdAndUpdate(req.params.id, {
-      person,
-      type,
-      status,
-      assignedCaseworker,
-      startDate,
-      activity: activity || [],
-      uploads: uploads || [],
-      reminders: reminders || []
-    });
+    const updateFields = req.body;
+    await Case.findByIdAndUpdate(req.params.id, updateFields);
     res.json({ msg: 'Case updated' });
   } catch (error) {
     console.error(error);
@@ -77,18 +105,35 @@ const deleteCase = async (req, res) => {
   }
 };
 
-// Upload a file for a case
+// Upload a file for a case and add to supportingDocuments
 const uploadCaseFile = async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ msg: 'No file uploaded' });
     }
-    // Return file info for use in uploads array
-    res.json({
+    const { caseId } = req.body;
+    const fileDoc = {
       name: req.file.originalname,
-      url: req.file.path.replace('\\', '/'), // for Windows compatibility
-      msg: 'File uploaded successfully',
-    });
+      url: req.file.path.replace('\\', '/'),
+      uploadedAt: new Date(),
+      uploadedBy: req.user ? req.user._id : null
+    };
+    if (caseId) {
+      await Case.findByIdAndUpdate(caseId, { $push: { supportingDocuments: fileDoc } });
+    }
+    res.json({ ...fileDoc, msg: 'File uploaded and added to case' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Assign caseworkers (with lead)
+const assignCaseworkers = async (req, res) => {
+  try {
+    const { caseId, caseworkers } = req.body; // caseworkers: [{ userId, isLead }]
+    await Case.findByIdAndUpdate(caseId, { assignedCaseworkers: caseworkers });
+    res.json({ msg: 'Caseworkers assigned' });
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -102,4 +147,5 @@ module.exports = {
   updateCase,
   deleteCase,
   uploadCaseFile,
+  assignCaseworkers
 }; 

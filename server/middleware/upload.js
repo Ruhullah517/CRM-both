@@ -9,25 +9,27 @@ const storage = multer.diskStorage({
   }
 });
 
+// Allowed file types
+const allowedFileTypes = /pdf|doc|docx|xls|xlsx|jpg|jpeg|png|mp4/;
+
 // Initialize upload
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 10000000 }, // 10MB limit
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB limit
   fileFilter: function(req, file, cb) {
     checkFileType(file, cb);
   }
-}).single('applicationForm'); // 'applicationForm' is the name of the input field
+});
 
 // Check file type
 function checkFileType(file, cb) {
-  const filetypes = /jpeg|jpg|png|gif|pdf|doc|docx/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
+  const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedFileTypes.test(file.mimetype.toLowerCase());
 
   if (mimetype && extname) {
     return cb(null, true);
   } else {
-    cb('Error: Files of this type are not allowed!');
+    cb('Error: Only PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, MP4 files are allowed!');
   }
 }
 

@@ -25,11 +25,12 @@ export async function deleteCase(id) {
   return res.data;
 }
 
-export async function uploadCaseFile(file) {
+export async function uploadCaseFile(file, caseId) {
   const formData = new FormData();
-  formData.append('applicationForm', file);
+  formData.append('file', file);
+  if (caseId) formData.append('caseId', caseId);
   const res = await api.post('/cases/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+    headers: { 'Content-Type': 'multipart/form-data' }
   });
   return res.data;
 } 

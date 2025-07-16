@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const User = require('../models/User');
+const { authenticate, authorize } = require('../middleware/auth');
 const { getAllUsers, createUser, loginUser, updateUser, deleteUser, getUserById } = require('../controllers/userController');
 
 // @route   GET api/users
@@ -16,6 +18,16 @@ router.post('/', createUser);
 // @desc    Authenticate user & get token
 // @access  Public
 router.post('/login', loginUser);
+
+// Get all staff (caseworkers, admins, managers)
+router.get('/staff', authenticate, authorize('admin', 'manager'), async (req, res) => {
+  try {
+    const staff = await User.find({ role: { $in: ['admin', 'manager', 'caseworker'] } }, 'name _id role');
+    res.json(staff);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch staff' });
+  }
+});
 
 // @route   GET api/users/:id
 // @desc    Get a single user by ID

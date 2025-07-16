@@ -4,7 +4,7 @@ const { uploadApplication, getApplicationByEnquiryId } = require('../controllers
 const upload = require('../middleware/upload');
 
 // Upload application form
-router.post('/upload', upload, uploadApplication);
+router.post('/upload', upload.single('applicationForm'), uploadApplication);
 
 // Get application by enquiry ID
 router.get('/:enquiryId', getApplicationByEnquiryId);

@@ -1,10 +1,11 @@
-const express = require('express');
 const dotenv = require('dotenv');
+dotenv.config();
+const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
 const path = require('path');
+const reportsRouter = require('./routes/reports');
 
-dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -33,6 +34,8 @@ app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api/mentors', require('./routes/mentors'));
 app.use('/api/email-templates', require('./routes/emailTemplates'));
 app.use('/api/contract-templates', require('./routes/contractTemplates'));
+app.use('/api/referrals', require('./routes/referrals'));
+app.use('/reports', reportsRouter);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
