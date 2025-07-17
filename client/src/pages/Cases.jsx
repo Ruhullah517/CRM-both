@@ -195,7 +195,7 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
   const [ethnicity, setEthnicity] = useState(caseItem?.ethnicity || "");
   const [email, setEmail] = useState(caseItem?.contactInfo?.email || "");
   const [phone, setPhone] = useState(caseItem?.contactInfo?.phone || "");
-  const [address, setAddress] = useState(caseItem?.address || "");
+  const [organization, setOrganization] = useState(caseItem?.organization || "");
   const [referralSource, setReferralSource] = useState(caseItem?.referralSource || "");
   const [caseType, setCaseType] = useState(caseItem?.caseType || "");
   const [presentingIssues, setPresentingIssues] = useState(caseItem?.presentingIssues || "");
@@ -279,7 +279,7 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
       gender,
       ethnicity,
       contactInfo: { email, phone },
-      address,
+      organization,
       referralSource,
       caseType,
       presentingIssues,
@@ -358,7 +358,7 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
             </div>
             <div>
               <label className="block font-semibold mb-1">Organization</label>
-              <input placeholder="Organization" value={address} onChange={e => setAddress(e.target.value)} className="w-full px-4 py-2 border rounded" />
+              <input placeholder="Organization" value={organization} onChange={e => setOrganization(e.target.value)} className="w-full px-4 py-2 border rounded" />
             </div>
             <div>
               <label className="block font-semibold mb-1">Referrer Contact Number</label>
