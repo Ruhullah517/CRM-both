@@ -82,9 +82,10 @@ const createCaseFromReferral = async (req, res) => {
     const rawData = req.body; // The actual data object from WordPress
     const mappedData = mapWordpressFields(rawData);
     const caseData = transformWebsiteReferral(mappedData);
+    console.log(req.body);
     const caseItem = new Case(caseData);
     await caseItem.save();
-    res.status(201).json({ id: caseItem._id, msg: 'Case created from referral' });
+    res.status(201).json({ id: caseItem._id, msg: 'Case created from referral', data: req.body });
   } catch (error) {
     console.error('Error creating case from referral:', error);
     res.status(500).send('Server error');
