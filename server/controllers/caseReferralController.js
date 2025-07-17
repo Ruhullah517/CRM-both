@@ -14,7 +14,10 @@ function transformWebsiteReferral(data) {
       phone: data.carerContactNumber || data.contactNumber || ''
     },
     address: data.address || '',
-    referralSource: data.organization || data.referrerName || '',
+    referralSource: data.referrerName || '', // Only use referrerName
+    organization: data.organization || '',   // Store organization separately
+    referrerContactNumber: data.contactNumber || '',
+    referrerEmail: data.emailAddress || '',
     caseType: data.serviceType || data.carerType || '',
     presentingIssues: data.referralDetails || '',
     assignedCaseworkers: [],

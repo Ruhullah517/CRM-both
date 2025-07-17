@@ -127,7 +127,9 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
         <div className="font-semibold text-green-900 mb-2 text-lg">Referrer Details</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
           <div><span className="font-semibold">Referrer Name:</span> {caseItem.referralSource}</div>
-          <div><span className="font-semibold">Organization:</span> {caseItem.address}</div>
+          <div><span className="font-semibold">Organization:</span> {caseItem.organization}</div>
+          <div><span className="font-semibold">Referrer Contact Number:</span> {caseItem.referrerContactNumber}</div>
+          <div><span className="font-semibold">Referrer Email:</span> {caseItem.referrerEmail}</div>
         </div>
       </div>
       {/* SSW Details */}
@@ -357,6 +359,14 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
             <div>
               <label className="block font-semibold mb-1">Organization</label>
               <input placeholder="Organization" value={address} onChange={e => setAddress(e.target.value)} className="w-full px-4 py-2 border rounded" />
+            </div>
+            <div>
+              <label className="block font-semibold mb-1">Referrer Contact Number</label>
+              <input placeholder="Referrer Contact Number" value={caseItem?.referrerContactNumber || ""} onChange={e => setReferralContactNumber(e.target.value)} className="w-full px-4 py-2 border rounded" />
+            </div>
+            <div>
+              <label className="block font-semibold mb-1">Referrer Email</label>
+              <input placeholder="Referrer Email" value={caseItem?.referrerEmail || ""} onChange={e => setReferralEmail(e.target.value)} className="w-full px-4 py-2 border rounded" />
             </div>
           </div>
         </div>
