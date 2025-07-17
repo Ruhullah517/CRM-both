@@ -46,34 +46,40 @@ function transformWebsiteReferral(data) {
 // Map incoming WordPress field keys to backend field names
 function mapWordpressFields(data) {
   return {
-    // Carer Details
-    carerName: data['fields.field_8dba340.raw_value'], // Carer Name
-    carerEmail: data['fields.field_fa8987e.raw_value'], // Carer Email
-    carerContactNumber: data['fields.field_6dbbe13.raw_value'], // Carer Contact Number
-
     // Referrer Details
-    referrerName: data['fields.name.raw_value'], // Referrer Name
-    organization: data['fields.field_cc2e080.raw_value'], // Organization
+    referrerName: data['fields.name.raw_value'],
+    position: data['fields.field_81b3283.raw_value'],
+    organization: data['fields.email.raw_value'],
+    contactNumber: data['fields.field_2a317f5.raw_value'],
+    emailAddress: data['fields.field_236cc38.raw_value'],
+    serviceType: data['fields.field_423164f.raw_value'],
+    hours: data['fields.field_516bfb9.raw_value'],
+    referralDetails: data['fields.field_8273cb2.raw_value'],
 
-    // SSW (Supervising Social Worker) Details
-    sswName: data['fields.field_600bb55.raw_value'], // SSW Name
-    sswContactNumber: data['fields.field_6834ad2.raw_value'], // SSW Contact Number
-    sswEmail: data['fields.field_7e24913.raw_value'], // SSW Email
-    sswLocalAuthority: data['fields.field_d51e22d.raw_value'], // SSW Local Authority
+    // Carer Details
+    carerName: data['fields.field_600bb55.raw_value'],
+    carerContactNumber: data['fields.field_6dbbe13.raw_value'],
+    carerEmail: data['fields.field_fa8987e.raw_value'],
+    carerType: data['fields.field_74a621c.raw_value'],
 
-    // Decision Maker Details
-    decisionMakerName: data['fields.field_0640e53.raw_value'], // Decision Maker Name
-    decisionMakerContactNumber: data['fields.field_8cff087.raw_value'], // Decision Maker Contact Number
-    decisionMakerEmail: data['fields.field_a52aea1.raw_value'], // Decision Maker Email
+    // SSW
+    sswName: data['fields.field_8dba340.raw_value'],
+    sswContactNumber: data['fields.field_6834ad2.raw_value'],
+    sswEmail: data['fields.field_7e24913.raw_value'],
+    sswLocalAuthority: data['fields.field_d51e22d.raw_value'],
+
+    // Decision Maker
+    decisionMakerName: data['fields.field_d9861e8.raw_value'],
+    decisionMakerContactNumber: data['fields.field_8cff087.raw_value'],
+    decisionMakerEmail: data['fields.field_a52aea1.raw_value'],
 
     // Finance Contact
-    financeContactName: data['fields.field_50fcec2.raw_value'], // Finance Contact Name
-    financeContactNumber: data['fields.field_8cff087.raw_value'], // Finance Contact Number
-    financeEmail: data['fields.field_a52aea1.raw_value'], // Finance Email
+    financeContactName: data['fields.field_cc2e080.raw_value'],
+    financeContactNumber: data['fields.field_50fcec2.raw_value'],
+    financeEmail: data['fields.field_0640e53.raw_value'],
 
-    // Case Information
-    presentingIssues: data['fields.field_8273cb2.raw_value'], // Presenting Issues
-    notes: data['fields.field_71586e4.raw_value'], // Notes / Case Summary
+    // Additional Info
+    otherConsideration: data['fields.field_71586e4.raw_value'],
   };
 }
 
