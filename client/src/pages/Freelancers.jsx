@@ -9,6 +9,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { getFreelancers, createFreelancer, updateFreelancer, deleteFreelancer } from '../services/freelancers';
 import { formatDate } from '../utils/dateUtils';
+import Loader from '../components/Loader';
 
 const roles = ['Trainer', 'Mentor'];
 const statuses = ['Active', 'Inactive'];
@@ -707,7 +708,7 @@ const Freelancers = () => {
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
       <FreelancerList onSelect={f => { setSelected(f); setView("detail"); }} onAdd={() => setView("add")} freelancers={freelancers} onDelete={handleDeleteFreelancer} />
-      {loading && <div className="text-center py-4">Loading...</div>}
+      {loading && <Loader />}
     </>
   );
 };

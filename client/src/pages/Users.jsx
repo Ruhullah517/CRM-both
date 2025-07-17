@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getUsers, createUser, updateUser, deleteUser } from '../services/users';
+import Loader from '../components/Loader';
 
 const roles = [
   { label: 'Admin', value: 'admin' },
@@ -33,6 +34,8 @@ export default function Users() {
     }
     setLoading(false);
   }
+
+  if (loading) return <Loader />;
 
   if (user?.user.role !== 'admin') {
     return <div className="p-8 text-center text-red-600 font-bold">Access denied. Admins only.</div>;

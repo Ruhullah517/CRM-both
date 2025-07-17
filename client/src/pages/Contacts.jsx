@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { getContacts, createContact, updateContact, deleteContact } from '../services/contacts';
 import { getUsers } from '../services/users';
+import Loader from '../components/Loader';
 
 const tagColors = {
   training: 'bg-green-100 text-[#2EAB2C]',
@@ -211,7 +212,7 @@ const Contacts = () => {
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
       <ContactList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} contacts={contacts} onDelete={handleDeleteContact} />
-      {loading && <div className="text-center py-4">Loading...</div>}
+      {loading && <Loader />}
     </>
   );
 };

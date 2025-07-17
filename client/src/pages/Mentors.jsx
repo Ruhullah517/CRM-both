@@ -11,6 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { getMentors, createMentor, updateMentor, deleteMentor } from '../services/mentors';
 import { getCandidates } from '../services/candidates';
+import Loader from '../components/Loader';
 
 const statusColors = {
   Active: 'bg-green-100 text-[#2EAB2C]',
@@ -197,7 +198,7 @@ export default function Mentors() {
           ))}
         </tbody>
       </table>
-      {loading && <div className="text-center py-4">Loading...</div>}
+      {loading && <Loader />}
       {/* Add/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">

@@ -10,6 +10,7 @@ import {
 import { getCases, createCase, updateCase, deleteCase, uploadCaseFile } from '../services/cases';
 import { formatDate } from '../utils/dateUtils';
 import api from '../services/api';
+import Loader from '../components/Loader';
 
 const statuses = ['Open', 'In Progress', 'Closed'];
 const caseworkers = ['Sarah Brown', 'Mike Green', 'Jane Lee'];
@@ -430,14 +431,14 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
               <select value={riskLevel} onChange={e => setRiskLevel(e.target.value)} className="w-full px-4 py-2 border rounded">
                 <option value="">Select Risk Level</option>
                 {riskLevels.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
+        </select>
             </div>
             <div>
               <label className="block font-semibold mb-1">Status</label>
               <select value={status} onChange={e => setStatus(e.target.value)} className="w-full px-4 py-2 border rounded">
                 <option value="">Select Status</option>
                 {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
+        </select>
             </div>
             <div>
               <label className="block font-semibold mb-1">Paused Reason</label>
@@ -480,11 +481,11 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
             {assignedCaseworkers.map((cw, i) => {
               const staff = staffList.find(s => s._id === cw.userId);
               return (
-                <li key={i} className="flex items-center gap-2 text-sm mb-1">
+              <li key={i} className="flex items-center gap-2 text-sm mb-1">
                   <span>{staff ? staff.name : cw.userId}{cw.isLead ? ' (Lead)' : ''}</span>
                   <button type="button" className="text-blue-500 ml-2" onClick={() => setLead(i)}>Set Lead</button>
                   <button type="button" className="text-red-500 ml-2" onClick={() => removeCaseworker(i)}>Remove</button>
-                </li>
+              </li>
               );
             })}
           </ul>
@@ -585,7 +586,7 @@ const Cases = () => {
     }
   }
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
+  if (loading) return <Loader />;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   if (view === "edit") {

@@ -8,6 +8,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { getCandidates, createCandidate, updateCandidate, deleteCandidate } from '../services/candidates';
 import { formatDate } from '../utils/dateUtils';
+import Loader from '../components/Loader';
 
 const stages = ['Inquiry', 'Application', 'Assessment', 'Mentoring', 'Final Approval'];
 const statuses = ['New', 'Active', 'Paused', 'Completed'];
@@ -186,7 +187,7 @@ const Candidates = () => {
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
       <CandidateList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} candidates={candidates} onDelete={handleDeleteCandidate} />
-      {loading && <div className="text-center py-4">Loading...</div>}
+      {loading && <Loader />}
     </>
   );
 };

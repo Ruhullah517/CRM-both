@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getEnquiries, approveEnquiry, rejectEnquiry, assignEnquiry } from '../services/enquiries';
 import { formatDate } from '../utils/dateUtils';
+import Loader from '../components/Loader';
 
 export default function Enquiries() {
   const [enquiries, setEnquiries] = useState([]);
@@ -52,7 +53,7 @@ export default function Enquiries() {
     fetchEnquiries();
   }
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <Loader />;
   if (error) return <div>{error}</div>;
 
   return (

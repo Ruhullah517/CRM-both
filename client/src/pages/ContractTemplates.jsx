@@ -6,6 +6,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { getContractTemplates, createContractTemplate, updateContractTemplate } from '../services/contractTemplates';
+import Loader from '../components/Loader';
 
 const roles = ['Trainer', 'Mentor'];
 
@@ -104,7 +105,7 @@ export default function ContractTemplates() {
           </tbody>
         </table>
       </div>
-      {loading && <div className="text-center py-4">Loading...</div>}
+      {loading && <Loader />}
       {/* Add/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 px-2">

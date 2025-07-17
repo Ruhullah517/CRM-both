@@ -10,6 +10,7 @@ import {
 import { getContracts, createContract, updateContract, deleteContract } from '../services/contracts';
 import { getUsers } from '../services/users';
 import { getCandidates } from '../services/candidates';
+import Loader from '../components/Loader';
 
 const statuses = ['Signed', 'Pending', 'Expired'];
 const roles = ['Trainer', 'Mentor'];
@@ -195,7 +196,7 @@ const Contracts = () => {
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
       <ContractList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} contracts={contracts} onDelete={handleDeleteContract} />
-      {loading && <div className="text-center py-4">Loading...</div>}
+      {loading && <Loader />}
     </>
   );
 };
