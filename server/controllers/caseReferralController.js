@@ -46,10 +46,12 @@ function transformWebsiteReferral(data) {
 const createCaseFromReferral = async (req, res) => {
   try {
     const referralData = req.body;
+    console.log(req.body);
+    res.json({data: req.body})
     const caseData = transformWebsiteReferral(referralData);
     const caseItem = new Case(caseData);
-    await caseItem.save();
-    res.status(201).json({ id: caseItem._id, msg: 'Case created from referral', bdy:req.body });
+    // await caseItem.save();
+    // res.status(201).json({ id: caseItem._id, msg: 'Case created from referral', bdy: req.body });
   } catch (error) {
     console.error('Error creating case from referral:', error);
     res.status(500).send('Server error');
