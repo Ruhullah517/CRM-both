@@ -75,7 +75,7 @@ function mapWordpressFields(data) {
 
 const createCaseFromReferral = async (req, res) => {
   try {
-    const rawData = req.body.data; // The actual data object from WordPress
+    const rawData = req.body; // The actual data object from WordPress
     const mappedData = mapWordpressFields(rawData);
     const caseData = transformWebsiteReferral(mappedData);
     const caseItem = new Case(caseData);
