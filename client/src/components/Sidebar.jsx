@@ -14,7 +14,7 @@ import {
   AcademicCapIcon,
   QuestionMarkCircleIcon,
 } from '@heroicons/react/24/outline';
-import img2 from '../assets/img2.jpg';
+import img3 from '../../public/img3.png';
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', roles: ['admin', 'staff', 'caseworker', 'freelancer'], icon: HomeIcon },
   { name: 'Recruitment Pipeline', path: '/pipeline', roles: ['admin', 'staff'], icon: Squares2X2Icon },
@@ -37,9 +37,9 @@ export default function Sidebar() {
     <aside className="h-screen w-20 md:w-56 bg-black text-white flex flex-col py-6 px-2 md:px-4 transition-all duration-200 overflow-y-auto">
       <div className="relative w-full flex justify-center items-center mb-8">
         <img
-          src={img2}
+          src={img3}
           alt=""
-          className="w-16 h-16 md:w-full md:h-32 object-cover md:rounded-none"
+          className="w-6 h-6 md:w-14 md:h-14 object-cover md:rounded-none"
           style={{ maxWidth: '100%', height: 'auto' }}
         />
       </div>
