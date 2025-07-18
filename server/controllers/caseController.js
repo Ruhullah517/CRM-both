@@ -112,9 +112,10 @@ const uploadCaseFile = async (req, res) => {
       return res.status(400).json({ msg: 'No file uploaded' });
     }
     const { caseId } = req.body;
+    const fileUrl = `https://crm-backend-0v14.onrender.com/uploads/${req.file.filename}`;
     const fileDoc = {
       name: req.file.originalname,
-      url: req.file.path.replace('\\', '/'),
+      url: fileUrl,
       uploadedAt: new Date(),
       uploadedBy: req.user ? req.user._id : null
     };
