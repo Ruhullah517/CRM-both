@@ -1,7 +1,7 @@
 import axios from 'axios';
 import api from './api';
 
-const API_URL = 'http://localhost:3001/api/applications';
+const API_URL = 'https://crm-backend-0v14.onrender.com/api/applications';
 
 export const getApplicationByEnquiryId = async (enquiryId) => {
   try {

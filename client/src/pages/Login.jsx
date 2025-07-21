@@ -7,15 +7,26 @@ export default function Login() {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   async function handleSubmit(e) {
     e.preventDefault();
+    setLoading(true);
+    setError('');
     try {
       await login(email, password);
       navigate('/dashboard');
-    } catch (error) {
-      console.error('Failed to log in:', error);
-      // You can add user-facing error handling here
+    } catch (err) {
+      // Check for invalid credentials (401) or other errors
+      if (err.response && err.response.status === 401) {
+        setError('Invalid email or password.');
+      } else {
+        setError('Failed to log in. Please try again.');
+      }
+      console.error('Failed to log in:', err);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -40,8 +51,17 @@ export default function Login() {
             onChange={e => setPassword(e.target.value)}
             required
           />
-          <button type="submit" className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700">Login</button>
+          <button
+            type="submit"
+            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:opacity-50"
+            disabled={loading}
+          >
+            {loading ? 'Logging in...' : 'Login'}
+          </button>
         </form>
+        {error && (
+          <div className="mt-4 text-center text-red-600">{error}</div>
+        )}
       </div>
     </div>
   );
