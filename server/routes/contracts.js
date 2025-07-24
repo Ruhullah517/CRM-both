@@ -1,17 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const {
-  getAllContracts,
-  getContractById,
-  createContract,
-  updateContract,
-  deleteContract,
+  getAllGeneratedContracts,
+  getGeneratedContract,
+  generateContract,
+  sendForSignature,
+  downloadContract,
+  deleteGeneratedContract,
 } = require('../controllers/contractController');
 
-router.get('/', getAllContracts);
-router.get('/:id', getContractById);
-router.post('/', createContract);
-router.put('/:id', updateContract);
-router.delete('/:id', deleteContract);
+// List all generated contracts
+router.get('/', getAllGeneratedContracts);
+// Get a single generated contract
+router.get('/:id', getGeneratedContract);
+// Generate a new contract
+router.post('/generate', generateContract);
+// Send for e-signature
+router.post('/:id/send-signature', sendForSignature);
+// Download contract PDF
+router.get('/:id/download', downloadContract);
+// Delete a generated contract
+router.delete('/:id', deleteGeneratedContract);
 
 module.exports = router; 

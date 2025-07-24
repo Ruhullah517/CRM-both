@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://crm-backend-0v14.onrender.com/api/users';
+const API_URL = 'http://localhost:3001/api/users';
 
 const login = async (email, password) => {
   const response = await axios.post(`${API_URL}/login`, { email, password });

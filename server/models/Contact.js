@@ -5,6 +5,8 @@ const ContactSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: String,
   phone: String,
+  role: { type: String },
+  documents: [String], // URLs to generated contracts, PDFs, etc.
   type: { type: String, default: 'personal' },
   tags: [String],
   notes: String,

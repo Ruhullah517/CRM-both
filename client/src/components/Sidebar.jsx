@@ -21,7 +21,7 @@ const navItems = [
   { name: 'Candidates', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon },
   { name: 'Cases', path: '/cases', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon },
   { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon },
-  { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'freelancer'], icon: UserCircleIcon },
+  { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon },
   { name: 'Contacts', path: '/contacts', roles: ['admin', 'staff'], icon: IdentificationIcon },
   { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: EnvelopeIcon },
   { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon },

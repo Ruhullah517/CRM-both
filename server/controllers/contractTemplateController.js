@@ -1,5 +1,11 @@
 const ContractTemplate = require('../models/ContractTemplate');
 
+// Helper to extract placeholders from content
+function extractPlaceholders(content) {
+  const matches = content.match(/{{\s*([\w_\d]+)\s*}}/g) || [];
+  return Array.from(new Set(matches.map(m => m.replace(/{{|}}/g, '').trim())));
+}
+
 // List all contract templates
 const getAllContractTemplates = async (req, res) => {
   try {
@@ -25,9 +31,10 @@ const getContractTemplateById = async (req, res) => {
 
 // Create a new contract template
 const createContractTemplate = async (req, res) => {
-  const { name, role, body } = req.body;
+  const { name, type, content } = req.body;
   try {
-    const template = new ContractTemplate({ name, role, body });
+    const placeholders = extractPlaceholders(content);
+    const template = new ContractTemplate({ name, type, content, placeholders });
     await template.save();
     res.status(201).json(template);
   } catch (error) {
@@ -38,9 +45,10 @@ const createContractTemplate = async (req, res) => {
 
 // Update a contract template
 const updateContractTemplate = async (req, res) => {
-  const { name, role, body } = req.body;
+  const { name, type, content } = req.body;
   try {
-    await ContractTemplate.findByIdAndUpdate(req.params.id, { name, role, body });
+    const placeholders = extractPlaceholders(content);
+    await ContractTemplate.findByIdAndUpdate(req.params.id, { name, type, content, placeholders });
     res.json({ msg: 'Contract template updated' });
   } catch (error) {
     console.error(error);
