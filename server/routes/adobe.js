@@ -17,27 +17,37 @@ router.get('/auth', (req, res) => {
 router.get('/callback', async (req, res) => {
     const code = req.query.code;
 
+    if (!code) {
+        return res.status(400).send('Missing authorization code');
+    }
+
     try {
-        const response = await axios.post('https://api.sg1.adobesign.com/oauth/token', null, {
+        const tokenRes = await axios.post('https://secure.sg1.adobesign.com/oauth/v2/token', null, {
             params: {
+                grant_type: 'authorization_code',
                 code,
                 client_id: CLIENT_ID,
                 client_secret: CLIENT_SECRET,
                 redirect_uri: REDIRECT_URI,
-                grant_type: 'authorization_code'
             },
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            }
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
         });
 
-        const { access_token, refresh_token } = response.data;
-        // Save token to DB or session as needed
+        const accessToken = tokenRes.data.access_token;
+        const refreshToken = tokenRes.data.refresh_token;
 
-        res.json({ message: 'Adobe Sign connected successfully', access_token, refresh_token });
+        // You can store tokens in DB here
+
+        res.send({
+            success: true,
+            accessToken,
+            refreshToken,
+        });
     } catch (err) {
-        console.error('Error exchanging code for token:', err.response?.data || err.message);
-        res.status(500).json({ error: 'Token exchange failed' });
+        console.error('Token exchange error:', err.response?.data || err.message);
+        res.status(500).json({ error: 'Token exchange failed', details: err.response?.data || err.message });
     }
 });
 
