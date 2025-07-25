@@ -9,7 +9,7 @@ const REDIRECT_URI = 'https://crm-backend-0v14.onrender.com/api/adobe/callback';
 
 // Step 1: Redirect to Adobe Sign
 router.get('/auth', (req, res) => {
-    const authURL = `https://secure.sg1.adobesign.com/public/oauth?redirect_uri=${REDIRECT_URI}&response_type=code&client_id=${CLIENT_ID}&scope=user_login:self+agreement_send:account`;
+    const authURL = `https://secure.sg1.adobesign.com/public/oauth/v2?redirect_uri=${REDIRECT_URI}&response_type=code&client_id=${CLIENT_ID}&scope=user_login:self+agreement_send:account+agreement_write:account`;
     res.redirect(authURL);
 });
 
