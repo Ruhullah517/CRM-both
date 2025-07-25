@@ -5,6 +5,7 @@ const cors = require('cors');
 const db = require('./config/db');
 const path = require('path');
 const reportsRouter = require('./routes/reports');
+const adobeRoutes = require('./routes/adobe');
 
 
 const app = express();
@@ -36,6 +37,7 @@ app.use('/api/email-templates', require('./routes/emailTemplates'));
 app.use('/api/contract-templates', require('./routes/contractTemplates'));
 app.use('/api/referrals', require('./routes/referrals'));
 app.use('/reports', reportsRouter);
+app.use('/api/adobe', adobeRoutes);
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

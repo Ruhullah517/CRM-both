@@ -13,6 +13,7 @@ import {
   ClipboardDocumentListIcon,
   AcademicCapIcon,
   QuestionMarkCircleIcon,
+  Cog6ToothIcon
 } from '@heroicons/react/24/outline';
 import img3 from '../../public/img3.png';
 const navItems = [
@@ -28,6 +29,7 @@ const navItems = [
   { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon },
   { name: 'User Management', path: '/users', roles: ['admin'], icon: UserGroupIcon },
   { name: 'Enquiries', path: '/enquiries', roles: ['admin', 'staff'], icon: QuestionMarkCircleIcon },
+  { name: 'Settings', path: '/settings', roles: ['admin', 'staff'], icon: Cog6ToothIcon },
 ];
 
 export default function Sidebar() {

@@ -365,7 +365,6 @@ const Contracts = () => {
       />
     );
   }
-L
   return (
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
