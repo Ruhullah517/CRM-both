@@ -19,3 +19,8 @@ export async function downloadContract(id) {
   // Returns the download URL for the contract PDF
   return `${api.defaults.baseURL.replace(/\/api$/, '')}/contracts/${id}/download`;
 } 
+
+export async function deleteContract(contractId) {
+  const res = await api.delete(`/contracts/${contractId}`);
+  return res.data;
+}

@@ -5,7 +5,7 @@ import {
   PencilSquareIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { getContractTemplates, createContractTemplate, updateContractTemplate } from '../services/contractTemplates';
+import { getContractTemplates, createContractTemplate, updateContractTemplate, deleteContractTemplate } from '../services/contractTemplates';
 import Loader from '../components/Loader';
 
 const types = ['company', 'freelancer', 'mentor', 'delivery'];
@@ -109,6 +109,15 @@ export default function ContractTemplates() {
       textarea.selectionStart = textarea.selectionEnd = start + ph.length;
     }, 0);
   }
+  async function handleDelete(id) {
+    if (!window.confirm('Are you sure you want to delete this template?')) return;
+    try {
+      await deleteContractTemplate(id);
+      setTemplates(prev => prev.filter(t => t._id !== id && t.id !== id));
+    } catch (err) {
+      alert('Failed to delete template');
+    }
+  }
 
   return (
     <div className="max-w-3xl w-full mx-auto mt-6 bg-white rounded shadow p-4 sm:p-8">
@@ -143,7 +152,11 @@ export default function ContractTemplates() {
                     <button className="text-[#2EAB2C] hover:underline flex items-center gap-1" onClick={() => openEdit(t)}>
                       <PencilSquareIcon className="w-5 h-5" /> Edit
                     </button>
+                    <button className="text-red-600 hover:underline flex items-center gap-1" onClick={() => handleDelete(t._id || t.id)}>
+                      Delete
+                    </button>
                   </td>
+
                 )}
               </tr>
             ))}

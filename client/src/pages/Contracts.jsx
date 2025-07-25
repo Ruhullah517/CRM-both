@@ -1,15 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  PlusIcon,
-  EyeIcon,
-  PencilSquareIcon,
-  UserCircleIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
-import { getGeneratedContracts, generateContract, downloadContract } from '../services/contracts';
-import { getUsers } from '../services/users';
-import { getCandidates } from '../services/candidates';
+import { getGeneratedContracts, generateContract, downloadContract, deleteContract } from '../services/contracts';
 import { getContractTemplates } from '../services/contractTemplates';
 import Loader from '../components/Loader';
 
@@ -68,39 +59,54 @@ const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
   );
 };
 
-const ContractDetail = ({ contract, onBack, onEdit }) => (
-  <div className="max-w-2xl mx-auto p-4 bg-white rounded shadow mt-6">
-    <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
-    <h2 className="text-xl font-bold mb-2">{contract.name || contract.filledData?.client_name || contract.filledData?.facilitator_name || contract._id}</h2>
-    <div className="mb-2"><span className="font-semibold">Type:</span> {contract.roleType}</div>
-    <div className="mb-2"><span className="font-semibold">Status:</span> <span className={`px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700`}>{contract.status}</span></div>
-    <div className="mb-2"><span className="font-semibold">Created By:</span> {contract.generatedBy?.name || '-'}</div>
-    {contract.generatedDocUrl && (
-      <div className="mb-2">
-        <span className="font-semibold">PDF:</span> <a href={contract.generatedDocUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">Download PDF</a>
+const ContractDetail = ({ contract, onBack, onEdit, onDelete, loading }) => {
+  return (
+    <div className="max-w-2xl mx-auto p-4 bg-white rounded shadow mt-6">
+      <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
+      <h2 className="text-xl font-bold mb-2">{contract.name || contract.filledData?.client_name || contract.filledData?.facilitator_name || contract._id}</h2>
+      <div className="mb-2"><span className="font-semibold">Type:</span> {contract.roleType}</div>
+      <div className="mb-2"><span className="font-semibold">Status:</span> <span className="px-2 py-1 rounded text-xs font-semibold bg-gray-100 text-gray-700">{contract.status}</span></div>
+      <div className="mb-2"><span className="font-semibold">Created By:</span> {contract.generatedBy?.name || '-'}</div>
+
+      {contract.generatedDocUrl && (
+        <div className="mb-2">
+          <span className="font-semibold">PDF:</span>{" "}
+          <a href={contract.generatedDocUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">Download PDF</a>
+        </div>
+      )}
+
+      {contract.generatedDocUrl && (
+        <div className="my-4">
+          <iframe
+            src={contract.generatedDocUrl}
+            title="Contract PDF Preview"
+            width="100%"
+            height="500px"
+            style={{ border: '1px solid #ccc', borderRadius: '8px' }}
+          />
+        </div>
+      )}
+
+      {contract.filledData && contract.templateId?.content && (
+        <div className="bg-gray-50 p-4 rounded text-sm whitespace-pre-wrap max-h-96 overflow-y-auto mt-4">
+          {contract.templateId.content.replace(/{{\s*([\w_\d]+)\s*}}/g, (match, p1) => contract.filledData[p1.trim()] || `[${p1.trim()}]`)}
+        </div>
+      )}
+
+      <div className="flex gap-3 mt-6">
+        <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
+        <button
+          onClick={() => onDelete(contract._id)}
+          disabled={loading}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-800"
+        >
+          {loading ? "Deleting..." : "Delete Contract"}
+        </button>
       </div>
-    )}
-    {/* PDF Preview */}
-    {contract.generatedDocUrl && (
-      <div className="my-4">
-        <iframe
-          src={contract.generatedDocUrl}
-          title="Contract PDF Preview"
-          width="100%"
-          height="500px"
-          style={{ border: '1px solid #ccc', borderRadius: '8px' }}
-        />
-      </div>
-    )}
-    {/* Text Preview */}
-    {contract.filledData && contract.templateId && contract.templateId.content && (
-      <div className="bg-gray-50 p-4 rounded text-sm whitespace-pre-wrap max-h-96 overflow-y-auto mt-4">
-        {contract.templateId.content.replace(/{{\s*([\w_\d]+)\s*}}/g, (match, p1) => contract.filledData[p1.trim()] || `[${p1.trim()}]`)}
-      </div>
-    )}
-    <button onClick={onEdit} className="mt-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
-  </div>
-);
+    </div>
+  );
+};
+
 
 const ContractForm = ({ contract, onBack, onSave }) => {
   // console.log('ContractForm contract:', contract.name);
@@ -203,6 +209,7 @@ const ContractForm = ({ contract, onBack, onSave }) => {
     });
   }
 
+
   return (
     <div className="max-w-xl mx-auto p-4 bg-white rounded shadow mt-6">
       <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
@@ -257,8 +264,8 @@ const ContractForm = ({ contract, onBack, onSave }) => {
           type="submit"
           disabled={!agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled()}
           className={`w-full py-2 rounded font-semibold transition ${!agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled()
-              ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-              : 'bg-[#2EAB2C] text-white hover:bg-green-800'
+            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+            : 'bg-[#2EAB2C] text-white hover:bg-green-800'
             }`}
         >
           {contract ? "Save" : "Add"}
@@ -271,6 +278,7 @@ const ContractForm = ({ contract, onBack, onSave }) => {
 const Contracts = () => {
   const { user } = useAuth();
   const isAdminOrStaff = user?.role === 'admin' || user?.role === 'staff';
+
   const [view, setView] = useState("list");
   const [selected, setSelected] = useState(null);
   const [contracts, setContracts] = useState([]);
@@ -288,19 +296,15 @@ const Contracts = () => {
       setContracts(data);
     } catch (err) {
       setError('Failed to load contracts');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function handleSaveContract(formData) {
     setError(null);
     try {
-      if (formData._id) {
-        // Update contract (reuse generateContract for now, or implement update API if needed)
-        await generateContract(formData); // This will overwrite the contract with the same ID
-      } else {
-        await generateContract(formData);
-      }
+      await generateContract(formData);
       fetchContracts();
       setView("list");
     } catch (err) {
@@ -313,23 +317,68 @@ const Contracts = () => {
     window.open(url, '_blank');
   }
 
-  if (view === "detail" && selected) return <ContractDetail contract={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} />;
-  if (view === "edit" && selected) return (
-    <ContractForm
-      key={selected._id} // This forces remount on contract change
-      contract={selected}
-      onBack={() => setView("detail")}
-      onSave={handleSaveContract}
-    />
-  );
-  if (view === "add") return <ContractForm onBack={() => setView("list")} onSave={handleSaveContract} />;
+  async function handleDeleteContract(id) {
+    if (!window.confirm("Are you sure you want to delete this contract?")) return;
+    setLoading(true);
+    try {
+      await deleteContract(id);
+      setContracts(prev => prev.filter(c => c._id !== id));
+      setSelected(null); // clear selected
+      setView("list");
+      alert("Contract deleted successfully.");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete contract.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (view === "detail" && selected) {
+    return (
+      <ContractDetail
+        contract={selected}
+        onBack={() => setView("list")}
+        onEdit={() => setView("edit")}
+        onDelete={handleDeleteContract}
+        loading={loading}
+      />
+    );
+  }
+
+  if (view === "edit" && selected) {
+    return (
+      <ContractForm
+        key={selected._id}
+        contract={selected}
+        onBack={() => setView("detail")}
+        onSave={handleSaveContract}
+      />
+    );
+  }
+
+  if (view === "add") {
+    return (
+      <ContractForm
+        onBack={() => setView("list")}
+        onSave={handleSaveContract}
+      />
+    );
+  }
+L
   return (
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
-      <ContractList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} contracts={contracts} onDownload={handleDownloadContract} />
+      <ContractList
+        contracts={contracts}
+        onSelect={c => { setSelected(c); setView("detail"); }}
+        onAdd={() => setView("add")}
+        onDownload={handleDownloadContract}
+      />
       {loading && <Loader />}
     </>
   );
 };
+
 
 export default Contracts;
