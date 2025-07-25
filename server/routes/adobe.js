@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const router = express.Router();
+const qs = require('qs'); // Add this at the top if not already
 require('dotenv').config();
 
 const CLIENT_ID = process.env.ADOBE_CLIENT_ID;
@@ -22,18 +23,21 @@ router.get('/callback', async (req, res) => {
     }
 
     try {
-        const tokenRes = await axios.post('https://secure.sg1.adobesign.com/oauth/v2/token', null, {
-            params: {
+        const tokenRes = await axios.post(
+            'https://secure.sg1.adobesign.com/oauth/v2/token',
+            qs.stringify({
                 grant_type: 'authorization_code',
                 code,
                 client_id: CLIENT_ID,
                 client_secret: CLIENT_SECRET,
                 redirect_uri: REDIRECT_URI,
-            },
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-        });
+            }),
+            {
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+            }
+        );
 
         const accessToken = tokenRes.data.access_token;
         const refreshToken = tokenRes.data.refresh_token;
