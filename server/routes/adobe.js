@@ -1,8 +1,10 @@
+require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const router = express.Router();
 const qs = require('qs'); // Add this at the top if not already
-require('dotenv').config();
 
 const CLIENT_ID = process.env.ADOBE_CLIENT_ID;
 const CLIENT_SECRET = process.env.ADOBE_CLIENT_SECRET;
@@ -83,6 +85,60 @@ router.post('/exchange-token', async (req, res) => {
         console.error('Adobe token exchange failed:', err.response?.data || err.message);
         res.status(500).json({ error: 'Token exchange failed' });
     }
+});
+
+// Helper: Read PDF and encode as base64
+function getBase64(filePath) {
+  const file = fs.readFileSync(filePath);
+  return file.toString('base64');
+}
+
+// POST /api/adobe/send-agreement
+router.post('/send-agreement', async (req, res) => {
+  const { accessToken, recipientEmail, contractPath, contractName } = req.body;
+
+  // 1. Read and encode the contract PDF
+  const fileBase64 = getBase64(contractPath);
+
+  // 2. Prepare the agreement payload
+  const agreementPayload = {
+    fileInfos: [
+      {
+        name: contractName || 'Contract.pdf',
+        file: fileBase64,
+      },
+    ],
+    name: contractName || 'Contract for Signature',
+    participantSetsInfo: [
+      {
+        memberInfos: [{ email: recipientEmail }],
+        order: 1,
+        role: 'SIGNER',
+      },
+    ],
+    signatureType: 'ESIGN',
+    state: 'IN_PROCESS', // Send immediately
+  };
+
+  try {
+    // 3. Call Adobe Sign API to create the agreement
+    const response = await axios.post(
+      'https://api.adobesign.com/api/rest/v6/agreements',
+      agreementPayload,
+      {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    // 4. Respond with agreementId and status
+    res.json({ success: true, agreementId: response.data.id, status: response.data.status });
+  } catch (err) {
+    console.error('Adobe Sign agreement error:', err.response?.data || err.message);
+    res.status(500).json({ error: 'Failed to send agreement', details: err.response?.data || err.message });
+  }
 });
 
 
