@@ -43,9 +43,6 @@ router.get('/callback', async (req, res) => {
 
         const accessToken = tokenRes.data.access_token;
         const refreshToken = tokenRes.data.refresh_token;
-
-        // You can store tokens in DB here
-
         res.send({
             success: true,
             accessToken,
