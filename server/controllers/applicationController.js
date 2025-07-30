@@ -2,7 +2,7 @@ const Application = require('../models/Application');
 
 const uploadApplication = async (req, res) => {
   const { enquiryId } = req.body;
-  const filePath = req.file.path;
+  const filePath = path.join('uploads', req.file.filename);
 
   try {
     // Check if an application for this enquiry already exists
