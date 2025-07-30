@@ -20,6 +20,14 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/', (req, res) => {
   res.send('Backend Server is running!');
 });
+app.get('/debug/list-contracts', (req, res) => {
+  const dirPath = path.join(__dirname, 'uploads/contracts');
+  if (!fs.existsSync(dirPath)) {
+    return res.json({ exists: false, files: [] });
+  }
+  const files = fs.readdirSync(dirPath);
+  res.json({ exists: true, files });
+});
 
 // Define Routes
 app.use('/api/users', require('./routes/users'));
