@@ -11,7 +11,7 @@ const statusColors = {
   pending: 'bg-yellow-100 text-yellow-800',
   expired: 'bg-red-100 text-red-800',
 };
-
+const [formLoading, setFormLoading] = useState(false);
 const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
   const [search, setSearch] = useState("");
   const filtered = contracts.filter(c => (c.filledData?.client_name || c._id || '').toLowerCase().includes(search.toLowerCase()));
@@ -108,7 +108,7 @@ const ContractDetail = ({ contract, onBack, onEdit, onDelete, loading }) => {
 };
 
 
-const ContractForm = ({ contract, onBack, onSave }) => {
+const ContractForm = ({ contract, onBack, onSave, loading }) => {
   // console.log('ContractForm contract:', contract.name);
   const [agreementName, setAgreementName] = useState(contract?.name || "");
   const [templates, setTemplates] = useState([]);
@@ -262,13 +262,13 @@ const ContractForm = ({ contract, onBack, onSave }) => {
         )}
         <button
           type="submit"
-          disabled={!agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled()}
-          className={`w-full py-2 rounded font-semibold transition ${!agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled()
-            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-            : 'bg-[#2EAB2C] text-white hover:bg-green-800'
+          disabled={loading || !agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled()}
+          className={`w-full py-2 rounded font-semibold transition ${loading || !agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled()
+              ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+              : 'bg-[#2EAB2C] text-white hover:bg-green-800'
             }`}
         >
-          {contract ? "Save" : "Add"}
+          {loading ? "Saving..." : contract ? "Save" : "Add"}
         </button>
       </form>
     </div>
@@ -303,12 +303,15 @@ const Contracts = () => {
 
   async function handleSaveContract(formData) {
     setError(null);
+    setFormLoading(true);
     try {
       await generateContract(formData);
       fetchContracts();
       setView("list");
     } catch (err) {
       setError('Failed to save contract');
+    } finally {
+      setFormLoading(false);
     }
   }
 
@@ -360,8 +363,11 @@ const Contracts = () => {
   if (view === "add") {
     return (
       <ContractForm
-        onBack={() => setView("list")}
+        key={selected?._id}
+        contract={selected}
+        onBack={() => setView("detail")}
         onSave={handleSaveContract}
+        loading={formLoading}
       />
     );
   }
