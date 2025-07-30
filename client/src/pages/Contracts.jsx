@@ -11,7 +11,7 @@ const statusColors = {
   pending: 'bg-yellow-100 text-yellow-800',
   expired: 'bg-red-100 text-red-800',
 };
-const [formLoading, setFormLoading] = useState(false);
+
 const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
   const [search, setSearch] = useState("");
   const filtered = contracts.filter(c => (c.filledData?.client_name || c._id || '').toLowerCase().includes(search.toLowerCase()));
@@ -108,7 +108,7 @@ const ContractDetail = ({ contract, onBack, onEdit, onDelete, loading }) => {
 };
 
 
-const ContractForm = ({ contract, onBack, onSave, loading }) => {
+const ContractForm = ({ contract, onBack, onSave }) => {
   // console.log('ContractForm contract:', contract.name);
   const [agreementName, setAgreementName] = useState(contract?.name || "");
   const [templates, setTemplates] = useState([]);
@@ -262,13 +262,13 @@ const ContractForm = ({ contract, onBack, onSave, loading }) => {
         )}
         <button
           type="submit"
-          disabled={loading || !agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled()}
-          className={`w-full py-2 rounded font-semibold transition ${loading || !agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled()
+          disabled={!agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled() || saving}
+          className={`w-full py-2 rounded font-semibold transition ${!agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled() || saving
               ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
               : 'bg-[#2EAB2C] text-white hover:bg-green-800'
             }`}
         >
-          {loading ? "Saving..." : contract ? "Save" : "Add"}
+          {saving ? "Saving..." : (contract ? "Save" : "Add")}
         </button>
       </form>
     </div>
@@ -284,6 +284,7 @@ const Contracts = () => {
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchContracts();
@@ -303,7 +304,7 @@ const Contracts = () => {
 
   async function handleSaveContract(formData) {
     setError(null);
-    setFormLoading(true);
+    setSaving(true); // start loader
     try {
       await generateContract(formData);
       fetchContracts();
@@ -311,7 +312,7 @@ const Contracts = () => {
     } catch (err) {
       setError('Failed to save contract');
     } finally {
-      setFormLoading(false);
+      setSaving(false); // stop loader
     }
   }
 
@@ -356,6 +357,7 @@ const Contracts = () => {
         contract={selected}
         onBack={() => setView("detail")}
         onSave={handleSaveContract}
+        saving={saving} // <-- pass saving state
       />
     );
   }
@@ -363,11 +365,9 @@ const Contracts = () => {
   if (view === "add") {
     return (
       <ContractForm
-        key={selected?._id}
-        contract={selected}
-        onBack={() => setView("detail")}
+        onBack={() => setView("list")}
         onSave={handleSaveContract}
-        loading={formLoading}
+        saving={saving} // <-- pass saving state
       />
     );
   }
