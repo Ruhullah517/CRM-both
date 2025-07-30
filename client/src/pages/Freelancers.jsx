@@ -63,7 +63,7 @@ const FreelancerList = ({ onSelect, onAdd, freelancers, onDelete }) => {
   );
 };
 
-const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete }) => (
+const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl }) => (
   <div className="max-w-2xl mx-auto p-4 bg-white rounded shadow mt-6">
     <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
     <h2 className="text-2xl font-bold mb-4 text-[#2EAB2C]">{freelancer.fullName}</h2>
@@ -73,7 +73,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete }) => (
         <div className="mb-2"><span className="font-semibold">Mobile:</span> {freelancer.mobileNumber}</div>
         <div className="mb-2"><span className="font-semibold">Home Address:</span> {freelancer.homeAddress}</div>
         <div className="mb-2"><span className="font-semibold">Geographical Location:</span> {freelancer.geographicalLocation}</div>
-    <div className="mb-2"><span className="font-semibold">Role:</span> {freelancer.role}</div>
+        <div className="mb-2"><span className="font-semibold">Role:</span> {freelancer.role}</div>
         <div className="mb-2"><span className="font-semibold">Miles Willing to Travel:</span> {freelancer.milesWillingToTravel}</div>
         <div className="mb-2"><span className="font-semibold">On WhatsApp:</span> {freelancer.isOnWhatsApp ? 'Yes' : 'No'}</div>
       </div>
@@ -85,7 +85,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete }) => (
         <div className="mb-2"><span className="font-semibold">DBS Check:</span> {freelancer.hasDBSCheck ? 'Yes' : 'No'}</div>
         <div className="mb-2"><span className="font-semibold">On Update System:</span> {freelancer.isOnUpdateSystem ? 'Yes' : 'No'}</div>
         {freelancer.dbsCertificateUrl && (
-          <div className="mb-2"><span className="font-semibold">DBS Certificate:</span> <a href={freelancer.dbsCertificateUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">View File</a></div>
+          <div className="mb-2"><span className="font-semibold">DBS Certificate:</span> <a href={backendBaseUrl + freelancer.dbsCertificateUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">View File</a></div>
         )}
       </div>
     </div>
@@ -100,7 +100,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete }) => (
       <div className="mb-2"><span className="font-semibold">Additional Info:</span> {freelancer.additionalInfo}</div>
       <div className="mb-2"><span className="font-semibold">Professional References:</span> {freelancer.professionalReferences}</div>
       {freelancer.cvUrl && (
-        <div className="mb-2"><span className="font-semibold">CV:</span> <a href={freelancer.cvUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">View File</a></div>
+        <div className="mb-2"><span className="font-semibold">CV:</span> <a href={backendBaseUrl + freelancer.cvUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">View File</a></div>
       )}
       <div className="mb-2"><span className="font-semibold">Payment Preference:</span> {freelancer.paymentPreferences}</div>
       {freelancer.paymentOther && (
@@ -230,7 +230,7 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
     } else if (type === 'file') {
       setForm(f => ({ ...f, [name]: files[0] }));
     } else {
-    setForm(f => ({ ...f, [name]: value }));
+      setForm(f => ({ ...f, [name]: value }));
     }
   }
 
@@ -471,7 +471,7 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
             <option value="20-50 miles">20-50 miles</option>
             <option value="50+ miles">50+ miles</option>
             <option value="nationwide">nationwide</option>
-        </select>
+          </select>
         </div>
         {/* Section 4: Work Experience & Skills */}
         <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
@@ -518,7 +518,7 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
                 <option value="0-1 years">0-1 years</option>
                 <option value="2-5 years">2-5 years</option>
                 <option value="6-10 years">6-10 years</option>
-        </select>
+              </select>
             </div>
           )}
           {/* Other Social Work Assessment Experience */}
@@ -637,6 +637,7 @@ const Freelancers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
 
   useEffect(() => {
     fetchFreelancers();
@@ -701,7 +702,7 @@ const Freelancers = () => {
     setSaving(false);
   }
 
-  if (view === "detail" && selected) return <FreelancerDetail freelancer={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} onDelete={handleDeleteFreelancer} />;
+  if (view === "detail" && selected) return <FreelancerDetail freelancer={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} onDelete={handleDeleteFreelancer} backendBaseUrl={backendBaseUrl} />;
   if (view === "edit" && selected) return <FreelancerForm freelancer={selected} onBack={() => setView("detail")} onSave={handleSaveFreelancer} loading={saving} />;
   if (view === "add") return <FreelancerForm onBack={() => setView("list")} onSave={handleSaveFreelancer} loading={saving} />;
   return (

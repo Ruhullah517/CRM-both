@@ -16,7 +16,7 @@ const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
   const [search, setSearch] = useState("");
   const filtered = contracts.filter(c => (c.filledData?.client_name || c._id || '').toLowerCase().includes(search.toLowerCase()));
   // console.log(filtered);
-
+  const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
   return (
     <div className="max-w-5xl mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
@@ -45,7 +45,7 @@ const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
                 <td className="px-4 py-2">
                   {c.generatedDocUrl && (
                     <>
-                      <a href={c.generatedDocUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">PDF</a>
+                      <a href={backendBaseUrl + c.generatedDocUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">PDF</a>
                     </>
                   )}
                 </td>
@@ -71,14 +71,14 @@ const ContractDetail = ({ contract, onBack, onEdit, onDelete, loading }) => {
       {contract.generatedDocUrl && (
         <div className="mb-2">
           <span className="font-semibold">PDF:</span>{" "}
-          <a href={contract.generatedDocUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">Download PDF</a>
+          <a href={backendBaseUrl + contract.generatedDocUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">Download PDF</a>
         </div>
       )}
 
       {contract.generatedDocUrl && (
         <div className="my-4">
           <iframe
-            src={contract.generatedDocUrl}
+            src={backendBaseUrl + contract.generatedDocUrl}
             title="Contract PDF Preview"
             width="100%"
             height="500px"
@@ -285,6 +285,7 @@ const Contracts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
+  const backendBaseUrl = "https://crm-backend-0v14.onrender.com"; 
 
   useEffect(() => {
     fetchContracts();
