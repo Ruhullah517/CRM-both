@@ -295,7 +295,7 @@ export default function EnquiryDetail() {
             {application ? (
               <div>
                 <DetailRow label="Status" value={application.status} />
-                <p><b>File:</b> <a href={`http://localhost:3001/${application.application_form_path}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{application.application_form_path}</a></p>
+                <p><b>File:</b> <a href={`https://crm-backend-0v14.onrender.com/${application.application_form_path}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{application.application_form_path}</a></p>
               </div>
             ) : (
               <p>No application uploaded yet.</p>

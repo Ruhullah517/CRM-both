@@ -53,8 +53,8 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
     <div className="max-w-7xl mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
         <input placeholder="Search by client or reference..." value={search} onChange={e => setSearch(e.target.value)} className="px-3 py-2 border rounded w-full sm:w-64" />
-        {['admin','manager','caseworker'].includes(user?.role) && (
-        <button onClick={onAdd} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 transition">Add Case</button>
+        {['admin', 'manager', 'caseworker'].includes(user?.role) && (
+          <button onClick={onAdd} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 transition">Add Case</button>
         )}
       </div>
       <div className="overflow-x-auto rounded shadow bg-white">
@@ -80,9 +80,9 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
                 <td className="px-4 py-2">{c.caseType}</td>
                 <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{c.status}</span></td>
                 <td className="px-4 py-2">{c.riskLevel}</td>
-                <td className="px-4 py-2">{(c.assignedCaseworkers||[]).map(cw => {
+                <td className="px-4 py-2">{(c.assignedCaseworkers || []).map(cw => {
                   const staff = staffList.find(s => s._id === cw.userId);
-                  return <span key={cw.userId} className={cw.isLead ? 'font-bold' : ''}>{staff ? staff.name : cw.userId}{cw.isLead ? ' (Lead)' : ''}<br/></span>;
+                  return <span key={cw.userId} className={cw.isLead ? 'font-bold' : ''}>{staff ? staff.name : cw.userId}{cw.isLead ? ' (Lead)' : ''}<br /></span>;
                 })}</td>
                 <td className="px-4 py-2">{formatDate(c.keyDates?.opened)}</td>
                 <td className="px-4 py-2"><button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
@@ -100,7 +100,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
   const { user } = useAuth();
   return (
     <div className="max-w-3xl mx-auto p-4 bg-white rounded shadow mt-6">
-    <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
+      <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
       <div className="mb-6 p-4 rounded bg-green-50 border border-green-200 flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
           <div className="text-lg font-bold mb-1">Case Reference: {caseItem.caseReferenceNumber}</div>
@@ -165,32 +165,32 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
         <div className="font-semibold text-green-900 mb-2 text-lg">Case Information</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
           <div><span className="font-semibold">Presenting Issues:</span> {caseItem.presentingIssues}</div>
-          <div><span className="font-semibold">Caseworkers:</span> {(caseItem.assignedCaseworkers||[]).map(cw => {
+          <div><span className="font-semibold">Caseworkers:</span> {(caseItem.assignedCaseworkers || []).map(cw => {
             const staff = staffList?.find(s => s._id === cw.userId);
-            return <span key={cw.userId} className={cw.isLead ? 'font-bold' : ''}>{staff ? staff.name : cw.userId}{cw.isLead ? ' (Lead)' : ''}<br/></span>;
+            return <span key={cw.userId} className={cw.isLead ? 'font-bold' : ''}>{staff ? staff.name : cw.userId}{cw.isLead ? ' (Lead)' : ''}<br /></span>;
           })}</div>
           <div><span className="font-semibold">Risk Level:</span> {caseItem.riskLevel}</div>
           <div><span className="font-semibold">Key Dates:</span> Opened: {caseItem.keyDates?.opened ? formatDate(caseItem.keyDates.opened) : '-'} | Review Due: {caseItem.keyDates?.reviewDue ? formatDate(caseItem.keyDates.reviewDue) : '-'} | Closed: {caseItem.keyDates?.closed ? formatDate(caseItem.keyDates.closed) : '-'}</div>
           <div><span className="font-semibold">Notes/Case Summary:</span> {caseItem.notes}</div>
           <div><span className="font-semibold">Outcome Achieved:</span> {caseItem.outcomeAchieved}</div>
-          <div><span className="font-semibold">Supporting Documents:</span> <ul className="list-disc ml-6">{(caseItem.supportingDocuments||[]).map((doc,i) => <li key={i}><a href={doc.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">{doc.name}</a></li>)}</ul></div>
+          <div><span className="font-semibold">Supporting Documents:</span> <ul className="list-disc ml-6">{(caseItem.supportingDocuments || []).map((doc, i) => <li key={i}><a href={doc.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">{doc.name}</a></li>)}</ul></div>
           <div><span className="font-semibold">Total Time Logged:</span> {caseItem.totalTimeLogged}</div>
           <div><span className="font-semibold">Invoiceable Hours:</span> {caseItem.invoiceableHours}</div>
         </div>
       </div>
-      {['admin','manager','caseworker'].includes(user.user?.role?.toLowerCase()) && (
+      {['admin', 'manager', 'caseworker'].includes(user.user?.role?.toLowerCase()) && (
         <div className="flex gap-2 justify-end mt-6">
           <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
         </div>
       )}
-  </div>
-);
+    </div>
+  );
 };
 
 const CaseForm = ({ caseItem, onBack, onSave }) => {
   // Main fields
   const [clientFullName, setClientFullName] = useState(caseItem?.clientFullName || "");
-  const [dateOfBirth, setDateOfBirth] = useState(caseItem?.dateOfBirth ? caseItem.dateOfBirth.slice(0,10) : "");
+  const [dateOfBirth, setDateOfBirth] = useState(caseItem?.dateOfBirth ? caseItem.dateOfBirth.slice(0, 10) : "");
   const [gender, setGender] = useState(caseItem?.gender || "");
   const [ethnicity, setEthnicity] = useState(caseItem?.ethnicity || "");
   const [email, setEmail] = useState(caseItem?.contactInfo?.email || "");
@@ -207,9 +207,9 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
   const [riskLevel, setRiskLevel] = useState(caseItem?.riskLevel || "");
   const [status, setStatus] = useState(caseItem?.status || "New");
   const [pausedReason, setPausedReason] = useState(caseItem?.pausedReason || "");
-  const [opened, setOpened] = useState(caseItem?.keyDates?.opened ? caseItem.keyDates.opened.slice(0,10) : "");
-  const [reviewDue, setReviewDue] = useState(caseItem?.keyDates?.reviewDue ? caseItem.keyDates.reviewDue.slice(0,10) : "");
-  const [closed, setClosed] = useState(caseItem?.keyDates?.closed ? caseItem.keyDates.closed.slice(0,10) : "");
+  const [opened, setOpened] = useState(caseItem?.keyDates?.opened ? caseItem.keyDates.opened.slice(0, 10) : "");
+  const [reviewDue, setReviewDue] = useState(caseItem?.keyDates?.reviewDue ? caseItem.keyDates.reviewDue.slice(0, 10) : "");
+  const [closed, setClosed] = useState(caseItem?.keyDates?.closed ? caseItem.keyDates.closed.slice(0, 10) : "");
   // Notes, outcome, time
   const [notes, setNotes] = useState(caseItem?.notes || "");
   const [outcomeAchieved, setOutcomeAchieved] = useState(caseItem?.outcomeAchieved || "");
@@ -235,6 +235,7 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
   const [financeContactName, setFinanceContactName] = useState(caseItem?.referralDetails?.financeContactName || "");
   const [financeContactNumber, setFinanceContactNumber] = useState(caseItem?.referralDetails?.financeContactNumber || "");
   const [financeEmail, setFinanceEmail] = useState(caseItem?.referralDetails?.financeEmail || "");
+  const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
 
   useEffect(() => {
     api.get('/users/staff')
@@ -441,14 +442,14 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
               <select value={riskLevel} onChange={e => setRiskLevel(e.target.value)} className="w-full px-4 py-2 border rounded">
                 <option value="">Select Risk Level</option>
                 {riskLevels.map(r => <option key={r} value={r}>{r}</option>)}
-        </select>
+              </select>
             </div>
             <div>
               <label className="block font-semibold mb-1">Status</label>
               <select value={status} onChange={e => setStatus(e.target.value)} className="w-full px-4 py-2 border rounded">
                 <option value="">Select Status</option>
                 {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
+              </select>
             </div>
             <div>
               <label className="block font-semibold mb-1">Paused Reason</label>
@@ -491,11 +492,11 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
             {assignedCaseworkers.map((cw, i) => {
               const staff = staffList.find(s => s._id === cw.userId);
               return (
-              <li key={i} className="flex items-center gap-2 text-sm mb-1">
+                <li key={i} className="flex items-center gap-2 text-sm mb-1">
                   <span>{staff ? staff.name : cw.userId}{cw.isLead ? ' (Lead)' : ''}</span>
                   <button type="button" className="text-blue-500 ml-2" onClick={() => setLead(i)}>Set Lead</button>
                   <button type="button" className="text-red-500 ml-2" onClick={() => removeCaseworker(i)}>Remove</button>
-              </li>
+                </li>
               );
             })}
           </ul>
@@ -516,7 +517,7 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
           <ul className="mb-2">
             {supportingDocuments.map((doc, i) => (
               <li key={i} className="flex items-center gap-2 text-sm mb-1">
-                <span><a href={doc.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">{doc.name}</a></span>
+                <span><a href={backendBaseUrl + doc.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">{doc.name}</a></span>
                 <button type="button" className="text-red-500 ml-2" onClick={() => removeDocument(i)}>Remove</button>
               </li>
             ))}
@@ -605,7 +606,7 @@ const Cases = () => {
   if (view === "detail") {
     return <>
       <CaseDetail caseItem={selected} staffList={staffList} onBack={() => { setView("list"); setSelected(null); }} onEdit={() => { setView("edit"); setEditMode(true); }} />
-      {['admin','manager'].includes(user.user?.role?.toLowerCase()) && (
+      {['admin', 'manager'].includes(user.user?.role?.toLowerCase()) && (
         <div className="max-w-2xl mx-auto mt-2 text-right">
           <button onClick={() => handleDeleteCase(selected)} className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-700">Delete Case</button>
         </div>
