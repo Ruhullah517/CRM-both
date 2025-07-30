@@ -108,7 +108,7 @@ const ContractDetail = ({ contract, onBack, onEdit, onDelete, loading }) => {
 };
 
 
-const ContractForm = ({ contract, onBack, onSave }) => {
+const ContractForm = ({ contract, onBack, onSave, saving }) => {
   // console.log('ContractForm contract:', contract.name);
   const [agreementName, setAgreementName] = useState(contract?.name || "");
   const [templates, setTemplates] = useState([]);
@@ -264,8 +264,8 @@ const ContractForm = ({ contract, onBack, onSave }) => {
           type="submit"
           disabled={!agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled() || saving}
           className={`w-full py-2 rounded font-semibold transition ${!agreementName.trim() || !selectedTemplateId || !allPlaceholdersFilled() || saving
-              ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-              : 'bg-[#2EAB2C] text-white hover:bg-green-800'
+            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+            : 'bg-[#2EAB2C] text-white hover:bg-green-800'
             }`}
         >
           {saving ? "Saving..." : (contract ? "Save" : "Add")}
@@ -357,7 +357,7 @@ const Contracts = () => {
         contract={selected}
         onBack={() => setView("detail")}
         onSave={handleSaveContract}
-        saving={saving} // <-- pass saving state
+        saving={saving}
       />
     );
   }
@@ -367,7 +367,7 @@ const Contracts = () => {
       <ContractForm
         onBack={() => setView("list")}
         onSave={handleSaveContract}
-        saving={saving} // <-- pass saving state
+        saving={saving}
       />
     );
   }
