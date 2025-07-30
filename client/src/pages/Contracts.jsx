@@ -59,7 +59,7 @@ const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
   );
 };
 
-const ContractDetail = ({ contract, onBack, onEdit, onDelete, loading }) => {
+const ContractDetail = ({ contract, onBack, onEdit, onDelete, loading, backendBaseUrl }) => {
   return (
     <div className="max-w-2xl mx-auto p-4 bg-white rounded shadow mt-6">
       <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
@@ -285,7 +285,7 @@ const Contracts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
-  const backendBaseUrl = "https://crm-backend-0v14.onrender.com"; 
+  const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
 
   useEffect(() => {
     fetchContracts();
@@ -347,6 +347,7 @@ const Contracts = () => {
         onEdit={() => setView("edit")}
         onDelete={handleDeleteContract}
         loading={loading}
+        backendBaseUrl={backendBaseUrl}
       />
     );
   }
