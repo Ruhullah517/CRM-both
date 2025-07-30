@@ -55,6 +55,10 @@ const generateContract = async (req, res) => {
     const pdfBytes = await pdfDoc.save();
     // Save PDF to disk
     const fileName = `contract_${Date.now()}.pdf`;
+    const dirPath = path.join(__dirname, '../uploads/contracts');
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
     const filePath = path.join(__dirname, '../uploads/contracts', fileName);
     fs.writeFileSync(filePath, pdfBytes);
     const generatedDocUrl = `/uploads/contracts/${fileName}`;
