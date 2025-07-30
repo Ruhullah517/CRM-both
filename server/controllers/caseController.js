@@ -112,7 +112,7 @@ const uploadCaseFile = async (req, res) => {
       return res.status(400).json({ msg: 'No file uploaded' });
     }
     const { caseId } = req.body;
-    const fileUrl = `http://localhost:3001/uploads/${req.file.filename}`;
+    const fileUrl = `/uploads/${req.file.filename}`;
     const fileDoc = {
       name: req.file.originalname,
       url: fileUrl,
