@@ -98,6 +98,7 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
 
 const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
   const { user } = useAuth();
+  const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
   return (
     <div className="max-w-3xl mx-auto p-4 bg-white rounded shadow mt-6">
       <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
@@ -173,7 +174,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
           <div><span className="font-semibold">Key Dates:</span> Opened: {caseItem.keyDates?.opened ? formatDate(caseItem.keyDates.opened) : '-'} | Review Due: {caseItem.keyDates?.reviewDue ? formatDate(caseItem.keyDates.reviewDue) : '-'} | Closed: {caseItem.keyDates?.closed ? formatDate(caseItem.keyDates.closed) : '-'}</div>
           <div><span className="font-semibold">Notes/Case Summary:</span> {caseItem.notes}</div>
           <div><span className="font-semibold">Outcome Achieved:</span> {caseItem.outcomeAchieved}</div>
-          <div><span className="font-semibold">Supporting Documents:</span> <ul className="list-disc ml-6">{(caseItem.supportingDocuments || []).map((doc, i) => <li key={i}><a href={doc.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">{doc.name}</a></li>)}</ul></div>
+          <div><span className="font-semibold">Supporting Documents:</span> <ul className="list-disc ml-6">{(caseItem.supportingDocuments || []).map((doc, i) => <li key={i}><a href={backendBaseUrl + doc.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">{doc.name}</a></li>)}</ul></div>
           <div><span className="font-semibold">Total Time Logged:</span> {caseItem.totalTimeLogged}</div>
           <div><span className="font-semibold">Invoiceable Hours:</span> {caseItem.invoiceableHours}</div>
         </div>
