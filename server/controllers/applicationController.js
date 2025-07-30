@@ -1,4 +1,5 @@
 const Application = require('../models/Application');
+const path = require('path');
 
 const uploadApplication = async (req, res) => {
   const { enquiryId } = req.body;
