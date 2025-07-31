@@ -15,7 +15,7 @@ router.get('/', getAllFreelancers);
 router.get('/:id', getFreelancerById);
 router.post('/', freelancerUploads, createFreelancer);
 router.post('/send-form-link', sendFreelancerFormLink);
-router.post('/public', submitFreelancerPublicForm);
+router.post('/public', freelancerUploads, submitFreelancerPublicForm);
 router.put('/:id', freelancerUploads, updateFreelancer);
 router.delete('/:id', deleteFreelancer);
 
