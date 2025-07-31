@@ -6,12 +6,16 @@ const {
   createFreelancer,
   updateFreelancer,
   deleteFreelancer,
+  sendFreelancerFormLink,
+  submitFreelancerPublicForm,
 } = require('../controllers/freelancerController');
 const freelancerUploads = require('../middleware/freelancerUploads');
 
 router.get('/', getAllFreelancers);
 router.get('/:id', getFreelancerById);
 router.post('/', freelancerUploads, createFreelancer);
+router.post('/send-form-link', sendFreelancerFormLink);
+router.post('/public', submitFreelancerPublicForm);
 router.put('/:id', freelancerUploads, updateFreelancer);
 router.delete('/:id', deleteFreelancer);
 

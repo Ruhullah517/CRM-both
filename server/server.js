@@ -31,6 +31,7 @@ app.use('/api/candidates', require('./routes/candidates'));
 app.use('/api/cases', require('./routes/cases'));
 app.use('/api/contracts', require('./routes/contracts'));
 app.use('/api/freelancers', require('./routes/freelancers'));
+app.use('/public/freelancers', require('./routes/publicFreelancers'));
 app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api/mentors', require('./routes/mentors'));
 app.use('/api/email-templates', require('./routes/emailTemplates'));

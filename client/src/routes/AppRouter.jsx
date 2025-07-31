@@ -20,6 +20,7 @@ import Enquiries from '../pages/Enquiries';
 import EnquiryDetail from '../pages/EnquiryDetail';
 import AdobeCallback from '../pages/AdobeCallback';
 import Settings from '../pages/settings';
+import FreelancerPublicForm from '../pages/FreelancerPublicForm';
 
 export default function AppRouter() {
   return (
@@ -45,6 +46,7 @@ export default function AppRouter() {
             <Route path="/enquiries/:id" element={<EnquiryDetail />} />
             <Route path="/adobe/callback" element={<AdobeCallback />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/freelancer-form/:token" element={<FreelancerPublicForm />} />
           </Route>
         </Route>
       </Routes>

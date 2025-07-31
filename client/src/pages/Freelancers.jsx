@@ -639,6 +639,35 @@ const Freelancers = () => {
   const [saving, setSaving] = useState(false);
   const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
 
+  // --- Send Form Online modal state ---
+  const [showSendFormModal, setShowSendFormModal] = useState(false);
+  const [sendFormEmail, setSendFormEmail] = useState("");
+  const [sendFormStatus, setSendFormStatus] = useState("");
+  const [sendFormLoading, setSendFormLoading] = useState(false);
+
+  const handleSendForm = async (e) => {
+    e.preventDefault();
+    setSendFormLoading(true);
+    setSendFormStatus("");
+    try {
+      const res = await fetch('/api/freelancers/send-form-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: sendFormEmail }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSendFormStatus('Form link sent successfully!');
+        setSendFormEmail("");
+      } else {
+        setSendFormStatus(data.message || 'Failed to send form link.');
+      }
+    } catch (err) {
+      setSendFormStatus('Error sending form link.');
+    }
+    setSendFormLoading(false);
+  };
+
   useEffect(() => {
     fetchFreelancers();
   }, []);
@@ -708,6 +737,42 @@ const Freelancers = () => {
   return (
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
+      {/* --- Send Form Online Button --- */}
+      <div className="max-w-5xl mx-auto p-4 flex justify-end">
+        <button
+          onClick={() => setShowSendFormModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
+        >
+          Send Form Online
+        </button>
+      </div>
+      {/* --- Modal --- */}
+      {showSendFormModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-80">
+            <h2 className="text-lg font-bold mb-2">Send Freelancer Form</h2>
+            <form onSubmit={handleSendForm}>
+              <input
+                type="email"
+                placeholder="Freelancer Email"
+                value={sendFormEmail}
+                onChange={e => setSendFormEmail(e.target.value)}
+                required
+                className="border p-2 mb-2 w-full rounded"
+              />
+              <div className="flex gap-2 mb-2">
+                <button type="submit" disabled={sendFormLoading} className="bg-blue-600 text-white px-4 py-2 rounded">
+                  {sendFormLoading ? 'Sending...' : 'Send'}
+                </button>
+                <button type="button" onClick={() => { setShowSendFormModal(false); setSendFormStatus(""); setSendFormEmail(""); }} className="bg-gray-300 px-4 py-2 rounded">
+                  Cancel
+                </button>
+              </div>
+            </form>
+            {sendFormStatus && <div className="mt-2 text-green-600">{sendFormStatus}</div>}
+          </div>
+        </div>
+      )}
       <FreelancerList onSelect={f => { setSelected(f); setView("detail"); }} onAdd={() => setView("add")} freelancers={freelancers} onDelete={handleDeleteFreelancer} />
       {loading && <Loader />}
     </>

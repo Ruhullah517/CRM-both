@@ -4,7 +4,7 @@ const FreelancerSchema = new mongoose.Schema({
   // Section 1: Personal Information
   fullName: { type: String, required: true },
   homeAddress: String,
-  email: String,
+  email: { type: String, index: true },
   mobileNumber: String,
   isOnWhatsApp: Boolean,
 
@@ -13,13 +13,13 @@ const FreelancerSchema = new mongoose.Schema({
   socialWorkEnglandRegistrationNumber: String,
   hasDBSCheck: Boolean,
   isOnUpdateSystem: Boolean,
-  dbsCertificateUrl: String, // Google Drive or uploaded file link
-  dbsCertificateFileName: String,
+  dbsCertificateUrl: String,      // Google Drive or uploaded file link
+  dbsCertificateFileName: String, // Display name
 
   // Section 3: Location & Availability
   currentLocation: String,
   geographicalLocation: String, // e.g., "North East"
-  role: String, // e.g., "Foster Carer"
+  role: String,                 // e.g., "Foster Carer"
   milesWillingToTravel: String,
 
   // Section 4: Work Experience & Skills
@@ -28,30 +28,34 @@ const FreelancerSchema = new mongoose.Schema({
   otherSocialWorkAssessmentExperience: [String],
 
   // Section 5: Consideration for Work & Training
-  considerationFor: [String],
+  considerationFor: [String], // e.g., ["Initial Assessment", "Form F", "Training"]
 
   // Section 6: Additional Information
   qualificationsAndTraining: String,
   additionalInfo: String,
   professionalReferences: String,
-  cvUrl: String, // Google Drive or uploaded file link
+  cvUrl: String,
   cvFileName: String,
 
   // Section 7: Payment & Tax Information
-  paymentPreferences: [String],
+  paymentPreferences: [String], // e.g., ["Limited Company", "Umbrella"]
   paymentOther: String,
 
-  // Legacy fields (for compatibility)
-  name: String,
-  roleLegacy: String,
-  status: String,
-  availability: String,
-  skills: [String],
-  complianceDocs: [String],
-  assignments: [String],
-  contract_date: Date,
+  // Meta / Admin Info
+  source: { type: String, enum: ['admin', 'freelancer'], default: 'freelancer' },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+
+  // Legacy fields (optional: to support older system)
+  legacy: {
+    name: String,
+    role: String,
+    availability: String,
+    skills: [String],
+    complianceDocs: [String],
+    assignments: [String],
+    contract_date: Date
+  },
+
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date, default: Date.now }
 });
-
-module.exports = mongoose.model('Freelancer', FreelancerSchema); 
