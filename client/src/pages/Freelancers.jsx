@@ -650,7 +650,7 @@ const Freelancers = () => {
     setSendFormLoading(true);
     setSendFormStatus("");
     try {
-      const res = await fetch('/api/freelancers/send-form-link', {
+      const res = await fetch(`${backendBaseUrl}/api/freelancers/send-form-link`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: sendFormEmail }),
