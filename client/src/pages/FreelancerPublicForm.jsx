@@ -89,7 +89,7 @@ const FreelancerPublicForm = () => {
         data.append(key, form[key]);
       }
     }
-    const res = await fetch('/api/freelancers/public', {
+    const res = await fetch('https://crm-backend-0v14.onrender.com/api/freelancers/public', {
       method: 'POST',
       body: data,
     });
