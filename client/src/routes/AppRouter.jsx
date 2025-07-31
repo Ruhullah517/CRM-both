@@ -46,8 +46,8 @@ export default function AppRouter() {
             <Route path="/enquiries/:id" element={<EnquiryDetail />} />
             <Route path="/adobe/callback" element={<AdobeCallback />} />
             <Route path="/settings" element={<Settings />} />
-            <Route path="/freelancer-form/:token" element={<FreelancerPublicForm />} />
           </Route>
+          <Route path="/freelancer-form/:token" element={<FreelancerPublicForm />} />
         </Route>
       </Routes>
     </BrowserRouter>
