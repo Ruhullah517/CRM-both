@@ -60,32 +60,63 @@ export default function EmailTemplates() {
           <PlusIcon className="w-5 h-5" /> Add Template
         </button>
       )}
-      <table className="min-w-full bg-white rounded shadow mb-8">
-        <thead>
-          <tr className="bg-green-50">
-            <th className="px-4 py-2 text-left font-semibold text-green-900">Name</th>
-            <th className="px-4 py-2 text-left font-semibold text-green-900">Subject</th>
-            <th className="px-4 py-2 text-left font-semibold text-green-900">Preview</th>
-            {isAdminOrStaff && <th className="px-4 py-2 text-left font-semibold text-green-900">Actions</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {templates.map((t) => (
-            <tr key={t.id} className="border-t hover:bg-green-50 transition">
-              <td className="px-4 py-2 font-semibold">{t.name}</td>
-              <td className="px-4 py-2">{t.subject}</td>
-              <td className="px-4 py-2 text-gray-600 text-sm max-w-xs truncate">{t.body.slice(0, 60)}...</td>
-              {isAdminOrStaff && (
-                <td className="px-4 py-2">
-                  <button className="text-[#2EAB2C] hover:underline flex items-center gap-1" onClick={() => openEdit(t)}>
-                    <PencilSquareIcon className="w-5 h-5" /> Edit
-                  </button>
-                </td>
-              )}
+      {/* Table for sm and up */}
+      <div className="hidden sm:block">
+        <table className="min-w-full bg-white rounded shadow mb-8">
+          <thead>
+            <tr className="bg-green-50">
+              <th className="px-4 py-2 text-left font-semibold text-green-900">Name</th>
+              <th className="px-4 py-2 text-left font-semibold text-green-900">Subject</th>
+              <th className="px-4 py-2 text-left font-semibold text-green-900">Preview</th>
+              {isAdminOrStaff && <th className="px-4 py-2 text-left font-semibold text-green-900">Actions</th>}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {templates.map((t) => (
+              <tr key={t.id} className="border-t hover:bg-green-50 transition">
+                <td className="px-4 py-2 font-semibold">{t.name}</td>
+                <td className="px-4 py-2">{t.subject}</td>
+                <td className="px-4 py-2 text-gray-600 text-sm max-w-xs truncate">{t.body.slice(0, 60)}...</td>
+                {isAdminOrStaff && (
+                  <td className="px-4 py-2">
+                    <button className="text-[#2EAB2C] hover:underline flex items-center gap-1" onClick={() => openEdit(t)}>
+                      <PencilSquareIcon className="w-5 h-5" /> Edit
+                    </button>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Card view for mobile */}
+      <div className="sm:hidden flex flex-col gap-4 mb-8">
+        {templates.map((t) => (
+          <div key={t.id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-base">{t.name}</span>
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Subject:</span> {t.subject}
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Preview:</span>{" "}
+              <span className="text-gray-600">{t.body.slice(0, 60)}...</span>
+            </div>
+            {isAdminOrStaff && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  className="flex-1 px-3 py-2 rounded bg-black text-white font-semibold hover:bg-green-800 flex items-center justify-center gap-2"
+                  onClick={() => openEdit(t)}
+                >
+                  <PencilSquareIcon className="w-5 h-5" /> Edit
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
       {/* Add/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">

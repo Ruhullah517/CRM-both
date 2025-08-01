@@ -64,48 +64,91 @@ export default function FormFAssessmentTracker({ enquiryId }) {
   return (
     <div className="bg-gray-50 p-4 rounded mb-8">
       <h2 className="text-xl font-bold mb-2">Form F Assessment Tracker</h2>
-      <table className="min-w-full bg-white border mb-2">
-        <thead>
-          <tr>
-            <th className="border px-2 py-1">Session</th>
-            <th className="border px-2 py-1">Notes</th>
-            <th className="border px-2 py-1">Date</th>
-            <th className="border px-2 py-1">Completed</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sessions.map((s, idx) => (
-            <tr key={s.session}>
-              <td className="border px-2 py-1 font-semibold">{s.session}</td>
-              <td className="border px-2 py-1">
-                <input
-                  type="text"
-                  className="w-full border rounded px-2 py-1"
-                  value={s.notes}
-                  onChange={e => handleSessionChange(idx, 'notes', e.target.value)}
-                />
-              </td>
-              <td className="border px-2 py-1">
-                <input
-                  type="date"
-                  className="w-full border rounded px-2 py-1"
-                  value={s.date ? s.date.slice(0, 10) : ''}
-                  onChange={e => handleSessionChange(idx, 'date', e.target.value)}
-                />
-              </td>
-              <td className="border px-2 py-1 text-center">
+  
+      {/* Table for sm and up */}
+      <div className="hidden sm:block">
+        <table className="min-w-full bg-white border mb-2">
+          <thead>
+            <tr>
+              <th className="border px-2 py-1">Session</th>
+              <th className="border px-2 py-1">Notes</th>
+              <th className="border px-2 py-1">Date</th>
+              <th className="border px-2 py-1">Completed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {sessions.map((s, idx) => (
+              <tr key={s.session}>
+                <td className="border px-2 py-1 font-semibold">{s.session}</td>
+                <td className="border px-2 py-1">
+                  <input
+                    type="text"
+                    className="w-full border rounded px-2 py-1"
+                    value={s.notes}
+                    onChange={e => handleSessionChange(idx, 'notes', e.target.value)}
+                  />
+                </td>
+                <td className="border px-2 py-1">
+                  <input
+                    type="date"
+                    className="w-full border rounded px-2 py-1"
+                    value={s.date ? s.date.slice(0, 10) : ''}
+                    onChange={e => handleSessionChange(idx, 'date', e.target.value)}
+                  />
+                </td>
+                <td className="border px-2 py-1 text-center">
+                  <input
+                    type="checkbox"
+                    checked={!!s.completed}
+                    onChange={() => handleSessionChange(idx, 'completed')}
+                  />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+  
+      {/* Card view for mobile */}
+      <div className="sm:hidden flex flex-col gap-4">
+        {sessions.map((s, idx) => (
+          <div key={s.session} className="bg-white rounded shadow p-3 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold">{s.session}</span>
+              <label className="flex items-center gap-1">
                 <input
                   type="checkbox"
                   checked={!!s.completed}
                   onChange={() => handleSessionChange(idx, 'completed')}
+                  className="accent-blue-600"
                 />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                <span className="text-xs">Completed</span>
+              </label>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1">Notes</label>
+              <input
+                type="text"
+                className="w-full border rounded px-2 py-1"
+                value={s.notes}
+                onChange={e => handleSessionChange(idx, 'notes', e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1">Date</label>
+              <input
+                type="date"
+                className="w-full border rounded px-2 py-1"
+                value={s.date ? s.date.slice(0, 10) : ''}
+                onChange={e => handleSessionChange(idx, 'date', e.target.value)}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+  
       <button
-        className="bg-blue-600 text-white px-4 py-2 rounded mt-2"
+        className="bg-black text-white px-4 py-2 rounded mt-4 w-full sm:w-auto"
         onClick={handleSave}
         disabled={saving}
       >

@@ -28,7 +28,8 @@ const ContactList = ({ onSelect, onAdd, contacts, onDelete }) => {
         <input placeholder="Search contacts..." value={search} onChange={e => setSearch(e.target.value)} className="px-3 py-2 border rounded w-full sm:w-64" />
         <button onClick={onAdd} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 transition">Add Contact</button>
       </div>
-      <div className="overflow-x-auto rounded shadow bg-white">
+      {/* Table for sm and up */}
+      <div className="overflow-x-auto rounded shadow bg-white hidden sm:block">
         <table className="min-w-full text-left">
           <thead>
             <tr className="bg-green-50">
@@ -53,12 +54,57 @@ const ContactList = ({ onSelect, onAdd, contacts, onDelete }) => {
                 </td>
                 <td className="px-4 py-2">{c.email}</td>
                 <td className="px-4 py-2">{c.dateAdded ? new Date(c.dateAdded).toLocaleDateString() : ''}</td>
-                <td className="px-4 py-2"><button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
-                <td className="px-4 py-2"><button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">Delete</button></td>
+                <td className="px-4 py-2">
+                  <button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-black text-white font-semibold hover:bg-gray-600">
+                    View
+                  </button>
+                </td>
+                <td className="px-4 py-2">
+                  <button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Card view for mobile */}
+      <div className="sm:hidden flex flex-col gap-4">
+        {filtered.map(c => (
+          <div key={c._id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-base">{c.name}</span>
+              <span className="text-xs px-2 py-1 rounded bg-green-50">{c.type}</span>
+            </div>
+            <div className="flex flex-wrap gap-1 text-sm">
+              {(c.tags || []).map(tag => (
+                <span key={tag} className={`px-2 py-1 rounded text-xs font-semibold ${tagColors[tag.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{tag}</span>
+              ))}
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Email:</span> {c.email}
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Date Added:</span> {c.dateAdded ? new Date(c.dateAdded).toLocaleDateString() : ''}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => onSelect(c)}
+                className="flex-1 px-3 py-2 rounded bg-black text-white font-semibold hover:bg-gray-600"
+              >
+                View
+              </button>
+              <button
+                onClick={() => onDelete(c)}
+                className="flex-1 px-3 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

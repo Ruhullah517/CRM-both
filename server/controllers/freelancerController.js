@@ -219,8 +219,24 @@ const sendFreelancerFormLink = async (req, res) => {
     await transporter.sendMail({
       from: 'ruhullah517@gmail.com',
       to: email,
-      subject: 'Complete Your Freelancer Form',
-      html: `<p>Please complete your freelancer form by clicking the link below:</p>
+      subject: 'Complete Your Freelancer Form – BFCA',
+      html: `<p>Thank you for your interest in working with the <strong>Black Foster Carers Alliance (BFCA)</strong>.</p>
+  
+  <p>To move forward, please complete our freelancer registration form using the link below:</p>
+  
+  <p>
+    👉 <a href="${link}">${link}</a>
+      Complete the Freelancer Form
+    </a>
+  </p>
+
+  <p>Once submitted, a member of our team will be in touch with the next steps.</p>
+
+  <p>If you have any questions in the meantime, feel free to get in touch.</p>
+
+  <p>Warm regards,<br/>
+  <strong>Black Foster Carers Alliance Team (BFCA)</strong></p>
+  <p>Please complete your freelancer form by clicking the link below:</p>
              <a href="${link}">${link}</a>`,
     });
 

@@ -37,7 +37,8 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
         <input placeholder="Search candidates..." value={search} onChange={e => setSearch(e.target.value)} className="px-3 py-2 border rounded w-full sm:w-64" />
         <button onClick={onAdd} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 transition">Add Candidate</button>
       </div>
-      <div className="overflow-x-auto rounded shadow bg-white">
+      {/* Table for sm and up */}
+      <div className="overflow-x-auto rounded shadow bg-white hidden sm:block">
         <table className="min-w-full text-left">
           <thead>
             <tr className="bg-green-50">
@@ -54,16 +55,64 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
             {filtered.map(c => (
               <tr key={c._id} className="border-t hover:bg-green-50 transition">
                 <td className="px-4 py-2 font-semibold">{c.name}</td>
-                <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status]}`}>{c.status}</span></td>
-                <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${stageColors[c.stage]}`}>{c.stage}</span></td>
+                <td className="px-4 py-2">
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status]}`}>{c.status}</span>
+                </td>
+                <td className="px-4 py-2">
+                  <span className={`px-2 py-1 rounded text-xs font-semibold ${stageColors[c.stage]}`}>{c.stage}</span>
+                </td>
                 <td className="px-4 py-2">{c.mentor}</td>
                 <td className="px-4 py-2">{formatDate(c.deadline)}</td>
-                <td className="px-4 py-2"><button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
-                <td className="px-4 py-2"><button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">Delete</button></td>
+                <td className="px-4 py-2">
+                  <button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-black text-white font-semibold hover:bg-gray-600">
+                    View
+                  </button>
+                </td>
+                <td className="px-4 py-2">
+                  <button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Card view for mobile */}
+      <div className="sm:hidden flex flex-col gap-4">
+        {filtered.map(c => (
+          <div key={c._id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-base">{c.name}</span>
+              <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status]}`}>{c.status}</span>
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Stage:</span>{" "}
+              <span className={`px-2 py-1 rounded text-xs font-semibold ${stageColors[c.stage]}`}>{c.stage}</span>
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Mentor:</span> {c.mentor}
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Deadline:</span> {formatDate(c.deadline)}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => onSelect(c)}
+                className="flex-1 px-3 py-2 rounded bg-black text-white font-semibold hover:bg-gray-600"
+              >
+                View
+              </button>
+              <button
+                onClick={() => onDelete(c)}
+                className="flex-1 px-3 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

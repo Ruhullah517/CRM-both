@@ -104,43 +104,76 @@ export default function Users() {
         Add User
       </button>
       {error && <div className="mb-4 text-red-600">{error}</div>}
-      <table className="w-full text-left bg-white rounded shadow mb-6">
-        <thead>
-          <tr className="bg-green-50">
-            <th className="py-2 px-4">Email</th>
-            <th className="py-2 px-4">Role</th>
-            <th className="py-2 px-4">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loading ? (
-            <tr><td colSpan={3} className="text-center py-4">Loading...</td></tr>
-          ) : users.map(u => (
-            <tr key={u._id} className="border-t">
-              <td className="py-2 px-4 font-semibold">{u.email}</td>
-              <td className="py-2 px-4 capitalize">{u.role}</td>
-              <td className="py-2 px-4">
-                {u.role !== 'admin' && u.email !== user.email && (
-                  <>
-                    <button
-                      className="mr-2 px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200"
-                      onClick={() => handleEdit(u)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200"
-                      onClick={() => handleDelete(u._id)}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </td>
+      {/* Table for sm and up */}
+      <div className="hidden sm:block">
+        <table className="w-full text-left bg-white rounded shadow mb-6">
+          <thead>
+            <tr className="bg-green-50">
+              <th className="py-2 px-4">Email</th>
+              <th className="py-2 px-4">Role</th>
+              <th className="py-2 px-4">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={3} className="text-center py-4">Loading...</td>
+              </tr>
+            ) : users.map(u => (
+              <tr key={u._id} className="border-t">
+                <td className="py-2 px-4 font-semibold">{u.email}</td>
+                <td className="py-2 px-4 capitalize">{u.role}</td>
+                <td className="py-2 px-4">
+                  {u.role !== 'admin' && u.email !== user.email && (
+                    <>
+                      <button
+                        className="mr-2 px-3 py-1 rounded bg-black text-white font-semibold hover:bg-gray-600"
+                        onClick={() => handleEdit(u)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200"
+                        onClick={() => handleDelete(u._id)}
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Card view for mobile */}
+      <div className="sm:hidden flex flex-col gap-4 mb-6">
+        {users.map(u => (
+          <div key={u._id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-base">{u.email}</span>
+              <span className="capitalize text-xs px-2 py-1 rounded bg-green-50">{u.role}</span>
+            </div>
+            {u.role !== 'admin' && u.email !== user.email && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  className="flex-1 px-3 py-2 rounded bg-black text-white font-semibold hover:bg-gray-600"
+                  onClick={() => handleEdit(u)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="flex-1 px-3 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200"
+                  onClick={() => handleDelete(u._id)}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
           <div className="bg-white rounded shadow p-6 w-full max-w-sm relative">

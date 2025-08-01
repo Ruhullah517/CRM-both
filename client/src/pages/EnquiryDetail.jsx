@@ -194,7 +194,7 @@ export default function EnquiryDetail() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow mt-8 mb-8">
-      <button className="mb-4 text-blue-600 hover:underline" onClick={() => navigate(-1)}>&larr; Back to List</button>
+      <button className="mb-4 text-[#2EAB2C] hover:underline" onClick={() => navigate(-1)}>&larr; Back to List</button>
 
       {/* Enquiry Details Section */}
       <DetailSection title="Enquiry Details" isOpen={openSection === 'enquiry'} onToggle={() => toggleSection('enquiry')}>
@@ -316,7 +316,7 @@ export default function EnquiryDetail() {
                     href={`https://crm-backend-0v14.onrender.com/${application.application_form_path}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline break-all"
+                    className="text-[#2EAB2C] hover:underline break-all"
                   >
                     {application.application_form_path}
                   </a>
@@ -337,12 +337,12 @@ export default function EnquiryDetail() {
                   className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4
             file:rounded-full file:border-0
             file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100"
+            file:bg-blue-50 file:text-[#2EAB2C]
+            hover:file:bg-gray-600"
                   accept=".pdf,.doc,.docx"
                 />
                 {selectedFile && (
-                  <span className="text-sm text-gray-700 truncate max-w-xs">
+                  <span className="text-sm text-[#2EAB2C] truncate max-w-xs">
                     {selectedFile.name}
                   </span>
                 )}
@@ -350,7 +350,7 @@ export default function EnquiryDetail() {
 
               <button
                 type="submit"
-                className={`inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+                className={`inline-flex items-center px-4 py-2 bg-black text-white text-sm font-medium rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed`}
                 disabled={uploading}
               >
                 {uploading && (

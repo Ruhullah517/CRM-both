@@ -131,7 +131,8 @@ export default function ContractTemplates() {
         </button>
       )}
       {error && <div className="mb-4 text-red-600">{error}</div>}
-      <div className="overflow-x-auto rounded">
+      {/* Table for sm and up */}
+      <div className="hidden sm:block overflow-x-auto rounded">
         <table className="min-w-full bg-white rounded shadow mb-8">
           <thead>
             <tr className="bg-green-50">
@@ -156,12 +157,43 @@ export default function ContractTemplates() {
                       Delete
                     </button>
                   </td>
-
                 )}
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Card view for mobile */}
+      <div className="sm:hidden flex flex-col gap-4 mb-8">
+        {templates.map((t) => (
+          <div key={t._id || t.id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-base">{t.name}</span>
+              <span className="text-xs px-2 py-1 rounded bg-green-50">{t.type}</span>
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Preview:</span>{" "}
+              <span className="text-gray-600">{t.content?.slice(0, 60)}...</span>
+            </div>
+            {isAdminOrStaff && (
+              <div className="flex gap-2 mt-2">
+                <button
+                  className="flex-1 px-3 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 flex items-center justify-center gap-2"
+                  onClick={() => openEdit(t)}
+                >
+                  <PencilSquareIcon className="w-5 h-5" /> Edit
+                </button>
+                <button
+                  className="flex-1 px-3 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200 flex items-center justify-center gap-2"
+                  onClick={() => handleDelete(t._id || t.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
       {loading && <Loader />}
       {/* Add/Edit Modal */}
@@ -174,9 +206,10 @@ export default function ContractTemplates() {
                 <XMarkIcon className="w-7 h-7" />
               </button>
             </div>
-            <div className="bg-white rounded-l-lg shadow-lg p-8 w-full md:w-[480px] flex flex-col justify-between z-10 overflow-y-auto max-h-full">
-              <h2 className="text-3xl font-bold mb-8 text-center text-[#2EAB2C]">{form.id ? 'Edit' : 'Add'} Contract Template</h2>
-              <form className="space-y-8 flex-1" onSubmit={handleFormSubmit}>
+            {/* Form Section */}
+            <div className="bg-white rounded-t-lg md:rounded-l-lg md:rounded-tr-none shadow-lg p-4 sm:p-8 w-full md:w-[480px] flex flex-col justify-between z-10 overflow-y-auto max-h-full">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center text-[#2EAB2C]">{form.id ? 'Edit' : 'Add'} Contract Template</h2>
+              <form className="space-y-6 sm:space-y-8 flex-1" onSubmit={handleFormSubmit}>
                 <div>
                   <label className="block font-semibold mb-1">Template Name <span className="text-red-500">*</span></label>
                   <input
@@ -203,21 +236,23 @@ export default function ContractTemplates() {
                     value={form.content}
                     onChange={handleFormChange}
                     placeholder="Write your contract here. Use placeholders like {{client_name}}, {{training_date}}, etc."
-                    className="w-full px-4 py-2 border rounded min-h-[180px]"
+                    className="w-full px-4 py-2 border rounded min-h-[140px] sm:min-h-[180px]"
                     required
                   />
                   <div className="text-xs text-gray-500 mt-1">
                     Use <span className="font-mono bg-gray-100 px-1">{'{{placeholder}}'}</span> for dynamic fields. Example: <span className="font-mono bg-gray-100 px-1">{'Dear {{client_name}},'}</span>
                   </div>
                 </div>
-                <div className="flex gap-2 mt-8">
+                <div className="flex gap-2 mt-6 sm:mt-8">
                   <button type="submit" className="flex-1 bg-[#2EAB2C] text-white py-3 rounded hover:bg-green-800 shadow font-semibold text-lg" disabled={saving}>{form.id ? 'Update' : 'Add'} Template</button>
                   <button type="button" className="flex-1 bg-gray-200 text-gray-700 py-3 rounded hover:bg-gray-300 shadow font-semibold text-lg" onClick={() => setShowForm(false)}>Cancel</button>
                 </div>
               </form>
             </div>
-            <div className="bg-gray-50 rounded-r-lg shadow-lg p-8 w-full md:w-[520px] flex flex-col z-10 overflow-y-auto max-h-full border-l border-gray-200">
-              <div className="mb-6">
+            {/* Side Panel: Recommended Placeholders and Preview */}
+            <div className="bg-gray-50 rounded-b-lg md:rounded-r-lg md:rounded-bl-none shadow-lg p-4 sm:p-8 w-full md:w-[520px] flex flex-col z-10 overflow-y-auto max-h-full border-t md:border-t-0 md:border-l border-gray-200">
+              {/* Recommended Placeholders: only on md+ */}
+              <div className="mb-4 sm:mb-6 hidden md:block">
                 <div className="font-semibold mb-2 text-lg">Recommended Placeholders</div>
                 <div className="flex flex-wrap gap-2">
                   {(placeholdersByType[form.type] || []).map(ph => (
@@ -233,9 +268,10 @@ export default function ContractTemplates() {
                   ))}
                 </div>
               </div>
+              {/* Live Preview */}
               <div className="flex-1 flex flex-col">
                 <div className="font-semibold mb-2 text-lg">Live Preview (with example values)</div>
-                <div className="bg-white border p-4 rounded text-sm whitespace-pre-wrap max-h-96 overflow-y-auto flex-1">
+                <div className="bg-white border p-4 rounded text-sm whitespace-pre-wrap max-h-60 sm:max-h-96 overflow-y-auto flex-1">
                   {form.content.replace(/{{(.*?)}}/g, (match, p1) => {
                     // Example values for preview
                     const examples = {

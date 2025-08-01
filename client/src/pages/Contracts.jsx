@@ -14,16 +14,34 @@ const statusColors = {
 
 const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
   const [search, setSearch] = useState("");
-  const filtered = contracts.filter(c => (c.filledData?.client_name || c._id || '').toLowerCase().includes(search.toLowerCase()));
-  // console.log(filtered);
+  const filtered = contracts.filter(
+    (c) =>
+      (c.filledData?.client_name || c._id || "")
+        .toLowerCase()
+        .includes(search.toLowerCase())
+  );
   const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
+  // statusColors should be defined in the file already
+
   return (
     <div className="max-w-5xl mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
-        <input placeholder="Search contracts..." value={search} onChange={e => setSearch(e.target.value)} className="px-3 py-2 border rounded w-full sm:w-64" />
-        <button onClick={onAdd} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 transition">Add Contract</button>
+        <input
+          placeholder="Search contracts..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-3 py-2 border rounded w-full sm:w-64"
+        />
+        <button
+          onClick={onAdd}
+          className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 transition w-full sm:w-auto"
+        >
+          Add Contract
+        </button>
       </div>
-      <div className="overflow-x-auto rounded shadow bg-white">
+
+      {/* Table for sm and up */}
+      <div className="overflow-x-auto rounded shadow bg-white hidden sm:block">
         <table className="min-w-full text-left">
           <thead>
             <tr className="bg-green-50">
@@ -36,24 +54,97 @@ const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
             </tr>
           </thead>
           <tbody>
-            {filtered.map(c => (
+            {filtered.map((c) => (
               <tr key={c._id} className="border-t hover:bg-green-50 transition">
                 <td className="px-4 py-2 font-semibold">{c?.name || c._id}</td>
                 <td className="px-4 py-2">{c.roleType}</td>
-                <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{c.status}</span></td>
-                <td className="px-4 py-2">{c.generatedBy?.name || '-'}</td>
+                <td className="px-4 py-2">
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] ||
+                      "bg-gray-100 text-gray-700"
+                      }`}
+                  >
+                    {c.status}
+                  </span>
+                </td>
+                <td className="px-4 py-2">{c.generatedBy?.name || "-"}</td>
                 <td className="px-4 py-2">
                   {c.generatedDocUrl && (
-                    <>
-                      <a href={backendBaseUrl + c.generatedDocUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">PDF</a>
-                    </>
+                    <a
+                      href={backendBaseUrl + c.generatedDocUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-700 hover:underline"
+                    >
+                      PDF
+                    </a>
                   )}
                 </td>
-                <td className="px-4 py-2"><button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
+                <td className="px-4 py-2">
+                  <button
+                    onClick={() => onSelect(c)}
+                    className="px-3 py-1 rounded bg-black text-white font-semibold hover:bg-gray-600"
+                  >
+                    View
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Card view for mobile */}
+      <div className="sm:hidden flex flex-col gap-4">
+        {filtered.map((c) => (
+          <div
+            key={c._id}
+            className="rounded shadow bg-white p-4 flex flex-col gap-2"
+          >
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-base">
+                {c?.name || c._id}
+              </span>
+              <span
+                className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] ||
+                  "bg-gray-100 text-gray-700"
+                  }`}
+              >
+                {c.status}
+              </span>
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Type:</span> {c.roleType}
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Created By:</span>{" "}
+              {c.generatedBy?.name || "-"}
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">PDF:</span>{" "}
+              {c.generatedDocUrl ? (
+                <a
+                  href={backendBaseUrl + c.generatedDocUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-700 hover:underline"
+                >
+                  PDF
+                </a>
+              ) : (
+                <span className="text-gray-400">Not generated</span>
+              )}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => onSelect(c)}
+                className="flex-1 px-3 py-2 rounded bg-black text-white font-semibold hover:bg-gray-600"
+              >
+                View
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

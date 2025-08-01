@@ -39,25 +39,48 @@ const statusOptions = [
 const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
   const [search, setSearch] = useState("");
   const { user } = useAuth();
+
   // Filter: if caseworker, only show assigned cases
-  const filteredCases = cases.filter(c => {
-    if (user?.role === 'caseworker') {
-      return (c.assignedCaseworkers || []).some(cw => cw.userId === user._id);
-    }
-    return true;
-  }).filter(c =>
-    (c.clientFullName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.caseReferenceNumber || '').toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredCases = cases
+    .filter((c) => {
+      if (user?.role === "caseworker") {
+        return (c.assignedCaseworkers || []).some(
+          (cw) => cw.userId === user._id
+        );
+      }
+      return true;
+    })
+    .filter(
+      (c) =>
+        (c.clientFullName || "")
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+        (c.caseReferenceNumber || "")
+          .toLowerCase()
+          .includes(search.toLowerCase())
+    );
+
   return (
     <div className="max-w-7xl mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
-        <input placeholder="Search by client or reference..." value={search} onChange={e => setSearch(e.target.value)} className="px-3 py-2 border rounded w-full sm:w-64" />
-        {['admin', 'manager', 'caseworker'].includes(user?.role) && (
-          <button onClick={onAdd} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 transition">Add Case</button>
+        <input
+          placeholder="Search by client or reference..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="px-3 py-2 border rounded w-full sm:w-64"
+        />
+        {["admin", "manager", "caseworker"].includes(user?.role) && (
+          <button
+            onClick={onAdd}
+            className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 transition w-full sm:w-auto"
+          >
+            Add Case
+          </button>
         )}
       </div>
-      <div className="overflow-x-auto rounded shadow bg-white">
+
+      {/* Table for sm and up */}
+      <div className="overflow-x-auto rounded shadow bg-white hidden sm:block">
         <table className="min-w-full text-left">
           <thead>
             <tr className="bg-green-50">
@@ -73,24 +96,115 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
             </tr>
           </thead>
           <tbody>
-            {filteredCases.map(c => (
+            {filteredCases.map((c) => (
               <tr key={c._id} className="border-t hover:bg-green-50 transition">
-                <td className="px-4 py-2 font-mono text-xs">{c.caseReferenceNumber}</td>
+                <td className="px-4 py-2 font-mono text-xs">
+                  {c.caseReferenceNumber}
+                </td>
                 <td className="px-4 py-2 font-semibold">{c.clientFullName}</td>
                 <td className="px-4 py-2">{c.caseType}</td>
-                <td className="px-4 py-2"><span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{c.status}</span></td>
+                <td className="px-4 py-2">
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${
+                      statusColors[c.status?.toLowerCase()] ||
+                      "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {c.status}
+                  </span>
+                </td>
                 <td className="px-4 py-2">{c.riskLevel}</td>
-                <td className="px-4 py-2">{(c.assignedCaseworkers || []).map(cw => {
-                  const staff = staffList.find(s => s._id === cw.userId);
-                  return <span key={cw.userId} className={cw.isLead ? 'font-bold' : ''}>{staff ? staff.name : cw.userId}{cw.isLead ? ' (Lead)' : ''}<br /></span>;
-                })}</td>
-                <td className="px-4 py-2">{formatDate(c.keyDates?.opened)}</td>
-                <td className="px-4 py-2"><button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200">View</button></td>
-                {/* <td className="px-4 py-2">{['admin','manager'].includes(user.user?.role) && (<button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">Delete</button>)}</td> */}
+                <td className="px-4 py-2">
+                  {(c.assignedCaseworkers || []).map((cw) => {
+                    const staff = staffList.find((s) => s._id === cw.userId);
+                    return (
+                      <span
+                        key={cw.userId}
+                        className={cw.isLead ? "font-bold" : ""}
+                      >
+                        {staff ? staff.name : cw.userId}
+                        {cw.isLead ? " (Lead)" : ""}
+                        <br />
+                      </span>
+                    );
+                  })}
+                </td>
+                <td className="px-4 py-2">
+                  {formatDate(c.keyDates?.opened)}
+                </td>
+                <td className="px-4 py-2">
+                  <button
+                    onClick={() => onSelect(c)}
+                    className="px-3 py-1 rounded bg-black text-white font-semibold hover:bg-gray-600"
+                  >
+                    View
+                  </button>
+                </td>
+                {/* Add delete button if needed */}
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Card view for mobile */}
+      <div className="sm:hidden flex flex-col gap-4">
+        {filteredCases.map((c) => (
+          <div
+            key={c._id}
+            className="rounded shadow bg-white p-4 flex flex-col gap-2"
+          >
+            <div className="flex justify-between items-center">
+              <span className="font-mono text-xs text-gray-500">
+                {c.caseReferenceNumber}
+              </span>
+              <span
+                className={`px-2 py-1 rounded text-xs font-semibold ${
+                  statusColors[c.status?.toLowerCase()] ||
+                  "bg-gray-100 text-gray-700"
+                }`}
+              >
+                {c.status}
+              </span>
+            </div>
+            <div className="font-semibold text-lg">{c.clientFullName}</div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Type:</span> {c.caseType}
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Risk:</span> {c.riskLevel}
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Caseworkers:</span>{" "}
+              {(c.assignedCaseworkers || []).map((cw) => {
+                const staff = staffList.find((s) => s._id === cw.userId);
+                return (
+                  <span
+                    key={cw.userId}
+                    className={cw.isLead ? "font-bold" : ""}
+                  >
+                    {staff ? staff.name : cw.userId}
+                    {cw.isLead ? " (Lead)" : ""}
+                    <br />
+                  </span>
+                );
+              })}
+            </div>
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Opened:</span>{" "}
+              {formatDate(c.keyDates?.opened)}
+            </div>
+            <div className="flex gap-2 mt-2">
+              <button
+                onClick={() => onSelect(c)}
+                className="flex-1 px-3 py-2 rounded bg-black text-white font-semibold hover:bg-gray-600"
+              >
+                View
+              </button>
+              {/* Add delete button if needed */}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
