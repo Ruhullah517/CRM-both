@@ -133,20 +133,12 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => (
       {(candidate.documents || []).map((d, i) =>
         <li key={i} className="flex items-center gap-2">
           <a
-            href={d.url}
+            href={`https://crm-backend-0v14.onrender.com${d.url}`}
             className="text-blue-700 hover:underline"
             target="_blank"
             rel="noopener noreferrer"
           >
             {d.name}
-          </a>
-          <a
-            href={d.url}
-            download
-            className="text-gray-500 hover:text-blue-700 text-xs"
-            title="Download"
-          >
-            ⬇️
           </a>
         </li>
       )}
@@ -177,7 +169,7 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
     formData.append("name", newDocumentName);
 
     // Adjust the URL to your backend endpoint
-    const res = await fetch("/api/candidates/upload-document", {
+    const res = await fetch("https://crm-backend-0v14.onrender.com/api/candidates/upload-document", {
       method: "POST",
       body: formData,
     });
