@@ -177,7 +177,7 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
     formData.append("name", newDocumentName);
 
     // Adjust the URL to your backend endpoint
-    const res = await fetch("/api/candidates/upload-document", {
+    const res = await fetch("https://crm-backend-0v14.onrender.com/api/candidates/upload-document", {
       method: "POST",
       body: formData,
     });
