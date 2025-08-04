@@ -29,7 +29,7 @@ const getGeneratedContract = async (req, res) => {
 
 // Generate a new contract from template and filled data
 const generateContract = async (req, res) => {
-  const { name, templateId, roleType, generatedBy, filledData } = req.body;
+  const { name, templateId, roleType, generatedBy, filledData, status } = req.body;
   try {
     // Fetch template and validate placeholders
     const template = await ContractTemplate.findById(templateId);
@@ -74,7 +74,7 @@ const generateContract = async (req, res) => {
           generatedBy,
           filledData,
           generatedDocUrl,
-          status: 'pending',
+          status: status || 'pending',
         },
         { new: true }
       );
@@ -88,7 +88,7 @@ const generateContract = async (req, res) => {
         generatedBy,
         filledData,
         generatedDocUrl,
-        status: 'pending',
+        status: status ||'pending',
       });
       await contract.save();
       res.status(201).json(contract);

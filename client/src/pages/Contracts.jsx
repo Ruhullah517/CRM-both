@@ -208,6 +208,7 @@ const ContractForm = ({ contract, onBack, onSave, saving }) => {
   const [placeholderValues, setPlaceholderValues] = useState(contract?.filledData || {});
   const [showPreview, setShowPreview] = useState(false);
   const { user } = useAuth();
+  const [status, setStatus] = useState(contract?.status || "Pending");
 
   // Ensure form is pre-filled when contract changes (edit mode)
   useEffect(() => {
@@ -222,6 +223,7 @@ const ContractForm = ({ contract, onBack, onSave, saving }) => {
     const templateId = contract.templateId?._id || contract.templateId;
     setSelectedTemplateId(templateId || "");
     setPlaceholderValues(contract.filledData || {});
+    setStatus(contract.status || "Pending");
   }, [contract, templates]);
 
   useEffect(() => {
@@ -297,6 +299,7 @@ const ContractForm = ({ contract, onBack, onSave, saving }) => {
       generatedBy: userId,
       filledData: placeholderValues,
       name: agreementName,
+      status,
     });
   }
 
@@ -315,6 +318,21 @@ const ContractForm = ({ contract, onBack, onSave, saving }) => {
             {templates.map(t => (
               <option key={t._id || t.id} value={t._id || t.id}>{t.name} ({t.type})</option>
             ))}
+          </select>
+        </div>
+        <div>
+          <label className="block font-semibold mb-1">Status</label>
+          <select
+            name="status"
+            value={status}
+            onChange={e => setStatus(e.target.value)}
+            className="w-full px-4 py-2 border rounded"
+            required
+          >
+            <option value="">Select status</option>
+            <option value="Signed">Signed</option>
+            <option value="Pending">Pending</option>
+            <option value="Expired">Expired</option>
           </select>
         </div>
         {/* Placeholder fields */}
