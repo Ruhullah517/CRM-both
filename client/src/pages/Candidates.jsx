@@ -129,7 +129,28 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => (
     <h3 className="font-semibold mt-4 mb-1">Notes</h3>
     <ul className="mb-2 list-disc ml-6 text-sm">{(candidate.notes || []).map((n, i) => <li key={i}>{n.text} <span className="text-gray-400">({n.date})</span></li>)}</ul>
     <h3 className="font-semibold mb-1">Documents</h3>
-    <ul className="mb-2 text-sm">{(candidate.documents || []).map((d, i) => <li key={i}><a href={d.url} className="text-blue-700 hover:underline">{d.name}</a></li>)}</ul>
+    <ul className="mb-2 text-sm">
+      {(candidate.documents || []).map((d, i) =>
+        <li key={i} className="flex items-center gap-2">
+          <a
+            href={d.url}
+            className="text-blue-700 hover:underline"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {d.name}
+          </a>
+          <a
+            href={d.url}
+            download
+            className="text-gray-500 hover:text-blue-700 text-xs"
+            title="Download"
+          >
+            ⬇️
+          </a>
+        </li>
+      )}
+    </ul>
     <button onClick={onEdit} className="mt-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
   </div>
 );
@@ -138,6 +159,37 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
   const [name, setName] = useState(candidate?.name || "");
   const [mentor, setMentor] = useState(candidate?.mentor || "");
   const [deadline, setDeadline] = useState(candidate?.deadline || "");
+  const [status, setStatus] = useState(candidate?.status || "New");
+  const [stage, setStage] = useState(candidate?.stage || "Inquiry");
+  const [email, setEmail] = useState(candidate?.email || "");
+  const [notes, setNotes] = useState(candidate?.notes || []);
+  const [documents, setDocuments] = useState(candidate?.documents || []);
+  const [newNote, setNewNote] = useState("");
+  const [newDocumentName, setNewDocumentName] = useState("");
+  const [newDocumentFile, setNewDocumentFile] = useState("");
+  const [uploading, setUploading] = useState(false);
+
+  async function handleDocumentUpload() {
+    if (!newDocumentFile || !newDocumentName) return;
+    setUploading(true);
+    const formData = new FormData();
+    formData.append("file", newDocumentFile);
+    formData.append("name", newDocumentName);
+
+    // Adjust the URL to your backend endpoint
+    const res = await fetch("/api/candidates/upload-document", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    if (data.url) {
+      setDocuments([...documents, { name: newDocumentName, url: data.url }]);
+      setNewDocumentName("");
+      setNewDocumentFile(null);
+    }
+    setUploading(false);
+  }
+
   function handleSubmit(e) {
     e.preventDefault();
     onSave({
@@ -145,12 +197,12 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
       name,
       mentor,
       deadline,
+      status,
+      stage,
+      email,
+      notes,
+      documents,
       _id: candidate?._id,
-      status: candidate?.status || "New",
-      stage: candidate?.stage || "Inquiry",
-      notes: candidate?.notes || [],
-      documents: candidate?.documents || [],
-      email: candidate?.email || "",
     });
   }
   return (
@@ -159,6 +211,17 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
       <h2 className="text-xl font-bold mb-4">{candidate ? "Edit" : "Add"} Candidate</h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 border rounded" />
+        <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-4 py-2 border rounded" />
+        <select value={status} onChange={e => setStatus(e.target.value)} className="w-full px-4 py-2 border rounded">
+          {statuses.map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <select value={stage} onChange={e => setStage(e.target.value)} className="w-full px-4 py-2 border rounded">
+          {stages.map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
         <select value={mentor} onChange={e => setMentor(e.target.value)} className="w-full px-4 py-2 border rounded">
           <option value="">Select Mentor</option>
           {mentors.map(m => (
@@ -166,6 +229,75 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
           ))}
         </select>
         <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className="w-full px-4 py-2 border rounded" />
+
+        {/* Notes Section */}
+        <div>
+          <label className="block font-semibold mb-1">Notes</label>
+          <ul className="mb-2 list-disc ml-6 text-sm">
+            {notes.map((n, i) => (
+              <li key={i}>
+                {n.text} <span className="text-gray-400">({n.date})</span>
+                <button type="button" className="ml-2 text-red-600" onClick={() => setNotes(notes.filter((_, idx) => idx !== i))}>Remove</button>
+              </li>
+            ))}
+          </ul>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Add note"
+              value={newNote}
+              onChange={e => setNewNote(e.target.value)}
+              className="flex-1 px-2 py-1 border rounded"
+            />
+            <button
+              type="button"
+              className="bg-gray-200 px-3 py-1 rounded"
+              onClick={() => {
+                if (newNote.trim()) {
+                  setNotes([...notes, { text: newNote, date: new Date().toLocaleDateString() }]);
+                  setNewNote("");
+                }
+              }}
+            >
+              Add
+            </button>
+          </div>
+        </div>
+
+        {/* Documents Section */}
+        <div>
+          <label className="block font-semibold mb-1">Documents</label>
+          <ul className="mb-2 text-sm">
+            {documents.map((d, i) => (
+              <li key={i}>
+                <a href={d.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">{d.name}</a>
+                <button type="button" className="ml-2 text-red-600" onClick={() => setDocuments(documents.filter((_, idx) => idx !== i))}>Remove</button>
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <input
+              type="text"
+              placeholder="Document Name"
+              value={newDocumentName}
+              onChange={e => setNewDocumentName(e.target.value)}
+              className="flex-1 px-2 py-1 border rounded"
+            />
+            <input
+              type="file"
+              onChange={e => setNewDocumentFile(e.target.files[0])}
+              className="flex-1 px-2 py-1 border rounded"
+            />
+            <button
+              type="button"
+              className="bg-gray-200 px-3 py-1 rounded"
+              onClick={handleDocumentUpload}
+              disabled={uploading}
+            >
+              {uploading ? "Uploading..." : "Add"}
+            </button>
+          </div>
+        </div>
         <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold">{candidate ? "Save" : "Add"}</button>
       </form>
     </div>
