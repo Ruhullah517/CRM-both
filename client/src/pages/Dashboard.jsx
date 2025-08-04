@@ -1,31 +1,57 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import RemindersWidget from '../components/RemindersWidget';
-import RecentActivityWidget from '../components/RecentActivityWidget';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { getCases } from '../services/cases';
+import { getGeneratedContracts } from '../services/contracts';
+import { getFreelancers } from '../services/freelancers';
+import { getEnquiries } from '../services/enquiries';
 import {
-  CalendarDaysIcon,
-  BriefcaseIcon,
   UserGroupIcon,
   DocumentTextIcon,
+  BriefcaseIcon,
+  InboxIcon,
 } from '@heroicons/react/24/outline';
-import { mockDashboard } from "../utils/mockData";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 
-const summary = [
-  { label: 'Upcoming Training Events', value: mockDashboard.upcomingTrainings.length, icon: CalendarDaysIcon, color: 'bg-green-100', iconColor: 'text-green-700' },
-  { label: 'Active Support Cases', value: mockDashboard.activeCases, icon: UserGroupIcon, color: 'bg-blue-100', iconColor: 'text-blue-700' },
-  { label: 'Sales Pipeline', value: mockDashboard.salesPipeline.reduce((a, b) => a + b.count, 0), icon: BriefcaseIcon, color: 'bg-yellow-100', iconColor: 'text-yellow-700' },
-  { label: 'Contracts in Progress', value: mockDashboard.contractProgress.length, icon: DocumentTextIcon, color: 'bg-purple-100', iconColor: 'text-purple-700' },
-];
-
-const COLORS = ['#22c55e', '#eab308', '#3b82f6', '#a21caf'];
+const COLORS = ['#3b82f6', '#a21caf', '#22c55e', '#eab308'];
 
 export default function Dashboard() {
   const { userInfo } = useAuth();
+  const [cases, setCases] = useState([]);
+  const [contracts, setContracts] = useState([]);
+  const [freelancers, setFreelancers] = useState([]);
+  const [enquiries, setEnquiries] = useState([]);
+
+  useEffect(() => {
+    async function fetchAll() {
+      const [casesData, contractsData, freelancersData, enquiriesData] = await Promise.all([
+        getCases(),
+        getGeneratedContracts(),
+        getFreelancers(),
+        getEnquiries(),
+      ]);
+      setCases(casesData);
+      setContracts(contractsData);
+      setFreelancers(freelancersData);
+      setEnquiries(enquiriesData);
+    }
+    fetchAll();
+  }, []);
+
+  const summary = [
+    { label: 'Cases', value: cases.length, icon: BriefcaseIcon, color: 'bg-blue-100', iconColor: 'text-blue-700' },
+    { label: 'Contracts', value: contracts.length, icon: DocumentTextIcon, color: 'bg-purple-100', iconColor: 'text-purple-700' },
+    { label: 'Freelancers', value: freelancers.length, icon: UserGroupIcon, color: 'bg-green-100', iconColor: 'text-green-700' },
+    { label: 'Enquiries', value: enquiries.length, icon: InboxIcon, color: 'bg-yellow-100', iconColor: 'text-yellow-700' },
+  ];
+
+  const pieData = summary.map((s) => ({ name: s.label, value: s.value }));
+
   return (
     <div className="max-w-7xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-left">Dashboard</h1>
-      <div className="mb-8 text-lg text-left">Welcome, <span className="font-semibold">{userInfo?.name}</span> ({userInfo?.role})</div>
+      <div className="mb-8 text-lg text-left">
+        Welcome, <span className="font-semibold">{userInfo?.name}</span> ({userInfo?.role})
+      </div>
       {/* Summary Widgets */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {summary.map((s, i) => {
@@ -43,94 +69,119 @@ export default function Dashboard() {
           );
         })}
       </div>
+
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Reminders & Activity */}
-        <div className="col-span-1 flex flex-col gap-8">
-          <RemindersWidget />
-          <RecentActivityWidget />
-        </div>
-        {/* Right: Charts & Calendar */}
-        <div className="col-span-2 flex flex-col gap-8">
-          {/* Sales Pipeline Chart */}
-          <div className="bg-white rounded shadow p-6 flex flex-col items-center">
-            <h2 className="text-xl font-bold mb-4 self-start">Sales Pipeline Overview</h2>
-            <div className="relative flex items-center justify-center" style={{ width: 220, height: 220 }}>
-              <ResponsiveContainer width={220} height={220}>
-                <PieChart>
-                  <Pie
-                    data={mockDashboard.salesPipeline}
-                    dataKey="count"
-                    nameKey="stage"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={70}
-                    outerRadius={100}
-                    startAngle={210}
-                    endAngle={-30}
-                    paddingAngle={4}
-                  >
-                    <Cell fill="#2EAB2C" /> {/* Lead - green */}
-                    <Cell fill="#eab308" /> {/* Contacted - yellow */}
-                    <Cell fill="#3b82f6" /> {/* Closed - blue */}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Center Label */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-3xl font-extrabold text-gray-900">80%+</span>
-                <span className="text-lg text-gray-500 font-semibold">Leads</span>
-              </div>
-            </div>
-            {/* Custom Legend */}
-            <div className="flex gap-8 mt-6">
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 rounded-full" style={{ background: "#2EAB2C" }}></span>
-                <span className="text-sm font-semibold text-gray-700">Lead</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 rounded-full" style={{ background: "#eab308" }}></span>
-                <span className="text-sm font-semibold text-gray-700">Contacted</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 rounded-full" style={{ background: "#3b82f6" }}></span>
-                <span className="text-sm font-semibold text-gray-700">Closed</span>
-              </div>
-            </div>
-          </div>
-          {/* Contract Progress Table */}
-          <div className="bg-white rounded shadow p-6">
-            <h2 className="text-xl font-bold mb-4">Contract Progress</h2>
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  <th className="py-2">Contract</th>
-                  <th className="py-2">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mockDashboard.contractProgress.map((c, i) => (
-                  <tr key={i} className="border-t">
-                    <td className="py-2 font-semibold">{c.name}</td>
-                    <td className="py-2">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${c.status === 'Signed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{c.status}</span>
-                    </td>
-                  </tr>
+        {/* Left: Pie Chart */}
+        <div className="col-span-1 h-90 flex flex-col items-center bg-white rounded shadow p-6">
+          <h2 className="text-xl font-bold mb-4 self-start">Entity Distribution</h2>
+          <ResponsiveContainer width={250} height={250}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={100}
+                fill="#8884d8"
+                label
+              >
+                {pieData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                 ))}
-              </tbody>
-            </table>
-          </div>
-          {/* Upcoming Trainings Calendar/List */}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Right: Recent Lists */}
+        <div className="col-span-2 flex flex-col gap-8">
+          {/* Recent Cases */}
           <div className="bg-white rounded shadow p-6">
-            <h2 className="text-xl font-bold mb-4">Upcoming Training Events</h2>
-            <ul>
-              {mockDashboard.upcomingTrainings.map((event, i) => (
-                <li key={i} className="mb-2 flex items-center">
-                  <span className="mr-3 text-green-700">📅</span>
-                  <span className="font-semibold mr-2">{event.date}</span>
-                  <span>{event.title}</span>
+            <h2 className="text-lg font-bold mb-4">Recent Cases</h2>
+            <ul className="flex flex-col gap-2">
+              {cases.slice(0, 5).map((c) => (
+                <li
+                  key={c._id}
+                  className="rounded bg-blue-50 sm:bg-transparent p-3 sm:p-0 flex flex-col sm:flex-row sm:justify-between sm:items-center"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                    <span className="font-semibold">{c.caseReferenceNumber || c._id}</span>
+                    <span className="text-gray-600">{c.clientFullName}</span>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700 w-max mt-2 sm:mt-0">
+                    {c.status}
+                  </span>
                 </li>
               ))}
+              {cases.length === 0 && <li className="text-gray-400">No cases found.</li>}
+            </ul>
+          </div>
+          {/* Recent Contracts */}
+          <div className="bg-white rounded shadow p-6">
+            <h2 className="text-lg font-bold mb-4">Recent Contracts</h2>
+            <ul className="flex flex-col gap-2">
+              {contracts.slice(0, 5).map((c) => (
+                <li
+                  key={c._id}
+                  className="rounded bg-purple-50 sm:bg-transparent p-3 sm:p-0 flex flex-col sm:flex-row sm:justify-between sm:items-center"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                    <span className="font-semibold">{c.name || c._id}</span>
+                    <span className="text-gray-600">{c.roleType}</span>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded bg-purple-100 text-purple-700 w-max mt-2 sm:mt-0">
+                    {c.status}
+                  </span>
+                </li>
+              ))}
+              {contracts.length === 0 && <li className="text-gray-400">No contracts found.</li>}
+            </ul>
+          </div>
+          {/* Recent Freelancers */}
+          <div className="bg-white rounded shadow p-6">
+            <h2 className="text-lg font-bold mb-4">Recent Freelancers</h2>
+            <ul className="flex flex-col gap-2">
+              {freelancers.slice(0, 5).map((f) => (
+                <li
+                  key={f._id}
+                  className="rounded bg-green-50 sm:bg-transparent p-3 sm:p-0 flex flex-col sm:flex-row sm:justify-between sm:items-center"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                    <span className="font-semibold">{f.fullName}</span>
+                    <span className="text-gray-600">{f.email}</span>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 w-max mt-2 sm:mt-0">
+                    {f.role}
+                  </span>
+                </li>
+              ))}
+              {freelancers.length === 0 && <li className="text-gray-400">No freelancers found.</li>}
+            </ul>
+          </div>
+          {/* Recent Enquiries */}
+          <div className="bg-white rounded shadow p-6">
+            <h2 className="text-lg font-bold mb-4">Recent Enquiries</h2>
+            <ul className="flex flex-col gap-2">
+              {enquiries.slice(0, 5).map((e) => (
+                <li
+                  key={e._id}
+                  className="rounded bg-yellow-50 sm:bg-transparent p-3 sm:p-0 flex flex-col sm:flex-row sm:justify-between sm:items-center"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                    <span className="font-semibold">{e.full_name}</span>
+                    <span className="text-gray-600">{e.email_address}</span>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-700 w-max mt-2 sm:mt-0">
+                    {e.status}
+                  </span>
+                </li>
+              ))}
+              {enquiries.length === 0 && <li className="text-gray-400">No enquiries found.</li>}
             </ul>
           </div>
         </div>

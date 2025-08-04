@@ -127,7 +127,26 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => (
     <div className="mb-2"><span className="font-semibold">Mentor:</span> {candidate.mentor}</div>
     <div className="mb-2"><span className="font-semibold">Deadline:</span> {formatDate(candidate.deadline)}</div>
     <h3 className="font-semibold mt-4 mb-1">Notes</h3>
-    <ul className="mb-2 list-disc ml-6 text-sm">{(candidate.notes || []).map((n, i) => <li key={i}>{n.text} <span className="text-gray-400">({n.date})</span></li>)}</ul>
+    <ul className="mb-2 list-disc ml-6 text-sm">
+      {(candidate.notes || []).map((n, i) => (
+        <li key={i}>
+          {n.text}
+          <span className="text-gray-400">
+            (
+            {n.date
+              ? new Date(n.date).toLocaleString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
+              : ''}
+            )
+          </span>
+        </li>
+      ))}
+    </ul>
     <h3 className="font-semibold mb-1">Documents</h3>
     <ul className="mb-2 text-sm">
       {(candidate.documents || []).map((d, i) =>
@@ -197,6 +216,7 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
       _id: candidate?._id,
     });
   }
+
   return (
     <div className="max-w-xl mx-auto p-4 bg-white rounded shadow mt-6">
       <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
@@ -262,13 +282,34 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
           <label className="block font-semibold mb-1">Documents</label>
           <ul className="mb-2 text-sm">
             {documents.map((d, i) => (
-              <li key={i}>
-                <a href={d.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">{d.name}</a>
-                <button type="button" className="ml-2 text-red-600" onClick={() => setDocuments(documents.filter((_, idx) => idx !== i))}>Remove</button>
+              <li key={i} className="flex items-center gap-2">
+                <a
+                  href={d.url}
+                  className="text-blue-700 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {d.name}
+                </a>
+                <a
+                  href={d.url}
+                  download
+                  className="text-gray-500 hover:text-blue-700 text-xs"
+                  title="Download"
+                >
+                  ⬇️
+                </a>
+                <button
+                  type="button"
+                  className="ml-2 text-red-600"
+                  onClick={() => setDocuments(documents.filter((_, idx) => idx !== i))}
+                >
+                  Remove
+                </button>
               </li>
             ))}
           </ul>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col sm:flex-row gap-2 items-center">
             <input
               type="text"
               placeholder="Document Name"
@@ -276,20 +317,24 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
               onChange={e => setNewDocumentName(e.target.value)}
               className="flex-1 px-2 py-1 border rounded"
             />
-            <input
-              type="file"
-              onChange={e => setNewDocumentFile(e.target.files[0])}
-              className="flex-1 px-2 py-1 border rounded"
-            />
+            <label className="flex-1 flex items-center gap-2 cursor-pointer bg-gray-100 px-3 py-2 rounded border border-gray-300 hover:bg-gray-200">
+              <span className="text-gray-700">{newDocumentFile ? newDocumentFile.name : "Choose file"}</span>
+              <input
+                type="file"
+                onChange={e => setNewDocumentFile(e.target.files[0])}
+                className="hidden"
+              />
+            </label>
             <button
               type="button"
-              className="bg-gray-200 px-3 py-1 rounded"
+              className="bg-[#2EAB2C] text-white px-4 py-2 rounded hover:bg-green-800"
               onClick={handleDocumentUpload}
-              disabled={uploading}
+              disabled={uploading || !newDocumentFile || !newDocumentName}
             >
               {uploading ? "Uploading..." : "Add"}
             </button>
           </div>
+          {/* {uploadError && <div className="text-red-600 text-xs mt-1">{uploadError}</div>} */}
         </div>
         <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold">{candidate ? "Save" : "Add"}</button>
       </form>
@@ -353,6 +398,8 @@ const Candidates = () => {
       setError('Failed to delete candidate');
     }
   }
+
+
 
   if (view === "detail" && selected) return <CandidateDetail candidate={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} />;
   if (view === "edit" && selected) return <CandidateForm candidate={selected} onBack={() => setView("detail")} onSave={handleSaveCandidate} />;
