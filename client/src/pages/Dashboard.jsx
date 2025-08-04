@@ -11,6 +11,7 @@ import {
   InboxIcon,
 } from '@heroicons/react/24/outline';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import Loader from '../components/Loader';
 
 const COLORS = ['#3b82f6', '#a21caf', '#22c55e', '#eab308'];
 
@@ -20,6 +21,7 @@ export default function Dashboard() {
   const [contracts, setContracts] = useState([]);
   const [freelancers, setFreelancers] = useState([]);
   const [enquiries, setEnquiries] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchAll() {
@@ -33,19 +35,26 @@ export default function Dashboard() {
       setContracts(contractsData);
       setFreelancers(freelancersData);
       setEnquiries(enquiriesData);
+      setLoading(false);
     }
     fetchAll();
   }, []);
 
   const summary = [
-    { label: 'Cases', value: cases.length, icon: BriefcaseIcon, color: 'bg-blue-100', iconColor: 'text-blue-700' },
-    { label: 'Contracts', value: contracts.length, icon: DocumentTextIcon, color: 'bg-purple-100', iconColor: 'text-purple-700' },
-    { label: 'Freelancers', value: freelancers.length, icon: UserGroupIcon, color: 'bg-green-100', iconColor: 'text-green-700' },
-    { label: 'Enquiries', value: enquiries.length, icon: InboxIcon, color: 'bg-yellow-100', iconColor: 'text-yellow-700' },
+    { label: 'Total Cases', value: cases.length, icon: BriefcaseIcon, color: 'bg-blue-100', iconColor: 'text-blue-700' },
+    { label: 'Total Contracts', value: contracts.length, icon: DocumentTextIcon, color: 'bg-purple-100', iconColor: 'text-purple-700' },
+    { label: 'Total Freelancers', value: freelancers.length, icon: UserGroupIcon, color: 'bg-green-100', iconColor: 'text-green-700' },
+    { label: 'Total Enquiries', value: enquiries.length, icon: InboxIcon, color: 'bg-yellow-100', iconColor: 'text-yellow-700' },
   ];
 
   const pieData = summary.map((s) => ({ name: s.label, value: s.value }));
-
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[40vh]">
+        <Loader />
+      </div>
+    );
+  }
   return (
     <div className="max-w-7xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6 text-left">Dashboard</h1>
@@ -73,7 +82,7 @@ export default function Dashboard() {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Pie Chart */}
-        <div className="col-span-1 h-90 flex flex-col items-center bg-white rounded shadow p-6">
+        <div className="col-span-1 flex flex-col items-center bg-white rounded shadow p-6">
           <h2 className="text-xl font-bold mb-4 self-start">Entity Distribution</h2>
           <ResponsiveContainer width={250} height={250}>
             <PieChart>
@@ -93,9 +102,21 @@ export default function Dashboard() {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend />
+              {/* Remove <Legend /> here */}
             </PieChart>
           </ResponsiveContainer>
+          {/* Custom Legend */}
+          <div className="flex flex-wrap justify-start gap-4 mt-4 w-40">
+            {pieData.map((entry, index) => (
+              <div key={entry.name} className="flex items-center gap-2">
+                <span
+                  className="inline-block w-4 h-4 rounded-full"
+                  style={{ background: COLORS[index % COLORS.length] }}
+                ></span>
+                <span className="text-sm font-semibold text-gray-700">{entry.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Right: Recent Lists */}
