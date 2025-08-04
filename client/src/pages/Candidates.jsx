@@ -228,6 +228,7 @@ const CandidateForm = ({ candidate, onBack, onSave }) => {
             <option key={m} value={m}>{m}</option>
           ))}
         </select>
+        <div>Deadline:</div>
         <input type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className="w-full px-4 py-2 border rounded" />
 
         {/* Notes Section */}
