@@ -182,7 +182,17 @@ export default function EnquiryDetail() {
       setUploading(false);
     }
   }
-
+  async function handleDelete(id) {
+    if (!window.confirm('Are you sure you want to delete this enquiry?')) return;
+    setLoading(true);
+    try {
+      await deleteEnquiry(id);
+      fetchEnquiries();
+    } catch (err) {
+      setError('Failed to delete enquiry');
+      setLoading(false);
+    }
+  }
 
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
@@ -382,7 +392,12 @@ export default function EnquiryDetail() {
       <DetailSection title="Form F Assessment" isOpen={openSection === 'formf'} onToggle={() => toggleSection('formf')}>
         <FormFAssessmentTracker enquiryId={id} />
       </DetailSection>
-
+      <button
+        className="bg-red-500 text-white px-2 py-1 rounded"
+        onClick={() => handleDelete(enq._id)}
+      >
+        Delete Enquiry
+      </button>
     </div>
   );
 } 

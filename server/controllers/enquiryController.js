@@ -125,7 +125,16 @@ const createEnquiry = async (req, res) => {
   }
 };
 
-
+// Delete an enquiry
+const deleteEnquiry = async (req, res) => {
+  try {
+    await Enquiry.findByIdAndDelete(req.params.id);
+    res.json({ msg: 'Enquiry deleted' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
 
 // Create a new enquiry
 // const createEnquiry = async (req, res) => {
@@ -147,4 +156,5 @@ module.exports = {
   approveEnquiry,
   rejectEnquiry,
   assignEnquiry,
+  deleteEnquiry,
 }; 

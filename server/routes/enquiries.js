@@ -7,6 +7,7 @@ const {
   approveEnquiry,
   rejectEnquiry,
   assignEnquiry,
+  deleteEnquiry,
 } = require('../controllers/enquiryController');
 
 // List all enquiries
@@ -25,5 +26,7 @@ router.post('/:id/reject', rejectEnquiry);
 router.post('/:id/assign', assignEnquiry);
 
 router.post('/', createEnquiry);
+
+router.delete('/:id', deleteEnquiry);
 
 module.exports = router; 

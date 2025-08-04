@@ -26,3 +26,8 @@ export const assignEnquiry = async (id, staffId) => {
   const response = await axios.post(`${API_URL}/${id}/assign`, { staffId });
   return response.data;
 }; 
+export async function deleteEnquiry(id) {
+  const res = await fetch(`/api/enquiries/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete enquiry');
+  return res.json();
+}
