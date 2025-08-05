@@ -116,13 +116,18 @@ const ContactDetail = ({ contact, onBack, onEdit }) => (
     <h2 className="text-xl font-bold mb-2">{contact.name}</h2>
     <div className="mb-2"><span className="font-semibold">Type:</span> {contact.type}</div>
     <div className="mb-2"><span className="font-semibold">Email:</span> {contact.email}</div>
+    <div className="mb-2"><span className="font-semibold">Phone:</span> {contact.phone}</div>
+    <div className="mb-2"><span className="font-semibold">Organization Name:</span> {contact.organizationName}</div>
+    <div className="mb-2"><span className="font-semibold">Organization Address:</span> {contact.organizationAddress}</div>
     <div className="mb-2"><span className="font-semibold">Tags:</span> {(contact.tags || []).map(tag => (
       <span key={tag} className={`ml-2 px-2 py-1 rounded text-xs font-semibold ${tagColors[tag.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{tag}</span>
     ))}</div>
     <div className="mb-2"><span className="font-semibold">Date Added:</span> {contact.dateAdded ? new Date(contact.dateAdded).toLocaleDateString() : ''}</div>
     <div className="mb-2"><span className="font-semibold">Notes:</span> {contact.notes}</div>
+    <h3 className="font-semibold mt-4 mb-1">Communication History</h3>
+    <ul className="mb-2 list-disc ml-6 text-sm">{(contact.communicationHistory || []).map((c, i) => <li key={i}>{c.type} - {c.summary} <span className="text-gray-400">({c.date ? new Date(c.date).toLocaleDateString() : ''})</span></li>)}</ul>
     <h3 className="font-semibold mt-4 mb-1">Email History</h3>
-    <ul className="mb-2 list-disc ml-6 text-sm">{(contact.emailHistory || []).map(e => <li key={e.id}>{e.subject} <span className="text-gray-400">({e.date})</span></li>)}</ul>
+    <ul className="mb-2 list-disc ml-6 text-sm">{(contact.emailHistory || []).map((e, i) => <li key={i}>{e.subject} <span className="text-gray-400">({e.date})</span></li>)}</ul>
     <div className="flex gap-2 mt-4">
       <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
     </div>
@@ -139,6 +144,9 @@ const ContactForm = ({ contact, onBack, onSave, loading }) => {
     notes: contact?.notes || '',
     emailHistory: contact?.emailHistory || [],
     user_id: contact?.user_id || '',
+    organizationName: contact?.organizationName || '',
+    organizationAddress: contact?.organizationAddress || '',
+    communicationHistory: contact?.communicationHistory || [],
   });
   const [users, setUsers] = useState([]);
 
@@ -169,15 +177,11 @@ const ContactForm = ({ contact, onBack, onSave, loading }) => {
       <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
       <h2 className="text-xl font-bold mb-4">{contact ? "Edit" : "Add"} Contact</h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <select name="user_id" value={form.user_id} onChange={handleChange} className="w-full px-4 py-2 border rounded">
-          <option value="">Select User</option>
-          {users.map(u => (
-            <option key={u._id} value={u._id}>{u.name}</option>
-          ))}
-        </select>
         <input name="name" placeholder="Name" value={form.name} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
         <input name="email" placeholder="Email" value={form.email} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
         <input name="phone" placeholder="Phone" value={form.phone} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
+        <input name="organizationName" placeholder="Organization Name" value={form.organizationName} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
+        <input name="organizationAddress" placeholder="Organization Address" value={form.organizationAddress} onChange={handleChange} className="w-full px-4 py-2 border rounded" />
         <select name="type" value={form.type} onChange={handleChange} className="w-full px-4 py-2 border rounded">
           {contactTypes.map(t => <option key={t} value={t}>{t}</option>)}
         </select>
@@ -212,6 +216,7 @@ const Contacts = () => {
         ...c,
         tags: typeof c.tags === 'string' ? JSON.parse(c.tags) : (c.tags || []),
         emailHistory: typeof c.emailHistory === 'string' ? JSON.parse(c.emailHistory) : (c.emailHistory || []),
+        communicationHistory: typeof c.communicationHistory === 'string' ? JSON.parse(c.communicationHistory) : (c.communicationHistory || []),
       }));
       setContacts(parsed);
     } catch (err) {

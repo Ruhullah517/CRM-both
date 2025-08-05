@@ -11,6 +11,21 @@ const ContactSchema = new mongoose.Schema({
   tags: [String],
   notes: String,
   emailHistory: [String],
+  organizationName: String,
+  organizationAddress: String,
+  // Structured communication history (e.g., emails, calls, meetings)
+  communicationHistory: [
+    {
+      type: { type: String }, // e.g., 'email', 'call', 'meeting'
+      date: Date,
+      summary: String,
+      engagement: {
+        opened: Boolean,
+        clicked: Boolean,
+        bounced: Boolean,
+      }
+    }
+  ],
   created_at: { type: Date, default: Date.now }
 });
 

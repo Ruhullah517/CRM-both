@@ -25,9 +25,9 @@ const getEmailTemplateById = async (req, res) => {
 
 // Create a new email template
 const createEmailTemplate = async (req, res) => {
-  const { name, subject, body } = req.body;
+  const { name, subject, body, logoUrl, primaryColor, fontFamily, category } = req.body;
   try {
-    const template = new EmailTemplate({ name, subject, body });
+    const template = new EmailTemplate({ name, subject, body, logoUrl, primaryColor, fontFamily, category });
     await template.save();
     res.status(201).json(template);
   } catch (error) {
@@ -38,9 +38,9 @@ const createEmailTemplate = async (req, res) => {
 
 // Update an email template
 const updateEmailTemplate = async (req, res) => {
-  const { name, subject, body } = req.body;
+  const { name, subject, body, logoUrl, primaryColor, fontFamily, category } = req.body;
   try {
-    await EmailTemplate.findByIdAndUpdate(req.params.id, { name, subject, body });
+    await EmailTemplate.findByIdAndUpdate(req.params.id, { name, subject, body, logoUrl, primaryColor, fontFamily, category });
     res.json({ msg: 'Email template updated' });
   } catch (error) {
     console.error(error);

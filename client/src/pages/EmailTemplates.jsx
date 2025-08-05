@@ -20,19 +20,21 @@ const initialTemplates = [
   },
 ];
 
+const categoryOptions = ['Follow-up', 'Newsletter', 'Invite', 'Training', 'Mentoring', 'Other'];
+
 export default function EmailTemplates() {
   const { user } = useAuth();
   const isAdminOrStaff = user.user?.role === 'admin' || user?.role === 'staff';
   const [templates, setTemplates] = useState(initialTemplates);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ id: null, name: '', subject: '', body: '' });
+  const [form, setForm] = useState({ id: null, name: '', subject: '', body: '', logoUrl: '', primaryColor: '', fontFamily: '', category: '' });
 
   function openAdd() {
-    setForm({ id: null, name: '', subject: '', body: '' });
+    setForm({ id: null, name: '', subject: '', body: '', logoUrl: '', primaryColor: '', fontFamily: '', category: '' });
     setShowForm(true);
   }
   function openEdit(t) {
-    setForm(t);
+    setForm({ ...t });
     setShowForm(true);
   }
   function handleFormChange(e) {
@@ -68,6 +70,8 @@ export default function EmailTemplates() {
               <th className="px-4 py-2 text-left font-semibold text-green-900">Name</th>
               <th className="px-4 py-2 text-left font-semibold text-green-900">Subject</th>
               <th className="px-4 py-2 text-left font-semibold text-green-900">Preview</th>
+              <th className="px-4 py-2 text-left font-semibold text-green-900">Category</th>
+              <th className="px-4 py-2 text-left font-semibold text-green-900">Branding</th>
               {isAdminOrStaff && <th className="px-4 py-2 text-left font-semibold text-green-900">Actions</th>}
             </tr>
           </thead>
@@ -77,6 +81,11 @@ export default function EmailTemplates() {
                 <td className="px-4 py-2 font-semibold">{t.name}</td>
                 <td className="px-4 py-2">{t.subject}</td>
                 <td className="px-4 py-2 text-gray-600 text-sm max-w-xs truncate">{t.body.slice(0, 60)}...</td>
+                <td className="px-4 py-2">{t.category}</td>
+                <td className="px-4 py-2">
+                  {t.logoUrl && <img src={t.logoUrl} alt="logo" className="inline h-6 align-middle mr-2" />}
+                  <span style={{ color: t.primaryColor, fontFamily: t.fontFamily || undefined }}>{t.primaryColor || t.fontFamily ? 'Aa' : ''}</span>
+                </td>
                 {isAdminOrStaff && (
                   <td className="px-4 py-2">
                     <button className="text-[#2EAB2C] hover:underline flex items-center gap-1" onClick={() => openEdit(t)}>
@@ -148,6 +157,36 @@ export default function EmailTemplates() {
                 className="w-full px-4 py-2 border rounded min-h-[120px]"
                 required
               />
+              <input
+                name="logoUrl"
+                value={form.logoUrl}
+                onChange={handleFormChange}
+                placeholder="Logo URL"
+                className="w-full px-4 py-2 border rounded"
+              />
+              <input
+                name="primaryColor"
+                value={form.primaryColor}
+                onChange={handleFormChange}
+                placeholder="Primary Color (e.g. #2EAB2C or green)"
+                className="w-full px-4 py-2 border rounded"
+              />
+              <input
+                name="fontFamily"
+                value={form.fontFamily}
+                onChange={handleFormChange}
+                placeholder="Font Family (e.g. Arial, 'Open Sans')"
+                className="w-full px-4 py-2 border rounded"
+              />
+              <select
+                name="category"
+                value={form.category}
+                onChange={handleFormChange}
+                className="w-full px-4 py-2 border rounded"
+              >
+                <option value="">Select Category</option>
+                {categoryOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+              </select>
               <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow">{form.id ? 'Update' : 'Add'} Template</button>
             </form>
           </div>

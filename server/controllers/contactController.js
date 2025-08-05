@@ -33,10 +33,11 @@ const getContactById = async (req, res) => {
 
 // Create a new contact
 const createContact = async (req, res) => {
-  const { user_id, name, email, phone, type, tags, notes, emailHistory } = req.body;
+  // Remove user_id from req.body
+  const { name, email, phone, type, tags, notes, emailHistory, organizationName, organizationAddress, communicationHistory } = req.body;
   try {
     const contact = new Contact({
-      user_id,
+      user_id: req.user._id, // Set from authenticated user
       name,
       email,
       phone,
@@ -44,6 +45,9 @@ const createContact = async (req, res) => {
       tags: tags || [],
       notes: notes || '',
       emailHistory: emailHistory || [],
+      organizationName,
+      organizationAddress,
+      communicationHistory: communicationHistory || [],
     });
     await contact.save();
     res.status(201).json(contact);
@@ -55,7 +59,7 @@ const createContact = async (req, res) => {
 
 // Update a contact
 const updateContact = async (req, res) => {
-  const { name, email, phone, type, tags, notes, emailHistory } = req.body;
+  const { name, email, phone, type, tags, notes, emailHistory, organizationName, organizationAddress, communicationHistory } = req.body;
   try {
     await Contact.findByIdAndUpdate(req.params.id, {
       name,
@@ -65,6 +69,9 @@ const updateContact = async (req, res) => {
       tags: tags || [],
       notes: notes || '',
       emailHistory: emailHistory || [],
+      organizationName,
+      organizationAddress,
+      communicationHistory: communicationHistory || [],
     });
     res.json({ msg: 'Contact updated' });
   } catch (error) {
