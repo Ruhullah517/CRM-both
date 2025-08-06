@@ -262,7 +262,7 @@ async function createOrUpdateContactFromFreelancer(freelancer) {
       organizationName: '',
       organizationAddress: '',
       communicationHistory: [],
-      user_id: freelancer.user_id || null,
+      // user_id is intentionally omitted
     });
   } else {
     if (!contact.tags.includes('Freelancer')) {
