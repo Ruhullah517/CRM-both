@@ -27,7 +27,7 @@ export const assignEnquiry = async (id, staffId) => {
   return response.data;
 }; 
 export async function deleteEnquiry(id) {
-  const res = await fetch(`/api/enquiries/${id}`, { method: 'DELETE' });
+  const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete enquiry');
   return res.json();
 }

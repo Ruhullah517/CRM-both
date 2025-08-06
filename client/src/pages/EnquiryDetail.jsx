@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEnquiryById, approveEnquiry, rejectEnquiry, assignEnquiry } from '../services/enquiries';
+import { getEnquiryById, approveEnquiry, rejectEnquiry, assignEnquiry, deleteEnquiry } from '../services/enquiries';
 import { getAssessmentByEnquiryId, createAssessment } from '../services/assessments';
 import { getApplicationByEnquiryId, uploadApplication } from '../services/applications';
 import { getUsers } from '../services/users';
@@ -187,7 +187,8 @@ export default function EnquiryDetail() {
     setLoading(true);
     try {
       await deleteEnquiry(id);
-      fetchEnquiries();
+      fetchEnquiry();
+      navigate('/enquiries');
     } catch (err) {
       setError('Failed to delete enquiry');
       setLoading(false);
@@ -394,7 +395,7 @@ export default function EnquiryDetail() {
       </DetailSection>
       <button
         className="bg-red-500 text-white px-2 py-1 rounded"
-        onClick={() => handleDelete(enq._id)}
+        onClick={() => handleDelete(enquiry._id)}
       >
         Delete Enquiry
       </button>

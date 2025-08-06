@@ -1,5 +1,6 @@
 const Case = require('../models/Case');
 const { v4: uuidv4 } = require('uuid');
+const Contact = require('../models/Contact');
 
 // List all cases
 const getAllCases = async (req, res) => {
@@ -75,6 +76,7 @@ const createCase = async (req, res) => {
       invoiceableHours
     });
     await caseItem.save();
+    await createOrUpdateContactsFromCase(caseItem);
     res.status(201).json(caseItem);
   } catch (error) {
     console.error(error);
@@ -140,6 +142,69 @@ const assignCaseworkers = async (req, res) => {
     res.status(500).send('Server error');
   }
 };
+
+async function createOrUpdateContactFromCasePerson(person, roleTag) {
+  if (!person) return;
+  const { name, email, phone } = person;
+  if (!email && !phone) return;
+  let contact = await Contact.findOne(email ? { email } : { phone });
+  if (!contact) {
+    contact = new Contact({
+      name,
+      email,
+      phone,
+      tags: [roleTag, 'Case'],
+      notes: '',
+      organizationName: '',
+      organizationAddress: '',
+      communicationHistory: [],
+    });
+  } else {
+    if (!contact.tags.includes(roleTag)) contact.tags.push(roleTag);
+    if (!contact.tags.includes('Case')) contact.tags.push('Case');
+    if (!contact.name && name) contact.name = name;
+    if (!contact.phone && phone) contact.phone = phone;
+    if (!contact.email && email) contact.email = email;
+  }
+  await contact.save();
+}
+
+async function createOrUpdateContactsFromCase(caseItem) {
+  // Carer (main client)
+  await createOrUpdateContactFromCasePerson({
+    name: caseItem.clientFullName,
+    email: caseItem.contactInfo?.email,
+    phone: caseItem.contactInfo?.phone
+  }, 'Carer');
+
+  // Referrer
+  await createOrUpdateContactFromCasePerson({
+    name: caseItem.referralSource,
+    email: caseItem.referrerEmail,
+    phone: caseItem.referrerContactNumber
+  }, 'Referrer');
+
+  // SSW
+  await createOrUpdateContactFromCasePerson({
+    name: caseItem.referralDetails?.sswName,
+    email: caseItem.referralDetails?.sswEmail,
+    phone: caseItem.referralDetails?.sswContactNumber
+  }, 'SSW');
+
+  // Decision Maker
+  await createOrUpdateContactFromCasePerson({
+    name: caseItem.referralDetails?.decisionMakerName,
+    email: caseItem.referralDetails?.decisionMakerEmail,
+    phone: caseItem.referralDetails?.decisionMakerContactNumber
+  }, 'Decision Maker');
+
+  // Finance Contact
+  await createOrUpdateContactFromCasePerson({
+    name: caseItem.referralDetails?.financeContactName,
+    email: caseItem.referralDetails?.financeEmail,
+    phone: caseItem.referralDetails?.financeContactNumber
+  }, 'Finance Contact');
+}
 
 module.exports = {
   getAllCases,
