@@ -18,7 +18,7 @@ router.get('/', authenticate, authorize('admin', 'manager'), getAllCases);
 // Get a single case (admin, manager, caseworker, volunteer)
 router.get('/:id', authenticate, authorize('admin', 'manager', 'caseworker', 'volunteer'), getCaseById);
 // Create a case (admin, manager, caseworker)
-router.post('/', authenticate, authorize('admin', 'manager', 'caseworker'), createCase);
+router.post('/', createCase);
 // Upload file (admin, manager, caseworker)
 router.post('/upload', authenticate, authorize('admin', 'manager', 'caseworker'), upload.single('file'), uploadCaseFile);
 // Assign caseworkers (admin, manager)
