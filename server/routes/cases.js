@@ -14,7 +14,7 @@ const activityController = require('../controllers/activityController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // List all cases (admin, manager)
-router.get('/', authenticate, getAllCases);
+router.get('/', authenticate, authorize('admin', 'manager'), getAllCases);
 // Get a single case (admin, manager, caseworker, volunteer)
 router.get('/:id', authenticate, authorize('admin', 'manager', 'caseworker', 'volunteer'), getCaseById);
 // Create a case (admin, manager, caseworker)
