@@ -37,7 +37,7 @@ const createContact = async (req, res) => {
   const { name, email, phone, type, tags, notes, emailHistory, organizationName, organizationAddress, communicationHistory } = req.body;
   try {
     const contact = new Contact({
-      user_id: req.user._id, // Set from authenticated user
+      // user_id: req.user._id,
       name,
       email,
       phone,
