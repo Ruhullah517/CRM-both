@@ -2,6 +2,7 @@ const Freelancer = require('../models/Freelancer');
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
 const FreelancerFormToken = require('../models/FreelancerFormToken');
+const Contact = require('../models/Contact');
 
 // List all freelancers
 const getAllFreelancers = async (req, res) => {
@@ -101,6 +102,7 @@ const createFreelancer = async (req, res) => {
       contract_date: req.body.contractDate || null
     });
     await freelancer.save();
+    await createOrUpdateContactFromFreelancer(freelancer);
     res.status(201).json(freelancer);
   } catch (error) {
     console.error(error);
@@ -247,6 +249,31 @@ const sendFreelancerFormLink = async (req, res) => {
   }
 };
 
+async function createOrUpdateContactFromFreelancer(freelancer) {
+  if (!freelancer.email) return;
+  let contact = await Contact.findOne({ email: freelancer.email });
+  if (!contact) {
+    contact = new Contact({
+      name: freelancer.fullName || freelancer.name,
+      email: freelancer.email,
+      phone: freelancer.mobileNumber,
+      tags: ['Freelancer'],
+      notes: '',
+      organizationName: '',
+      organizationAddress: '',
+      communicationHistory: [],
+      user_id: freelancer.user_id || null,
+    });
+  } else {
+    if (!contact.tags.includes('Freelancer')) {
+      contact.tags.push('Freelancer');
+    }
+    if (!contact.name && (freelancer.fullName || freelancer.name)) contact.name = freelancer.fullName || freelancer.name;
+    if (!contact.phone && freelancer.mobileNumber) contact.phone = freelancer.mobileNumber;
+  }
+  await contact.save();
+}
+
 const submitFreelancerPublicForm = async (req, res) => {
   const token = req.body.token;
   if (!token) return res.status(400).json({ message: 'Missing token' });
@@ -313,6 +340,7 @@ const submitFreelancerPublicForm = async (req, res) => {
       contract_date: req.body.contractDate || null
     });
     await freelancer.save();
+    await createOrUpdateContactFromFreelancer(freelancer);
     // Mark token as used
     tokenDoc.used = true;
     await tokenDoc.save();

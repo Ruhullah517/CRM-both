@@ -1,4 +1,5 @@
 const Enquiry = require('../models/Enquiry');
+const Contact = require('../models/Contact');
 
 // List all enquiries
 const getAllEnquiries = async (req, res) => {
@@ -111,6 +112,30 @@ function transformWpEnquiry(wpData) {
   return result;
 }
 
+async function createOrUpdateContactFromEnquiry(enquiry) {
+  if (!enquiry.email_address) return;
+  let contact = await Contact.findOne({ email: enquiry.email_address });
+  if (!contact) {
+    contact = new Contact({
+      name: enquiry.full_name,
+      email: enquiry.email_address,
+      phone: enquiry.telephone,
+      tags: ['Enquiry'],
+      notes: '',
+      organizationName: '',
+      organizationAddress: '',
+      communicationHistory: [],
+    });
+  } else {
+    if (!contact.tags.includes('Enquiry')) {
+      contact.tags.push('Enquiry');
+    }
+    if (!contact.name && enquiry.full_name) contact.name = enquiry.full_name;
+    if (!contact.phone && enquiry.telephone) contact.phone = enquiry.telephone;
+  }
+  await contact.save();
+}
+
 const createEnquiry = async (req, res) => {
   try {
     // Accept both direct and nested (WordPress) body
@@ -118,6 +143,8 @@ const createEnquiry = async (req, res) => {
     const enquiryData = transformWpEnquiry(wpData);
     const enquiry = new Enquiry(enquiryData);
     await enquiry.save();
+    // Create or update contact
+    await createOrUpdateContactFromEnquiry(enquiry);
     res.status(201).json({ id: enquiry._id, msg: 'Enquiry created successfully' });
   } catch (error) {
     console.error('Error creating enquiry:', error);
