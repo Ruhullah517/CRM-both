@@ -9,6 +9,7 @@ import {
 import { getContacts, createContact, updateContact, deleteContact } from '../services/contacts';
 import { getUsers } from '../services/users';
 import Loader from '../components/Loader';
+import { getEmailTemplates, sendBulkEmail } from '../services/emailTemplates';
 
 const tagColors = {
   training: 'bg-green-100 text-[#2EAB2C]',
@@ -19,9 +20,10 @@ const tagColors = {
 
 const contactTypes = ['Partner', 'Client', 'Mentor', 'Trainer', 'Other'];
 
-const ContactList = ({ onSelect, onAdd, contacts, onDelete }) => {
+const ContactList = ({ onSelect, onAdd, contacts, onDelete, selectedIds, onSelectContact, onSelectAll }) => {
   const [search, setSearch] = useState("");
   const filtered = contacts.filter(c => c.name?.toLowerCase().includes(search.toLowerCase()));
+  const allSelected = filtered.length > 0 && filtered.every(c => selectedIds.includes(c._id));
   return (
     <div className="max-w-5xl mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
@@ -33,6 +35,7 @@ const ContactList = ({ onSelect, onAdd, contacts, onDelete }) => {
         <table className="min-w-full text-left">
           <thead>
             <tr className="bg-green-50">
+              <th className="px-2 py-2"><input type="checkbox" checked={allSelected} onChange={e => onSelectAll(filtered.map(c => c._id), e.target.checked)} /></th>
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Type</th>
               <th className="px-4 py-2">Tags</th>
@@ -45,6 +48,7 @@ const ContactList = ({ onSelect, onAdd, contacts, onDelete }) => {
           <tbody>
             {filtered.map(c => (
               <tr key={c._id} className="border-t hover:bg-green-50 transition">
+                <td className="px-2 py-2"><input type="checkbox" checked={selectedIds.includes(c._id)} onChange={e => onSelectContact(c._id, e.target.checked)} /></td>
                 <td className="px-4 py-2 font-semibold">{c.name}</td>
                 <td className="px-4 py-2">{c.type}</td>
                 <td className="px-4 py-2 flex flex-wrap gap-1">
@@ -90,6 +94,7 @@ const ContactList = ({ onSelect, onAdd, contacts, onDelete }) => {
               <span className="font-semibold">Date Added:</span> {c.dateAdded ? new Date(c.dateAdded).toLocaleDateString() : ''}
             </div>
             <div className="flex gap-2 mt-2">
+              <input type="checkbox" checked={selectedIds.includes(c._id)} onChange={e => onSelectContact(c._id, e.target.checked)} />
               <button
                 onClick={() => onSelect(c)}
                 className="flex-1 px-3 py-2 rounded bg-black text-white font-semibold hover:bg-gray-600"
@@ -198,12 +203,17 @@ const Contacts = () => {
   const [view, setView] = useState("list");
   const [selected, setSelected] = useState(null);
   const [contacts, setContacts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [saving, setSaving] = useState(false);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [showBulkEmail, setShowBulkEmail] = useState(false);
+  const [emailTemplates, setEmailTemplates] = useState([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState("");
+  const [placeholders, setPlaceholders] = useState({});
+  const [sending, setSending] = useState(false);
+  const [sendResults, setSendResults] = useState(null);
 
   useEffect(() => {
     fetchContacts();
+    getEmailTemplates().then(setEmailTemplates);
   }, []);
 
   async function fetchContacts() {
@@ -256,13 +266,144 @@ const Contacts = () => {
     setSaving(false);
   }
 
-  if (view === "detail" && selected) return <ContactDetail contact={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} />;
-  if (view === "edit" && selected) return <ContactForm contact={selected} onBack={() => setView("detail")} onSave={handleSaveContact} loading={saving} />;
-  if (view === "add") return <ContactForm onBack={() => setView("list")} onSave={handleSaveContact} loading={saving} />;
+  function handleSelectContact(id, checked) {
+    setSelectedIds(ids => checked ? [...ids, id] : ids.filter(i => i !== id));
+  }
+  function handleSelectAll(ids, checked) {
+    setSelectedIds(checked ? ids : []);
+  }
+
+  function openBulkEmail() {
+    setSelectedTemplateId("");
+    setPlaceholders({});
+    setSendResults(null);
+    setShowBulkEmail(true);
+  }
+
+  function closeBulkEmail() {
+    setShowBulkEmail(false);
+  }
+
+  function handleTemplateChange(e) {
+    const templateId = e.target.value;
+    setSelectedTemplateId(templateId);
+    const template = emailTemplates.find(t => t._id === templateId || t.id === templateId);
+    if (!template) return setPlaceholders({});
+    // Extract placeholders from subject and body
+    const matches = (template.subject + ' ' + template.body).match(/{{\s*([\w_\d]+)\s*}}/g) || [];
+    const phs = {};
+    for (const id of selectedIds) {
+      phs[id] = {};
+      matches.forEach(m => {
+        const key = m.replace(/{{|}}/g, '').trim();
+        phs[id][key] = contacts.find(c => c._id === id)?.[key] || '';
+      });
+    }
+    setPlaceholders(phs);
+  }
+
+  function handlePlaceholderChange(contactId, key, value) {
+    setPlaceholders(phs => ({ ...phs, [contactId]: { ...phs[contactId], [key]: value } }));
+  }
+
+  async function handleSendBulkEmail() {
+    setSending(true);
+    setSendResults(null);
+    const template = emailTemplates.find(t => t._id === selectedTemplateId || t.id === selectedTemplateId);
+    if (!template) return;
+    const recipients = selectedIds.map(id => ({
+      email: contacts.find(c => c._id === id)?.email,
+      data: placeholders[id] || {},
+    }));
+    try {
+      const result = await sendBulkEmail({ templateId: selectedTemplateId, recipients });
+      setSendResults(result.results);
+    } catch (err) {
+      setSendResults([{ email: 'All', status: 'failed', error: err.message }]);
+    }
+    setSending(false);
+  }
+
+  if (view === "list" && (
+    <>
+      {error && <div className="mb-4 text-red-600">{error}</div>}
+      <ContactList
+        onSelect={c => { setSelected(c); setView("detail"); }}
+        onAdd={() => { setSelected(null); setView("form"); }}
+        contacts={contacts}
+        onDelete={handleDeleteContact}
+        selectedIds={selectedIds}
+        onSelectContact={handleSelectContact}
+        onSelectAll={handleSelectAll}
+      />
+      {selectedIds.length > 0 && (
+        <div className="max-w-5xl mx-auto p-4 flex justify-end">
+          <button className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-800" onClick={openBulkEmail}>
+            Send Bulk Email
+          </button>
+        </div>
+      )}
+      {showBulkEmail && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded shadow-lg p-8 w-full max-w-2xl relative">
+            <button className="absolute top-2 right-2 text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center" onClick={closeBulkEmail}>✕</button>
+            <h2 className="text-xl font-bold mb-4">Send Bulk Email</h2>
+            <div className="mb-4">
+              <label className="block font-semibold mb-1">Select Template</label>
+              <select className="w-full px-4 py-2 border rounded" value={selectedTemplateId} onChange={handleTemplateChange}>
+                <option value="">Select...</option>
+                {emailTemplates.map(t => <option key={t._id || t.id} value={t._id || t.id}>{t.name}</option>)}
+              </select>
+            </div>
+            {selectedTemplateId && (
+              <div className="mb-4">
+                <label className="block font-semibold mb-1">Fill Placeholders</label>
+                <div className="max-h-64 overflow-y-auto border rounded p-2">
+                  {selectedIds.map(id => (
+                    <div key={id} className="mb-2 border-b pb-2">
+                      <div className="font-semibold">{contacts.find(c => c._id === id)?.name || id}</div>
+                      {placeholders[id] && Object.keys(placeholders[id]).length > 0 ? (
+                        Object.keys(placeholders[id]).map(key => (
+                          <div key={key} className="flex items-center gap-2 my-1">
+                            <span className="w-32 text-sm text-gray-700">{key}:</span>
+                            <input className="flex-1 px-2 py-1 border rounded" value={placeholders[id][key] || ''} onChange={e => handlePlaceholderChange(id, key, e.target.value)} />
+                          </div>
+                        ))
+                      ) : <span className="text-xs text-gray-400">No placeholders</span>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end gap-2 mt-4">
+              <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold" onClick={closeBulkEmail}>Cancel</button>
+              <button className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-800" onClick={handleSendBulkEmail} disabled={sending || !selectedTemplateId}>
+                {sending ? 'Sending...' : 'Send Email'}
+              </button>
+            </div>
+            {sendResults && (
+              <div className="mt-4">
+                <h3 className="font-semibold mb-2">Results</h3>
+                <ul className="max-h-32 overflow-y-auto text-sm">
+                  {sendResults.map((r, i) => (
+                    <li key={i} className={r.status === 'sent' ? 'text-green-700' : 'text-red-700'}>
+                      {r.email}: {r.status} {r.error && <span>- {r.error}</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  ))
+    if (view === "detail" && selected) return <ContactDetail contact={selected} onBack={() => setView("list")} onEdit={() => setView("form")} />;
+  if (view === "form" && selected) return <ContactForm contact={selected} onBack={() => setView("list")} onSave={handleSaveContact} loading={false} />;
+  if (view === "add") return <ContactForm onBack={() => setView("list")} onSave={handleSaveContact} loading={false} />;
   return (
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}
-      <ContactList onSelect={c => { setSelected(c); setView("detail"); }} onAdd={() => setView("add")} contacts={contacts} onDelete={handleDeleteContact} />
       {loading && <Loader />}
     </>
   );

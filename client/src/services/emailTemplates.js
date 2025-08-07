@@ -23,4 +23,15 @@ export async function updateEmailTemplate(id, template) {
 export async function deleteEmailTemplate(id) {
   const res = await api.delete(`/email-templates/${id}`);
   return res.data;
+}
+
+// Bulk email service
+export async function sendBulkEmail({ templateId, recipients, subjectOverride, bodyOverride }) {
+  const res = await api.post('/email-templates/bulk', {
+    templateId,
+    recipients,
+    subjectOverride,
+    bodyOverride,
+  });
+  return res.data;
 } 
