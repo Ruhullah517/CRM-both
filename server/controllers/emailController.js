@@ -10,7 +10,7 @@ function fillTemplate(str, data) {
 
 // Helper to add logo to email body
 function addLogoToEmail(body, logoFile) {
-  console.log('addLogoToEmail called with logoFile:', logoFile);
+  console.log('addLogoToEmail called with logoFile:', logoFile ? logoFile.substring(0, 100) + '...' : 'null/undefined');
   console.log('logoFile type:', typeof logoFile);
   console.log('logoFile length:', logoFile ? logoFile.length : 'null/undefined');
   
@@ -22,6 +22,7 @@ function addLogoToEmail(body, logoFile) {
   // Check if logoFile is a base64 data URL or a file path
   const isBase64 = logoFile.startsWith('data:image/');
   console.log('Is base64:', isBase64);
+  console.log('Base64 prefix check:', logoFile.substring(0, 30));
   
   let logoHtml;
   if (isBase64) {
@@ -29,15 +30,17 @@ function addLogoToEmail(body, logoFile) {
     logoHtml = `<div style="text-align: center; margin-bottom: 20px;">
       <img src="${logoFile}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
     </div>`;
+    console.log('Generated base64 logo HTML length:', logoHtml.length);
   } else {
     // Fallback for file paths (legacy support)
     const backendUrl = 'https://crm-backend-0v14.onrender.com';
     logoHtml = `<div style="text-align: center; margin-bottom: 20px;">
       <img src="${backendUrl}${logoFile}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
     </div>`;
+    console.log('Generated file path logo HTML length:', logoHtml.length);
   }
   
-  console.log('Generated logo HTML:', logoHtml);
+  console.log('Final logo HTML preview:', logoHtml.substring(0, 200) + '...');
   return logoHtml + body;
 }
 

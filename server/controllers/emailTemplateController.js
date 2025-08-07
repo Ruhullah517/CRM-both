@@ -218,6 +218,49 @@ const debugTemplates = async (req, res) => {
   }
 };
 
+// Test function to verify base64 data and create test HTML
+const testTemplateLogo = async (req, res) => {
+  try {
+    const { templateId } = req.params;
+    const template = await EmailTemplate.findById(templateId);
+    
+    if (!template) {
+      return res.status(404).json({ message: 'Template not found' });
+    }
+    
+    const testHtml = `
+      <html>
+        <head>
+          <title>Logo Test</title>
+        </head>
+        <body>
+          <h1>Logo Test for Template: ${template.name}</h1>
+          <div>
+            <h2>Logo Data Info:</h2>
+            <p>Has logo: ${!!template.logoFile}</p>
+            <p>Logo length: ${template.logoFile ? template.logoFile.length : 0}</p>
+            <p>Is base64: ${template.logoFile ? template.logoFile.startsWith('data:image/') : false}</p>
+            <p>Logo prefix: ${template.logoFile ? template.logoFile.substring(0, 50) : 'N/A'}</p>
+          </div>
+          <div>
+            <h2>Logo Display:</h2>
+            ${template.logoFile ? `<img src="${template.logoFile}" alt="Logo" style="max-height: 100px; max-width: 300px; border: 1px solid #ccc;" />` : '<p>No logo</p>'}
+          </div>
+          <div>
+            <h2>Full Logo Data (first 200 chars):</h2>
+            <pre style="background: #f0f0f0; padding: 10px; overflow-x: auto;">${template.logoFile ? template.logoFile.substring(0, 200) + '...' : 'No logo data'}</pre>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    res.send(testHtml);
+  } catch (error) {
+    console.error('Test error:', error);
+    res.status(500).json({ message: 'Test failed', error: error.message });
+  }
+};
+
 module.exports = {
   getAllEmailTemplates,
   getEmailTemplateById,
@@ -225,5 +268,6 @@ module.exports = {
   updateEmailTemplate,
   deleteEmailTemplate,
   migrateTemplatesToBase64,
-  debugTemplates
+  debugTemplates,
+  testTemplateLogo
 }; 
