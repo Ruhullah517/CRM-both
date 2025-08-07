@@ -2,18 +2,62 @@ const EmailTemplate = require('../models/EmailTemplate');
 const Email = require('../models/Email');
 const Contact = require('../models/Contact');
 const nodemailer = require('nodemailer');
+const fs = require('fs');
+const path = require('path');
 
 // Helper to fill template placeholders
 function fillTemplate(str, data) {
   return str.replace(/{{\s*([\w_\d]+)\s*}}/g, (match, key) => data[key] || '');
 }
 
+// Helper to convert image to base64 data URI
+function imageToDataUri(filePath) {
+  try {
+    const fullPath = path.join(__dirname, '..', filePath);
+    if (!fs.existsSync(fullPath)) {
+      console.log('Logo file not found:', fullPath);
+      return null;
+    }
+    
+    const imageBuffer = fs.readFileSync(fullPath);
+    const mimeType = getMimeType(path.extname(filePath));
+    const base64 = imageBuffer.toString('base64');
+    return `data:${mimeType};base64,${base64}`;
+  } catch (error) {
+    console.error('Error converting image to data URI:', error);
+    return null;
+  }
+}
+
+// Helper to get MIME type from file extension
+function getMimeType(extension) {
+  const mimeTypes = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp'
+  };
+  return mimeTypes[extension.toLowerCase()] || 'image/jpeg';
+}
+
 // Helper to add logo to email body
-function addLogoToEmail(body, logoFile, backendUrl = 'https://crm-backend-0v14.onrender.com') {
+function addLogoToEmail(body, logoFile) {
   if (!logoFile) return body;
   
+  // Convert logo to base64 data URI for embedding
+  const logoDataUri = imageToDataUri(logoFile);
+  if (!logoDataUri) {
+    console.log('Could not embed logo, using original URL');
+    // Fallback to URL if base64 conversion fails
+    const logoHtml = `<div style="text-align: center; margin-bottom: 20px;">
+      <img src="https://crm-backend-0v14.onrender.com${logoFile}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
+    </div>`;
+    return logoHtml + body;
+  }
+  
   const logoHtml = `<div style="text-align: center; margin-bottom: 20px;">
-    <img src="${backendUrl}${logoFile}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
+    <img src="${logoDataUri}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
   </div>`;
   
   return logoHtml + body;

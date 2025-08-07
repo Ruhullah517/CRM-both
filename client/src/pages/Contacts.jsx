@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import {
   EyeIcon,
   PencilSquareIcon,
@@ -200,6 +201,7 @@ const ContactForm = ({ contact, onBack, onSave, loading }) => {
 
 const Contacts = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [view, setView] = useState("list");
   const [selected, setSelected] = useState(null);
   const [contacts, setContacts] = useState([]);
@@ -321,6 +323,18 @@ const Contacts = () => {
     try {
       const result = await sendBulkEmail({ templateId: selectedTemplateId, recipients });
       setSendResults(result.results);
+      
+      // Check if all emails were sent successfully
+      const allSuccessful = result.results.every(r => r.status === 'sent');
+      if (allSuccessful) {
+        // Show success message and redirect after a short delay
+        setTimeout(() => {
+          alert('All emails sent successfully!');
+          setShowBulkEmail(false);
+          setSelectedIds([]);
+          setSendResults(null);
+        }, 1500);
+      }
     } catch (err) {
       setSendResults([{ email: 'All', status: 'failed', error: err.message }]);
     }
@@ -381,11 +395,17 @@ const Contacts = () => {
                 </div>
               )}
               <div className="flex justify-end gap-2 mt-4">
-                <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold" onClick={closeBulkEmail}>Cancel</button>
-                <button className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-800" onClick={handleSendBulkEmail} disabled={sending || !selectedTemplateId}>
+                <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold" onClick={closeBulkEmail} disabled={sending}>Cancel</button>
+                <button className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed" onClick={handleSendBulkEmail} disabled={sending || !selectedTemplateId}>
                   {sending ? 'Sending...' : 'Send Email'}
                 </button>
               </div>
+              {sending && (
+                <div className="mt-4 text-center">
+                  <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <p className="mt-2 text-sm text-gray-600">Sending emails...</p>
+                </div>
+              )}
               {sendResults && (
                 <div className="mt-4">
                   <h3 className="font-semibold mb-2">Results</h3>
