@@ -25,9 +25,26 @@ const getEmailTemplateById = async (req, res) => {
 
 // Create a new email template
 const createEmailTemplate = async (req, res) => {
-  const { name, subject, body, logoUrl, primaryColor, fontFamily, category } = req.body;
+  const { name, subject, body, primaryColor, fontFamily, category } = req.body;
   try {
-    const template = new EmailTemplate({ name, subject, body, logoUrl, primaryColor, fontFamily, category });
+    let logoFile = null;
+    let logoFileName = null;
+    
+    if (req.file) {
+      logoFile = `/uploads/${req.file.filename}`;
+      logoFileName = req.file.originalname;
+    }
+    
+    const template = new EmailTemplate({ 
+      name, 
+      subject, 
+      body, 
+      logoFile, 
+      logoFileName, 
+      primaryColor, 
+      fontFamily, 
+      category 
+    });
     await template.save();
     res.status(201).json(template);
   } catch (error) {
@@ -38,9 +55,31 @@ const createEmailTemplate = async (req, res) => {
 
 // Update an email template
 const updateEmailTemplate = async (req, res) => {
-  const { name, subject, body, logoUrl, primaryColor, fontFamily, category } = req.body;
+  const { name, subject, body, primaryColor, fontFamily, category } = req.body;
   try {
-    await EmailTemplate.findByIdAndUpdate(req.params.id, { name, subject, body, logoUrl, primaryColor, fontFamily, category });
+    let logoFile = null;
+    let logoFileName = null;
+    
+    if (req.file) {
+      logoFile = `/uploads/${req.file.filename}`;
+      logoFileName = req.file.originalname;
+    }
+    
+    const updateData = { 
+      name, 
+      subject, 
+      body, 
+      primaryColor, 
+      fontFamily, 
+      category 
+    };
+    
+    if (logoFile) {
+      updateData.logoFile = logoFile;
+      updateData.logoFileName = logoFileName;
+    }
+    
+    await EmailTemplate.findByIdAndUpdate(req.params.id, updateData);
     res.json({ msg: 'Email template updated' });
   } catch (error) {
     console.error(error);

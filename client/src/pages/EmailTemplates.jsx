@@ -20,9 +20,10 @@ export default function EmailTemplates() {
   const isAdminOrStaff = user.user?.role === 'admin' || user?.role === 'staff';
   const [templates, setTemplates] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ id: null, name: '', subject: '', body: '', logoUrl: '', primaryColor: '', fontFamily: '', category: '' });
+  const [form, setForm] = useState({ id: null, name: '', subject: '', body: '', logoFile: null, logoFileName: '', primaryColor: '', fontFamily: '', category: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
 
   useEffect(() => {
     fetchTemplates();
@@ -41,16 +42,27 @@ export default function EmailTemplates() {
   }
 
   function openAdd() {
-    setForm({ id: null, name: '', subject: '', body: '', logoUrl: '', primaryColor: '', fontFamily: '', category: '' });
+    setForm({ id: null, name: '', subject: '', body: '', logoFile: null, logoFileName: '', primaryColor: '', fontFamily: '', category: '' });
+    setLogoPreview(null);
     setShowForm(true);
   }
   function openEdit(t) {
-    setForm({ ...t, id: t._id || t.id });
+    setForm({ ...t, id: t._id || t.id, logoFile: null });
+    setLogoPreview(t.logoFile ? t.logoFile : null);
     setShowForm(true);
   }
   function handleFormChange(e) {
-    const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: value }));
+    const { name, value, files } = e.target;
+    if (name === 'logoFile' && files && files[0]) {
+      const file = files[0];
+      setForm(f => ({ ...f, logoFile: file, logoFileName: file.name }));
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => setLogoPreview(e.target.result);
+      reader.readAsDataURL(file);
+    } else {
+      setForm(f => ({ ...f, [name]: value }));
+    }
   }
   function handleQuillChange(value) {
     setForm(f => ({ ...f, body: value }));
@@ -60,10 +72,22 @@ export default function EmailTemplates() {
     setLoading(true);
     setError(null);
     try {
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('subject', form.subject);
+      formData.append('body', form.body);
+      formData.append('primaryColor', form.primaryColor);
+      formData.append('fontFamily', form.fontFamily);
+      formData.append('category', form.category);
+      
+      if (form.logoFile) {
+        formData.append('logo', form.logoFile);
+      }
+      
       if (form.id) {
-        await updateEmailTemplate(form.id, form);
+        await updateEmailTemplate(form.id, formData);
       } else {
-        await createEmailTemplate(form);
+        await createEmailTemplate(formData);
       }
       setShowForm(false);
       fetchTemplates();
@@ -118,7 +142,7 @@ export default function EmailTemplates() {
                 <td className="px-4 py-2 text-gray-600 text-sm max-w-xs truncate" dangerouslySetInnerHTML={{ __html: t.body.replace(/<[^>]+>/g, '') }} />
                 <td className="px-4 py-2">{t.category}</td>
                 <td className="px-4 py-2">
-                  {t.logoUrl && <img src={t.logoUrl} alt="logo" className="inline h-6 align-middle mr-2" />}
+                  {t.logoFile && <img src={t.logoFile} alt="logo" className="inline h-6 align-middle mr-2" />}
                   <span style={{ color: t.primaryColor, fontFamily: t.fontFamily || undefined }}>{t.primaryColor || t.fontFamily ? 'Aa' : ''}</span>
                 </td>
                 {isAdminOrStaff && (
@@ -138,8 +162,16 @@ export default function EmailTemplates() {
       <div className="sm:hidden flex flex-col gap-4 mb-8">
         {templates.map((t) => (
           <div key={t._id || t.id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-2">
               <span className="font-semibold text-base">{t.name}</span>
+              {isAdminOrStaff && (
+                <div className="flex gap-2">
+                  <button className="text-[#2EAB2C] hover:underline flex items-center gap-1" onClick={() => openEdit(t)}>
+                    <PencilSquareIcon className="w-5 h-5" /> Edit
+                  </button>
+                  <button className="text-red-600 hover:underline" onClick={() => handleDelete(t._id || t.id)}>Delete</button>
+                </div>
+              )}
             </div>
             <div className="text-sm text-gray-700">
               <span className="font-semibold">Subject:</span> {t.subject}
@@ -148,19 +180,13 @@ export default function EmailTemplates() {
               <span className="font-semibold">Preview:</span>{' '}
               <span className="text-gray-600" dangerouslySetInnerHTML={{ __html: t.body.replace(/<[^>]+>/g, '') }} />
             </div>
-            {isAdminOrStaff && (
-              <div className="flex gap-2 mt-2">
-                <button
-                  className="flex-1 px-3 py-2 rounded bg-black text-white font-semibold hover:bg-green-800 flex items-center justify-center gap-2"
-                  onClick={() => openEdit(t)}
-                >
-                  <PencilSquareIcon className="w-5 h-5" /> Edit
-                </button>
-                <button className="flex-1 px-3 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200" onClick={() => handleDelete(t._id || t.id)}>
-                  Delete
-                </button>
-              </div>
-            )}
+            <div className="text-sm text-gray-700">
+              <span className="font-semibold">Category:</span> {t.category}
+            </div>
+            <div className="text-sm text-gray-700 flex items-center gap-2">
+              {t.logoFile && <img src={t.logoFile} alt="logo" className="inline h-6 align-middle mr-2" />}
+              <span style={{ color: t.primaryColor, fontFamily: t.fontFamily || undefined }}>{t.primaryColor || t.fontFamily ? 'Aa' : ''}</span>
+            </div>
           </div>
         ))}
       </div>
@@ -204,20 +230,27 @@ export default function EmailTemplates() {
                       ['blockquote', 'code-block'],
                       [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                       [{ 'indent': '-1'}, { 'indent': '+1' }],
-                      ['link', 'image'],
                       ['clean']
                     ]
                   }}
                   style={{ minHeight: 120 }}
                 />
               </div>
-              <input
-                name="logoUrl"
-                value={form.logoUrl}
-                onChange={handleFormChange}
-                placeholder="Logo URL"
-                className="w-full px-4 py-2 border rounded"
-              />
+              <div>
+                <label className="block font-semibold mb-1">Logo Image</label>
+                <input
+                  type="file"
+                  name="logoFile"
+                  accept="image/*"
+                  onChange={handleFormChange}
+                  className="w-full px-4 py-2 border rounded"
+                />
+                {logoPreview && (
+                  <div className="mt-2">
+                    <img src={logoPreview} alt="Logo preview" className="h-12 w-auto" />
+                  </div>
+                )}
+              </div>
               <input
                 name="primaryColor"
                 value={form.primaryColor}
@@ -243,8 +276,8 @@ export default function EmailTemplates() {
               </select>
             </form>
             <div className="p-4 border-t flex justify-end bg-white sticky bottom-0 z-10">
-              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow" form="email-template-form">
-                {form.id ? 'Update' : 'Add'} Template
+              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow disabled:opacity-60 disabled:cursor-not-allowed" form="email-template-form" disabled={loading}>
+                {loading ? (form.id ? 'Updating...' : 'Adding...') : (form.id ? 'Update' : 'Add')} Template
               </button>
             </div>
           </div>

@@ -8,11 +8,12 @@ const {
   deleteEmailTemplate,
 } = require('../controllers/emailTemplateController');
 const { sendBulkEmail } = require('../controllers/emailController');
+const upload = require('../middleware/upload');
 
 router.get('/', getAllEmailTemplates);
 router.get('/:id', getEmailTemplateById);
-router.post('/', createEmailTemplate);
-router.put('/:id', updateEmailTemplate);
+router.post('/', upload.single('logo'), createEmailTemplate);
+router.put('/:id', upload.single('logo'), updateEmailTemplate);
 router.delete('/:id', deleteEmailTemplate);
 
 // Bulk email endpoint

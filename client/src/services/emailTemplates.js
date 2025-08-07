@@ -10,13 +10,21 @@ export async function getEmailTemplate(id) {
   return res.data;
 }
 
-export async function createEmailTemplate(template) {
-  const res = await api.post('/email-templates', template);
+export async function createEmailTemplate(templateData) {
+  const res = await api.post('/email-templates', templateData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return res.data;
 }
 
-export async function updateEmailTemplate(id, template) {
-  const res = await api.put(`/email-templates/${id}`, template);
+export async function updateEmailTemplate(id, templateData) {
+  const res = await api.put(`/email-templates/${id}`, templateData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return res.data;
 }
 
