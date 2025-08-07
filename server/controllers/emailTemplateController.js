@@ -195,11 +195,35 @@ const deleteEmailTemplate = async (req, res) => {
   }
 };
 
+// Debug function to check template data
+const debugTemplates = async (req, res) => {
+  try {
+    const templates = await EmailTemplate.find();
+    const debugData = templates.map(t => ({
+      id: t._id,
+      name: t.name,
+      logoFile: t.logoFile ? (t.logoFile.startsWith('data:') ? 'BASE64_DATA' : t.logoFile) : 'NULL',
+      logoFileName: t.logoFileName,
+      hasLogoFile: !!t.logoFile,
+      logoFileLength: t.logoFile ? t.logoFile.length : 0
+    }));
+    
+    res.json({
+      totalTemplates: templates.length,
+      templates: debugData
+    });
+  } catch (error) {
+    console.error('Debug error:', error);
+    res.status(500).json({ message: 'Debug failed', error: error.message });
+  }
+};
+
 module.exports = {
   getAllEmailTemplates,
   getEmailTemplateById,
   createEmailTemplate,
   updateEmailTemplate,
   deleteEmailTemplate,
-  migrateTemplatesToBase64
+  migrateTemplatesToBase64,
+  debugTemplates
 }; 

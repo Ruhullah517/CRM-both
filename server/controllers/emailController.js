@@ -10,10 +10,18 @@ function fillTemplate(str, data) {
 
 // Helper to add logo to email body
 function addLogoToEmail(body, logoFile) {
-  if (!logoFile) return body;
+  console.log('addLogoToEmail called with logoFile:', logoFile);
+  console.log('logoFile type:', typeof logoFile);
+  console.log('logoFile length:', logoFile ? logoFile.length : 'null/undefined');
+  
+  if (!logoFile) {
+    console.log('No logo file provided, returning body as-is');
+    return body;
+  }
   
   // Check if logoFile is a base64 data URL or a file path
   const isBase64 = logoFile.startsWith('data:image/');
+  console.log('Is base64:', isBase64);
   
   let logoHtml;
   if (isBase64) {
@@ -29,6 +37,7 @@ function addLogoToEmail(body, logoFile) {
     </div>`;
   }
   
+  console.log('Generated logo HTML:', logoHtml);
   return logoHtml + body;
 }
 
@@ -50,6 +59,14 @@ async function sendBulkEmail(req, res) {
   try {
     const template = await EmailTemplate.findById(templateId);
     if (!template) return res.status(404).json({ message: 'Template not found' });
+    
+    console.log('Template found:', {
+      id: template._id,
+      name: template.name,
+      logoFile: template.logoFile,
+      logoFileName: template.logoFileName
+    });
+    
     const results = [];
     for (const recipient of recipients) {
       const { email, data = {} } = recipient;
