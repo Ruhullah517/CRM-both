@@ -1,4 +1,5 @@
 const EmailTemplate = require('../models/EmailTemplate');
+const fs = require('fs');
 
 // List all email templates
 const getAllEmailTemplates = async (req, res) => {
@@ -23,6 +24,41 @@ const getEmailTemplateById = async (req, res) => {
   }
 };
 
+// Helper function to convert file to base64
+function fileToBase64(filePath) {
+  try {
+    const fileBuffer = fs.readFileSync(filePath);
+    const base64String = fileBuffer.toString('base64');
+    
+    // Detect MIME type based on file extension
+    const ext = filePath.split('.').pop().toLowerCase();
+    let mimeType = 'image/png'; // default
+    
+    switch (ext) {
+      case 'jpg':
+      case 'jpeg':
+        mimeType = 'image/jpeg';
+        break;
+      case 'png':
+        mimeType = 'image/png';
+        break;
+      case 'gif':
+        mimeType = 'image/gif';
+        break;
+      case 'webp':
+        mimeType = 'image/webp';
+        break;
+      default:
+        mimeType = 'image/png';
+    }
+    
+    return `data:${mimeType};base64,${base64String}`;
+  } catch (error) {
+    console.error('Error converting file to base64:', error);
+    return null;
+  }
+}
+
 // Create a new email template
 const createEmailTemplate = async (req, res) => {
   const { name, subject, body, primaryColor, fontFamily, category } = req.body;
@@ -31,8 +67,15 @@ const createEmailTemplate = async (req, res) => {
     let logoFileName = null;
     
     if (req.file) {
-      logoFile = `/uploads/${req.file.filename}`;
-      logoFileName = req.file.originalname;
+      // Convert uploaded file to base64 for database storage
+      const base64Data = fileToBase64(req.file.path);
+      if (base64Data) {
+        logoFile = base64Data;
+        logoFileName = req.file.originalname;
+        
+        // Clean up the temporary file
+        fs.unlinkSync(req.file.path);
+      }
     }
     
     const template = new EmailTemplate({ 
@@ -61,8 +104,15 @@ const updateEmailTemplate = async (req, res) => {
     let logoFileName = null;
     
     if (req.file) {
-      logoFile = `/uploads/${req.file.filename}`;
-      logoFileName = req.file.originalname;
+      // Convert uploaded file to base64 for database storage
+      const base64Data = fileToBase64(req.file.path);
+      if (base64Data) {
+        logoFile = base64Data;
+        logoFileName = req.file.originalname;
+        
+        // Clean up the temporary file
+        fs.unlinkSync(req.file.path);
+      }
     }
     
     const updateData = { 
@@ -103,5 +153,5 @@ module.exports = {
   getEmailTemplateById,
   createEmailTemplate,
   updateEmailTemplate,
-  deleteEmailTemplate,
+  deleteEmailTemplate
 }; 

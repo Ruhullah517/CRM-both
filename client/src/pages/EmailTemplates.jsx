@@ -155,7 +155,7 @@ export default function EmailTemplates() {
                     <td className="px-4 py-2 text-gray-600 text-sm max-w-xs break-words" dangerouslySetInnerHTML={{ __html: t.body.replace(/<[^>]+>/g, '') }} />
                     <td className="px-4 py-2">{t.category}</td>
                     <td className="px-4 py-2">
-                      {t.logoFile && <img src={`${backendUrl}${t.logoFile}`} alt="logo" className="inline h-6 align-middle mr-2" />}
+                      {t.logoFile && <img src={t.logoFile} alt="logo" className="inline h-6 align-middle mr-2" />}
                     </td>
                     {isAdminOrStaff && (
                       <td className="px-4 py-2 flex flex-col gap-2">
