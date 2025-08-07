@@ -1,5 +1,6 @@
 const EmailTemplate = require('../models/EmailTemplate');
 const fs = require('fs');
+const path = require('path');
 
 // List all email templates
 const getAllEmailTemplates = async (req, res) => {
@@ -58,6 +59,52 @@ function fileToBase64(filePath) {
     return null;
   }
 }
+
+// Migration function to convert existing file paths to base64
+const migrateTemplatesToBase64 = async (req, res) => {
+  try {
+    const templates = await EmailTemplate.find({ logoFile: { $exists: true, $ne: null } });
+    let updatedCount = 0;
+    
+    for (const template of templates) {
+      // Skip if already base64
+      if (template.logoFile && template.logoFile.startsWith('data:image/')) {
+        continue;
+      }
+      
+      // Skip if no logo file
+      if (!template.logoFile || !template.logoFile.startsWith('/uploads/')) {
+        continue;
+      }
+      
+      // Try to convert file path to base64
+      const filePath = path.join(__dirname, '..', template.logoFile);
+      if (fs.existsSync(filePath)) {
+        const base64Data = fileToBase64(filePath);
+        if (base64Data) {
+          template.logoFile = base64Data;
+          await template.save();
+          updatedCount++;
+          
+          // Clean up the old file
+          try {
+            fs.unlinkSync(filePath);
+          } catch (err) {
+            console.error('Error deleting old file:', err);
+          }
+        }
+      }
+    }
+    
+    res.json({ 
+      message: `Migration completed. ${updatedCount} templates updated.`,
+      updatedCount 
+    });
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({ message: 'Migration failed', error: error.message });
+  }
+};
 
 // Create a new email template
 const createEmailTemplate = async (req, res) => {
@@ -153,5 +200,6 @@ module.exports = {
   getEmailTemplateById,
   createEmailTemplate,
   updateEmailTemplate,
-  deleteEmailTemplate
+  deleteEmailTemplate,
+  migrateTemplatesToBase64
 }; 

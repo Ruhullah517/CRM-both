@@ -6,6 +6,7 @@ const {
   createEmailTemplate,
   updateEmailTemplate,
   deleteEmailTemplate,
+  migrateTemplatesToBase64,
 } = require('../controllers/emailTemplateController');
 const { sendBulkEmail } = require('../controllers/emailController');
 const upload = require('../middleware/upload');
@@ -15,6 +16,9 @@ router.get('/:id', getEmailTemplateById);
 router.post('/', upload.single('logo'), createEmailTemplate);
 router.put('/:id', upload.single('logo'), updateEmailTemplate);
 router.delete('/:id', deleteEmailTemplate);
+
+// Migration endpoint to convert existing templates to base64
+router.post('/migrate-to-base64', migrateTemplatesToBase64);
 
 // Bulk email endpoint
 router.post('/bulk', sendBulkEmail);
