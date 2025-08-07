@@ -8,6 +8,17 @@ function fillTemplate(str, data) {
   return str.replace(/{{\s*([\w_\d]+)\s*}}/g, (match, key) => data[key] || '');
 }
 
+// Helper to add logo to email body
+function addLogoToEmail(body, logoFile, backendUrl = 'https://crm-backend-0v14.onrender.com') {
+  if (!logoFile) return body;
+  
+  const logoHtml = `<div style="text-align: center; margin-bottom: 20px;">
+    <img src="${backendUrl}${logoFile}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
+  </div>`;
+  
+  return logoHtml + body;
+}
+
 // Configure your transporter as per your SMTP settings
 const transporter = nodemailer.createTransport({
   service: 'gmail',
@@ -35,7 +46,11 @@ async function sendBulkEmail(req, res) {
       }
       // Fill subject/body
       const subject = subjectOverride ? fillTemplate(subjectOverride, data) : fillTemplate(template.subject, data);
-      const body = bodyOverride ? fillTemplate(bodyOverride, data) : fillTemplate(template.body, data);
+      let body = bodyOverride ? fillTemplate(bodyOverride, data) : fillTemplate(template.body, data);
+      
+      // Add logo to email body if template has one
+      body = addLogoToEmail(body, template.logoFile);
+      
       // Send email
       let status = 'sent', error = null;
       try {
