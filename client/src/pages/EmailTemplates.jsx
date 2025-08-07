@@ -10,6 +10,8 @@ import {
   updateEmailTemplate,
   deleteEmailTemplate,
 } from '../services/emailTemplates';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const categoryOptions = ['Follow-up', 'Newsletter', 'Invite', 'Training', 'Mentoring', 'Other'];
 
@@ -49,6 +51,9 @@ export default function EmailTemplates() {
   function handleFormChange(e) {
     const { name, value } = e.target;
     setForm(f => ({ ...f, [name]: value }));
+  }
+  function handleQuillChange(value) {
+    setForm(f => ({ ...f, body: value }));
   }
   async function handleFormSubmit(e) {
     e.preventDefault();
@@ -110,7 +115,7 @@ export default function EmailTemplates() {
               <tr key={t._id || t.id} className="border-t hover:bg-green-50 transition">
                 <td className="px-4 py-2 font-semibold">{t.name}</td>
                 <td className="px-4 py-2">{t.subject}</td>
-                <td className="px-4 py-2 text-gray-600 text-sm max-w-xs truncate">{t.body.slice(0, 60)}...</td>
+                <td className="px-4 py-2 text-gray-600 text-sm max-w-xs truncate" dangerouslySetInnerHTML={{ __html: t.body.replace(/<[^>]+>/g, '') }} />
                 <td className="px-4 py-2">{t.category}</td>
                 <td className="px-4 py-2">
                   {t.logoUrl && <img src={t.logoUrl} alt="logo" className="inline h-6 align-middle mr-2" />}
@@ -141,7 +146,7 @@ export default function EmailTemplates() {
             </div>
             <div className="text-sm text-gray-700">
               <span className="font-semibold">Preview:</span>{' '}
-              <span className="text-gray-600">{t.body.slice(0, 60)}...</span>
+              <span className="text-gray-600" dangerouslySetInnerHTML={{ __html: t.body.replace(/<[^>]+>/g, '') }} />
             </div>
             {isAdminOrStaff && (
               <div className="flex gap-2 mt-2">
@@ -162,10 +167,10 @@ export default function EmailTemplates() {
       {/* Add/Edit Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-8 w-full max-w-lg relative">
-            <button className="absolute top-2 right-2 text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center" onClick={() => setShowForm(false)}>✕</button>
-            <h2 className="text-xl font-bold mb-4">{form.id ? 'Edit' : 'Add'} Email Template</h2>
-            <form className="space-y-4" onSubmit={handleFormSubmit}>
+          <div className="bg-white rounded shadow-lg p-0 w-full max-w-lg relative max-h-[90vh] flex flex-col">
+            <button className="absolute top-2 right-2 text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center z-10" onClick={() => setShowForm(false)}>✕</button>
+            <form className="flex-1 overflow-y-auto p-8 space-y-4" id="email-template-form" onSubmit={handleFormSubmit} style={{ maxHeight: '70vh' }}>
+              <h2 className="text-xl font-bold mb-4">{form.id ? 'Edit' : 'Add'} Email Template</h2>
               <input
                 name="name"
                 value={form.name}
@@ -182,14 +187,30 @@ export default function EmailTemplates() {
                 className="w-full px-4 py-2 border rounded"
                 required
               />
-              <textarea
-                name="body"
-                value={form.body}
-                onChange={handleFormChange}
-                placeholder="Email Body (use {{name}}, {{date}}, etc. for placeholders)"
-                className="w-full px-4 py-2 border rounded min-h-[120px]"
-                required
-              />
+              <div>
+                <label className="block font-semibold mb-1">Email Body</label>
+                <ReactQuill
+                  value={form.body}
+                  onChange={handleQuillChange}
+                  theme="snow"
+                  modules={{
+                    toolbar: [
+                      [{ 'font': [] }, { 'size': [] }],
+                      ['bold', 'italic', 'underline', 'strike'],
+                      [{ 'color': [] }, { 'background': [] }],
+                      [{ 'script': 'sub'}, { 'script': 'super' }],
+                      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                      [{ 'align': [] }],
+                      ['blockquote', 'code-block'],
+                      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                      [{ 'indent': '-1'}, { 'indent': '+1' }],
+                      ['link', 'image'],
+                      ['clean']
+                    ]
+                  }}
+                  style={{ minHeight: 120 }}
+                />
+              </div>
               <input
                 name="logoUrl"
                 value={form.logoUrl}
@@ -220,8 +241,12 @@ export default function EmailTemplates() {
                 <option value="">Select Category</option>
                 {categoryOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
               </select>
-              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow">{form.id ? 'Update' : 'Add'} Template</button>
             </form>
+            <div className="p-4 border-t flex justify-end bg-white sticky bottom-0 z-10">
+              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow" form="email-template-form">
+                {form.id ? 'Update' : 'Add'} Template
+              </button>
+            </div>
           </div>
         </div>
       )}
