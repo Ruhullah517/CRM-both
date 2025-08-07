@@ -1,59 +1,89 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   PlusIcon,
   PencilSquareIcon,
 } from '@heroicons/react/24/outline';
-
-const initialTemplates = [
-  {
-    id: 1,
-    name: 'Welcome Email',
-    subject: 'Welcome to BFCA!',
-    body: 'Dear {{name}},\nWelcome to the Black Foster Carers Alliance. We are excited to have you on board!',
-  },
-  {
-    id: 2,
-    name: 'Training Reminder',
-    subject: 'Upcoming Training Event',
-    body: 'Dear {{name}},\nThis is a reminder for your upcoming training event on {{date}}.',
-  },
-];
+import {
+  getEmailTemplates,
+  createEmailTemplate,
+  updateEmailTemplate,
+  deleteEmailTemplate,
+} from '../services/emailTemplates';
 
 const categoryOptions = ['Follow-up', 'Newsletter', 'Invite', 'Training', 'Mentoring', 'Other'];
 
 export default function EmailTemplates() {
   const { user } = useAuth();
   const isAdminOrStaff = user.user?.role === 'admin' || user?.role === 'staff';
-  const [templates, setTemplates] = useState(initialTemplates);
+  const [templates, setTemplates] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ id: null, name: '', subject: '', body: '', logoUrl: '', primaryColor: '', fontFamily: '', category: '' });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchTemplates();
+  }, []);
+
+  async function fetchTemplates() {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getEmailTemplates();
+      setTemplates(data);
+    } catch (err) {
+      setError('Failed to load templates');
+    }
+    setLoading(false);
+  }
 
   function openAdd() {
     setForm({ id: null, name: '', subject: '', body: '', logoUrl: '', primaryColor: '', fontFamily: '', category: '' });
     setShowForm(true);
   }
   function openEdit(t) {
-    setForm({ ...t });
+    setForm({ ...t, id: t._id || t.id });
     setShowForm(true);
   }
   function handleFormChange(e) {
     const { name, value } = e.target;
     setForm(f => ({ ...f, [name]: value }));
   }
-  function handleFormSubmit(e) {
+  async function handleFormSubmit(e) {
     e.preventDefault();
-    if (form.id) {
-      setTemplates(ts => ts.map(t => t.id === form.id ? { ...form } : t));
-    } else {
-      setTemplates(ts => [...ts, { ...form, id: Date.now() }]);
+    setLoading(true);
+    setError(null);
+    try {
+      if (form.id) {
+        await updateEmailTemplate(form.id, form);
+      } else {
+        await createEmailTemplate(form);
+      }
+      setShowForm(false);
+      fetchTemplates();
+    } catch (err) {
+      setError('Failed to save template');
     }
-    setShowForm(false);
+    setLoading(false);
+  }
+  async function handleDelete(id) {
+    if (!window.confirm('Delete this template?')) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await deleteEmailTemplate(id);
+      fetchTemplates();
+    } catch (err) {
+      setError('Failed to delete template');
+    }
+    setLoading(false);
   }
 
   return (
     <div className="max-w-3xl mx-auto mt-10 bg-white rounded shadow p-8">
       <h1 className="text-2xl font-bold mb-6">Email Templates</h1>
+      {error && <div className="mb-4 text-red-600">{error}</div>}
       {isAdminOrStaff && (
         <button
           className="mb-4 bg-[#2EAB2C] text-white px-4 py-2 rounded hover:bg-green-800 shadow flex items-center gap-2"
@@ -77,7 +107,7 @@ export default function EmailTemplates() {
           </thead>
           <tbody>
             {templates.map((t) => (
-              <tr key={t.id} className="border-t hover:bg-green-50 transition">
+              <tr key={t._id || t.id} className="border-t hover:bg-green-50 transition">
                 <td className="px-4 py-2 font-semibold">{t.name}</td>
                 <td className="px-4 py-2">{t.subject}</td>
                 <td className="px-4 py-2 text-gray-600 text-sm max-w-xs truncate">{t.body.slice(0, 60)}...</td>
@@ -87,10 +117,11 @@ export default function EmailTemplates() {
                   <span style={{ color: t.primaryColor, fontFamily: t.fontFamily || undefined }}>{t.primaryColor || t.fontFamily ? 'Aa' : ''}</span>
                 </td>
                 {isAdminOrStaff && (
-                  <td className="px-4 py-2">
+                  <td className="px-4 py-2 flex gap-2">
                     <button className="text-[#2EAB2C] hover:underline flex items-center gap-1" onClick={() => openEdit(t)}>
                       <PencilSquareIcon className="w-5 h-5" /> Edit
                     </button>
+                    <button className="text-red-600 hover:underline" onClick={() => handleDelete(t._id || t.id)}>Delete</button>
                   </td>
                 )}
               </tr>
@@ -98,11 +129,10 @@ export default function EmailTemplates() {
           </tbody>
         </table>
       </div>
-
       {/* Card view for mobile */}
       <div className="sm:hidden flex flex-col gap-4 mb-8">
         {templates.map((t) => (
-          <div key={t.id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
+          <div key={t._id || t.id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <span className="font-semibold text-base">{t.name}</span>
             </div>
@@ -110,7 +140,7 @@ export default function EmailTemplates() {
               <span className="font-semibold">Subject:</span> {t.subject}
             </div>
             <div className="text-sm text-gray-700">
-              <span className="font-semibold">Preview:</span>{" "}
+              <span className="font-semibold">Preview:</span>{' '}
               <span className="text-gray-600">{t.body.slice(0, 60)}...</span>
             </div>
             {isAdminOrStaff && (
@@ -120,6 +150,9 @@ export default function EmailTemplates() {
                   onClick={() => openEdit(t)}
                 >
                   <PencilSquareIcon className="w-5 h-5" /> Edit
+                </button>
+                <button className="flex-1 px-3 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200" onClick={() => handleDelete(t._id || t.id)}>
+                  Delete
                 </button>
               </div>
             )}

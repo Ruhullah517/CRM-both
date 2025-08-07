@@ -210,6 +210,9 @@ const Contacts = () => {
   const [placeholders, setPlaceholders] = useState({});
   const [sending, setSending] = useState(false);
   const [sendResults, setSendResults] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchContacts();
@@ -324,81 +327,85 @@ const Contacts = () => {
     setSending(false);
   }
 
-  if (view === "list" && (
-    <>
-      {error && <div className="mb-4 text-red-600">{error}</div>}
-      <ContactList
-        onSelect={c => { setSelected(c); setView("detail"); }}
-        onAdd={() => { setSelected(null); setView("form"); }}
-        contacts={contacts}
-        onDelete={handleDeleteContact}
-        selectedIds={selectedIds}
-        onSelectContact={handleSelectContact}
-        onSelectAll={handleSelectAll}
-      />
-      {selectedIds.length > 0 && (
-        <div className="max-w-5xl mx-auto p-4 flex justify-end">
-          <button className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-800" onClick={openBulkEmail}>
-            Send Bulk Email
-          </button>
-        </div>
-      )}
-      {showBulkEmail && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-8 w-full max-w-2xl relative">
-            <button className="absolute top-2 right-2 text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center" onClick={closeBulkEmail}>✕</button>
-            <h2 className="text-xl font-bold mb-4">Send Bulk Email</h2>
-            <div className="mb-4">
-              <label className="block font-semibold mb-1">Select Template</label>
-              <select className="w-full px-4 py-2 border rounded" value={selectedTemplateId} onChange={handleTemplateChange}>
-                <option value="">Select...</option>
-                {emailTemplates.map(t => <option key={t._id || t.id} value={t._id || t.id}>{t.name}</option>)}
-              </select>
-            </div>
-            {selectedTemplateId && (
-              <div className="mb-4">
-                <label className="block font-semibold mb-1">Fill Placeholders</label>
-                <div className="max-h-64 overflow-y-auto border rounded p-2">
-                  {selectedIds.map(id => (
-                    <div key={id} className="mb-2 border-b pb-2">
-                      <div className="font-semibold">{contacts.find(c => c._id === id)?.name || id}</div>
-                      {placeholders[id] && Object.keys(placeholders[id]).length > 0 ? (
-                        Object.keys(placeholders[id]).map(key => (
-                          <div key={key} className="flex items-center gap-2 my-1">
-                            <span className="w-32 text-sm text-gray-700">{key}:</span>
-                            <input className="flex-1 px-2 py-1 border rounded" value={placeholders[id][key] || ''} onChange={e => handlePlaceholderChange(id, key, e.target.value)} />
-                          </div>
-                        ))
-                      ) : <span className="text-xs text-gray-400">No placeholders</span>}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold" onClick={closeBulkEmail}>Cancel</button>
-              <button className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-800" onClick={handleSendBulkEmail} disabled={sending || !selectedTemplateId}>
-                {sending ? 'Sending...' : 'Send Email'}
-              </button>
-            </div>
-            {sendResults && (
-              <div className="mt-4">
-                <h3 className="font-semibold mb-2">Results</h3>
-                <ul className="max-h-32 overflow-y-auto text-sm">
-                  {sendResults.map((r, i) => (
-                    <li key={i} className={r.status === 'sent' ? 'text-green-700' : 'text-red-700'}>
-                      {r.email}: {r.status} {r.error && <span>- {r.error}</span>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
+  if (view === "list") {
+    return (
+      <>
+        {error && <div className="mb-4 text-red-600">{error}</div>}
+        {loading && <Loader />}
+        <ContactList
+          onSelect={c => { setSelected(c); setView("detail"); }}
+          onAdd={() => { setSelected(null); setView("form"); }}
+          contacts={contacts}
+          onDelete={handleDeleteContact}
+          selectedIds={selectedIds}
+          onSelectContact={handleSelectContact}
+          onSelectAll={handleSelectAll}
+        />
+        {selectedIds.length > 0 && (
+          <div className="max-w-5xl mx-auto p-4 flex justify-end">
+            <button className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-800" onClick={openBulkEmail}>
+              Send Bulk Email
+            </button>
           </div>
-        </div>
-      )}
-    </>
-  ))
-    if (view === "detail" && selected) return <ContactDetail contact={selected} onBack={() => setView("list")} onEdit={() => setView("form")} />;
+        )}
+        {showBulkEmail && (
+          <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white rounded shadow-lg p-8 w-full max-w-2xl relative">
+              <button className="absolute top-2 right-2 text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center" onClick={closeBulkEmail}>✕</button>
+              <h2 className="text-xl font-bold mb-4">Send Bulk Email</h2>
+              <div className="mb-4">
+                <label className="block font-semibold mb-1">Select Template</label>
+                <select className="w-full px-4 py-2 border rounded" value={selectedTemplateId} onChange={handleTemplateChange}>
+                  <option value="">Select...</option>
+                  {emailTemplates.map(t => <option key={t._id || t.id} value={t._id || t.id}>{t.name}</option>)}
+                </select>
+              </div>
+              {selectedTemplateId && (
+                <div className="mb-4">
+                  <label className="block font-semibold mb-1">Fill Placeholders</label>
+                  <div className="max-h-64 overflow-y-auto border rounded p-2">
+                    {selectedIds.map(id => (
+                      <div key={id} className="mb-2 border-b pb-2">
+                        <div className="font-semibold">{contacts.find(c => c._id === id)?.name || id}</div>
+                        {placeholders[id] && Object.keys(placeholders[id]).length > 0 ? (
+                          Object.keys(placeholders[id]).map(key => (
+                            <div key={key} className="flex items-center gap-2 my-1">
+                              <span className="w-32 text-sm text-gray-700">{key}:</span>
+                              <input className="flex-1 px-2 py-1 border rounded" value={placeholders[id][key] || ''} onChange={e => handlePlaceholderChange(id, key, e.target.value)} />
+                            </div>
+                          ))
+                        ) : <span className="text-xs text-gray-400">No placeholders</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-end gap-2 mt-4">
+                <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 font-semibold" onClick={closeBulkEmail}>Cancel</button>
+                <button className="px-4 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-800" onClick={handleSendBulkEmail} disabled={sending || !selectedTemplateId}>
+                  {sending ? 'Sending...' : 'Send Email'}
+                </button>
+              </div>
+              {sendResults && (
+                <div className="mt-4">
+                  <h3 className="font-semibold mb-2">Results</h3>
+                  <ul className="max-h-32 overflow-y-auto text-sm">
+                    {sendResults.map((r, i) => (
+                      <li key={i} className={r.status === 'sent' ? 'text-green-700' : 'text-red-700'}>
+                        {r.email}: {r.status} {r.error && <span>- {r.error}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  if (view === "detail" && selected) return <ContactDetail contact={selected} onBack={() => setView("list")} onEdit={() => setView("form")} />;
   if (view === "form" && selected) return <ContactForm contact={selected} onBack={() => setView("list")} onSave={handleSaveContact} loading={false} />;
   if (view === "add") return <ContactForm onBack={() => setView("list")} onSave={handleSaveContact} loading={false} />;
   return (
