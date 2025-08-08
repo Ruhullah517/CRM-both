@@ -261,7 +261,67 @@ const testTemplateLogo = async (req, res) => {
   }
 };
 
-// Serve logo images for email templates
+// Serve logo images for email templates by template ID
+const serveLogoByTemplate = async (req, res) => {
+  try {
+    const { templateId } = req.params;
+    
+    if (!templateId) {
+      return res.status(400).json({ message: 'Template ID is required' });
+    }
+    
+    console.log('Logo request for template:', templateId);
+    
+    // Find the template
+    const template = await EmailTemplate.findById(templateId);
+    if (!template) {
+      return res.status(404).json({ message: 'Template not found' });
+    }
+    
+    if (!template.logoFile) {
+      return res.status(404).json({ message: 'No logo found for this template' });
+    }
+    
+    console.log('Template found, logo length:', template.logoFile.length);
+    
+    // Check if logoFile is base64
+    if (template.logoFile.startsWith('data:image/')) {
+      // Extract the base64 data from the data URL
+      const base64Match = template.logoFile.match(/data:image\/([^;]+);base64,(.+)/);
+      if (!base64Match) {
+        return res.status(400).json({ message: 'Invalid logo data format' });
+      }
+      
+      const mimeType = base64Match[1];
+      const base64Data = base64Match[2];
+      
+      console.log('MIME type:', mimeType);
+      console.log('Base64 data length:', base64Data.length);
+      
+      // Convert base64 to buffer
+      const imageBuffer = Buffer.from(base64Data, 'base64');
+      
+      console.log('Image buffer length:', imageBuffer.length);
+      
+      // Set appropriate headers
+      res.setHeader('Content-Type', `image/${mimeType}`);
+      res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      
+      // Send the image
+      res.send(imageBuffer);
+    } else {
+      // Fallback for file paths
+      return res.status(400).json({ message: 'Logo format not supported' });
+    }
+    
+  } catch (error) {
+    console.error('Logo serve error:', error);
+    res.status(500).json({ message: 'Failed to serve logo', error: error.message });
+  }
+};
+
+// Serve logo images for email templates (legacy route)
 const serveLogo = async (req, res) => {
   try {
     const { encodedLogo } = req.params;
@@ -270,20 +330,39 @@ const serveLogo = async (req, res) => {
       return res.status(400).json({ message: 'Logo parameter is required' });
     }
     
+    console.log('Logo request received:', {
+      encodedLogoLength: encodedLogo.length,
+      encodedLogoPrefix: encodedLogo.substring(0, 50)
+    });
+    
+    // URL decode the parameter first
+    const decodedLogo = decodeURIComponent(encodedLogo);
+    
+    console.log('Decoded logo length:', decodedLogo.length);
+    
     // Decode the base64 logo data
-    const logoData = Buffer.from(encodedLogo, 'base64').toString();
+    const logoData = Buffer.from(decodedLogo, 'base64').toString();
+    
+    console.log('Logo data length:', logoData.length);
+    console.log('Logo data prefix:', logoData.substring(0, 50));
     
     // Extract the base64 data from the data URL
     const base64Match = logoData.match(/data:image\/([^;]+);base64,(.+)/);
     if (!base64Match) {
+      console.log('No base64 match found');
       return res.status(400).json({ message: 'Invalid logo data format' });
     }
     
     const mimeType = base64Match[1];
     const base64Data = base64Match[2];
     
+    console.log('MIME type:', mimeType);
+    console.log('Base64 data length:', base64Data.length);
+    
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    console.log('Image buffer length:', imageBuffer.length);
     
     // Set appropriate headers
     res.setHeader('Content-Type', `image/${mimeType}`);
@@ -308,5 +387,6 @@ module.exports = {
   migrateTemplatesToBase64,
   debugTemplates,
   testTemplateLogo,
-  serveLogo
+  serveLogo,
+  serveLogoByTemplate
 }; 

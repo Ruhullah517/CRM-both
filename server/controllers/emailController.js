@@ -9,7 +9,7 @@ function fillTemplate(str, data) {
 }
 
 // Helper to add logo to email body
-function addLogoToEmail(body, logoFile) {
+function addLogoToEmail(body, logoFile, templateId) {
   if (!logoFile) {
     return body;
   }
@@ -20,10 +20,10 @@ function addLogoToEmail(body, logoFile) {
   let logoHtml;
   if (isBase64) {
     // For email compatibility, we need to host the image externally
-    // This creates a URL that serves the logo from our server
+    // Use template ID instead of passing full base64 data in URL
     const backendUrl = 'https://crm-backend-0v14.onrender.com';
     logoHtml = `<div style="text-align: start; margin-bottom: 20px;">
-      <img src="${backendUrl}/api/email-templates/logo/${Buffer.from(logoFile).toString('base64')}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
+      <img src="${backendUrl}/api/email-templates/logo/template/${templateId}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
     </div>`;
   } else {
     // Fallback for file paths (legacy support)
@@ -71,7 +71,7 @@ async function sendBulkEmail(req, res) {
       let body = bodyOverride ? fillTemplate(bodyOverride, data) : fillTemplate(template.body, data);
       
       // Add logo to email body if template has one
-      body = addLogoToEmail(body, template.logoFile);
+      body = addLogoToEmail(body, template.logoFile, template._id);
       
       // Prepare email options
       const mailOptions = {
