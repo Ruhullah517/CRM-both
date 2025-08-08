@@ -80,8 +80,39 @@ const deleteCandidate = async (req, res) => {
 // Assign mentor to candidate
 const assignMentorToCandidate = async (req, res) => {
   const { mentor } = req.body;
+  const Mentor = require('../models/Mentor');
+  
   try {
+    // Get the current candidate to check if they already have a mentor
+    const currentCandidate = await Candidate.findById(req.params.id);
+    const candidateId = req.params.id;
+    
+    // Remove candidate from previous mentor's mentees array
+    if (currentCandidate.mentor && currentCandidate.mentor !== mentor) {
+      const previousMentor = await Mentor.findOne({ name: currentCandidate.mentor });
+      if (previousMentor) {
+        await Mentor.findByIdAndUpdate(previousMentor._id, {
+          $pull: { mentees: candidateId }
+        });
+      }
+    }
+    
+    // Update candidate's mentor
     await Candidate.findByIdAndUpdate(req.params.id, { mentor });
+    
+    // Add candidate to new mentor's mentees array
+    if (mentor) {
+      const mentorDoc = await Mentor.findOne({ name: mentor });
+      if (mentorDoc) {
+        // Add candidate to mentor's mentees if not already there
+        if (!mentorDoc.mentees.includes(candidateId)) {
+          await Mentor.findByIdAndUpdate(mentorDoc._id, {
+            $push: { mentees: candidateId }
+          });
+        }
+      }
+    }
+    
     res.json({ msg: 'Mentor assigned successfully' });
   } catch (error) {
     console.error(error);

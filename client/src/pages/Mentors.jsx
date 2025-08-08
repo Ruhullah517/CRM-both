@@ -25,7 +25,7 @@ export default function Mentors() {
   const [mentors, setMentors] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [showDetail, setShowDetail] = useState(null);
-  const [form, setForm] = useState({ _id: null, name: '', email: '', phone: '', skills: '', status: 'Active', avatar: '', mentees: [] });
+  const [form, setForm] = useState({ _id: null, name: '', email: '', phone: '', skills: '', status: 'Active', mentees: [] });
   const [showAssign, setShowAssign] = useState(false);
   const [assignMentees, setAssignMentees] = useState([]); // candidate IDs
   const [candidates, setCandidates] = useState([]);
@@ -87,10 +87,10 @@ export default function Mentors() {
     try {
       if (form._id) {
         await updateMentor(form._id, { ...form, skills: skillsArr });
-      } else {
-        await createMentor({ ...form, skills: skillsArr, avatar: form.avatar || `https://randomuser.me/api/portraits/lego/${Math.floor(Math.random() * 10)}.jpg` });
-      }
-      fetchMentors();
+             } else {
+         await createMentor({ ...form, skills: skillsArr });
+       }
+      await fetchMentors();
       setShowForm(false);
     } catch (err) {
       setError('Failed to save mentor');
@@ -125,7 +125,9 @@ export default function Mentors() {
     setSaving(true);
     try {
       await assignMenteesToMentor(showDetail._id, assignMentees, showDetail.name);
-      fetchMentors();
+      await fetchMentors();
+      // Also refresh candidates to show updated mentor assignments
+      await fetchCandidates();
       setShowAssign(false);
     } catch (err) {
       setError('Failed to assign mentees');
@@ -156,8 +158,7 @@ export default function Mentors() {
         <table className="min-w-full bg-white rounded shadow mb-8">
           <thead>
             <tr className="bg-green-50">
-              <th className="px-4 py-2 text-left font-semibold text-green-900">Avatar</th>
-              <th className="px-4 py-2 text-left font-semibold text-green-900">Name</th>
+                             <th className="px-4 py-2 text-left font-semibold text-green-900">Name</th>
               <th className="px-4 py-2 text-left font-semibold text-green-900">Email</th>
               <th className="px-4 py-2 text-left font-semibold text-green-900">Phone</th>
               <th className="px-4 py-2 text-left font-semibold text-green-900">Skills</th>
@@ -168,9 +169,8 @@ export default function Mentors() {
           </thead>
           <tbody>
             {mentors.map((m) => (
-              <tr key={m._id} className="border-t hover:bg-green-50 transition">
-                <td className="px-4 py-2"><img src={m.avatar} alt={m.name} className="w-10 h-10 rounded-full" /></td>
-                <td className="px-4 py-2 font-semibold cursor-pointer hover:underline" onClick={() => openDetail(m)}>{m.name}</td>
+                             <tr key={m._id} className="border-t hover:bg-green-50 transition">
+                 <td className="px-4 py-2 font-semibold cursor-pointer hover:underline" onClick={() => openDetail(m)}>{m.name}</td>
                 <td className="px-4 py-2 text-[12px]">{m.email}</td>
                 <td className="px-4 py-2 text-[12px]">{m.phone}</td>
                 <td className="px-4 py-2">
@@ -204,14 +204,13 @@ export default function Mentors() {
       {/* Card view for mobile */}
       <div className="sm:hidden flex flex-col gap-4 mb-8">
         {mentors.map((m) => (
-          <div key={m._id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
-            <div className="flex items-center gap-3">
-              <img src={m.avatar} alt={m.name} className="w-12 h-12 rounded-full" />
-              <div>
-                <div className="font-semibold text-base">{m.name}</div>
-                <div className={`px-2 py-1 rounded text-xs font-semibold inline-block mt-1 ${statusColors[m.status]}`}>{m.status}</div>
-              </div>
-            </div>
+                     <div key={m._id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
+             <div className="flex items-center gap-3">
+               <div>
+                 <div className="font-semibold text-base">{m.name}</div>
+                 <div className={`px-2 py-1 rounded text-xs font-semibold inline-block mt-1 ${statusColors[m.status]}`}>{m.status}</div>
+               </div>
+             </div>
             <div className="text-sm text-gray-700">
               <span className="font-semibold">Email:</span> {m.email}
             </div>
@@ -299,7 +298,17 @@ export default function Mentors() {
                 <option value="Inactive">Inactive</option>
                 <option value="On Leave">On Leave</option>
               </select>
-              <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 shadow" disabled={saving}>{form._id ? 'Update' : 'Add'} Mentor</button>
+                             <button 
+                 type="submit" 
+                 disabled={saving}
+                 className={`w-full py-2 rounded shadow ${
+                   saving 
+                     ? 'bg-gray-400 cursor-not-allowed' 
+                     : 'bg-[#2EAB2C] text-white hover:bg-green-800'
+                 }`}
+               >
+                 {saving ? (form._id ? 'Updating...' : 'Adding...') : (form._id ? 'Update' : 'Add')} Mentor
+               </button>
             </form>
           </div>
         </div>
@@ -307,15 +316,14 @@ export default function Mentors() {
       {/* Detail Modal */}
       {showDetail && !showAssign && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded shadow-lg p-8 w-full max-w-md relative">
-            <button className="absolute top-2 right-2 text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center" onClick={() => setShowDetail(null)}><XMarkIcon className="w-5 h-5" /></button>
-            <div className="flex items-center gap-4 mb-4">
-              <img src={showDetail.avatar} alt={showDetail.name} className="w-16 h-16 rounded-full" />
-              <div>
-                <h2 className="text-xl font-bold">{showDetail.name}</h2>
-                <div className={`px-2 py-1 rounded text-xs font-semibold inline-block mt-1 ${statusColors[showDetail.status]}`}>{showDetail.status}</div>
-              </div>
-            </div>
+                     <div className="bg-white rounded shadow-lg p-8 w-full max-w-md relative">
+             <button className="absolute top-2 right-2 text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center" onClick={() => setShowDetail(null)}><XMarkIcon className="w-5 h-5" /></button>
+             <div className="flex items-center gap-4 mb-4">
+               <div>
+                 <h2 className="text-xl font-bold">{showDetail.name}</h2>
+                 <div className={`px-2 py-1 rounded text-xs font-semibold inline-block mt-1 ${statusColors[showDetail.status]}`}>{showDetail.status}</div>
+               </div>
+             </div>
             <div className="mb-2"><span className="font-semibold">Email:</span> {showDetail.email}</div>
             <div className="mb-2"><span className="font-semibold">Phone:</span> {showDetail.phone}</div>
             <div className="mb-2"><span className="font-semibold">Skills:</span> {(showDetail.skills || []).map(s => <span key={s} className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded mr-1 mb-1">{s}</span>)}</div>
@@ -335,7 +343,17 @@ export default function Mentors() {
                       </label>
                     ))}
                   </div>
-                  <button type="submit" className="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800 shadow" disabled={saving}>Save Mentees</button>
+                                     <button 
+                     type="submit" 
+                     disabled={saving}
+                     className={`w-full py-2 rounded shadow ${
+                       saving 
+                         ? 'bg-gray-400 cursor-not-allowed' 
+                         : 'bg-blue-700 text-white hover:bg-blue-800'
+                     }`}
+                   >
+                     {saving ? 'Saving...' : 'Save Mentees'}
+                   </button>
                 </form>
               ) : (
                 getMenteeNames(showDetail).length ? getMenteeNames(showDetail).join(', ') : <span className="text-gray-400">None</span>
@@ -368,7 +386,17 @@ export default function Mentors() {
                   </label>
                 ))}
               </div>
-              <button type="submit" className="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800 shadow" disabled={saving}>Save Assignments</button>
+                             <button 
+                 type="submit" 
+                 disabled={saving}
+                 className={`w-full py-2 rounded shadow ${
+                   saving 
+                     ? 'bg-gray-400 cursor-not-allowed' 
+                     : 'bg-blue-700 text-white hover:bg-blue-800'
+                 }`}
+               >
+                 {saving ? 'Saving...' : 'Save Assignments'}
+               </button>
             </form>
           </div>
         </div>

@@ -453,7 +453,9 @@ const Candidates = () => {
     setError(null);
     try {
       await assignMentorToCandidate(candidateId, mentorName);
-      fetchCandidates();
+      await fetchCandidates();
+      // Also refresh mentors to show updated mentees
+      await fetchMentors();
     } catch (err) {
       setError('Failed to assign mentor');
     }
