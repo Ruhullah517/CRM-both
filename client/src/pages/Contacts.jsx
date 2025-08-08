@@ -38,7 +38,6 @@ const ContactList = ({ onSelect, onAdd, contacts, onDelete, selectedIds, onSelec
             <tr className="bg-green-50">
               <th className="px-2 py-2"><input type="checkbox" checked={allSelected} onChange={e => onSelectAll(filtered.map(c => c._id), e.target.checked)} /></th>
               <th className="px-4 py-2">Name</th>
-              <th className="px-4 py-2">Type</th>
               <th className="px-4 py-2">Tags</th>
               <th className="px-4 py-2">Email</th>
               <th className="px-4 py-2">Date Added</th>
@@ -51,7 +50,6 @@ const ContactList = ({ onSelect, onAdd, contacts, onDelete, selectedIds, onSelec
               <tr key={c._id} className="border-t hover:bg-green-50 transition">
                 <td className="px-2 py-2"><input type="checkbox" checked={selectedIds.includes(c._id)} onChange={e => onSelectContact(c._id, e.target.checked)} /></td>
                 <td className="px-4 py-2 font-semibold">{c.name}</td>
-                <td className="px-4 py-2">{c.type}</td>
                 <td className="px-4 py-2 flex flex-wrap gap-1">
                   {(c.tags || []).map(tag => (
                     <span key={tag} className={`px-2 py-1 rounded text-xs font-semibold ${tagColors[tag.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{tag}</span>
