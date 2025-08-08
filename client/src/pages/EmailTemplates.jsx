@@ -62,19 +62,19 @@ export default function EmailTemplates() {
     setShowForm(true);
   }
   function openEdit(t) {
-    // Clean up any duplicate logos in the body
+    // Clean up any duplicate logos and empty logo tags in the body
     let cleanBody = t.body;
-    const workingLogoPattern = /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/;
-    const brokenLogoPattern = /<img[^>]*alt="Logo"[^>]*>/g;
     
-    // Remove any broken logo tags first
-    cleanBody = cleanBody.replace(brokenLogoPattern, '');
+    // Remove empty logo tags like <img alt="Logo"> or <p><img alt="Logo"></p>
+    cleanBody = cleanBody.replace(/<p>\s*<img[^>]*alt="Logo"[^>]*>\s*<\/p>/g, '');
+    cleanBody = cleanBody.replace(/<img[^>]*alt="Logo"[^>]*>/g, '');
     
-    // Handle duplicate working logos
-    const logos = cleanBody.match(new RegExp(workingLogoPattern, 'g'));
+    // Remove duplicate logo divs
+    const logoPattern = /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/;
+    const logos = cleanBody.match(new RegExp(logoPattern, 'g'));
     if (logos && logos.length > 1) {
       // Remove all but the first logo
-      cleanBody = cleanBody.replace(workingLogoPattern, '');
+      cleanBody = cleanBody.replace(logoPattern, '');
       cleanBody = logos[0] + cleanBody;
     }
     
@@ -97,26 +97,18 @@ export default function EmailTemplates() {
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target.result);
-        // Add logo to the beginning of email body, but only if it's not already there
-        const logoHtml = `<div style="margin-bottom: 20px;"><img src="${e.target.result}" alt="Logo" style="max-height: 60px; max-width: 200px;" /></div>`;
+        // Don't add logo HTML to body - let the email controller handle it
         setForm(f => {
-          // Check if logo is already in the body - look for both working and broken logo tags
-          const workingLogoPattern = /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/;
-          const brokenLogoPattern = /<img[^>]*alt="Logo"[^>]*>/g;
-          const hasWorkingLogo = workingLogoPattern.test(f.body);
-          const hasBrokenLogo = brokenLogoPattern.test(f.body);
-          
+          // Clean up any existing empty logo tags first
           let cleanBody = f.body;
-          // Remove any broken logo tags first
-          if (hasBrokenLogo) {
-            cleanBody = cleanBody.replace(brokenLogoPattern, '');
-          }
+          cleanBody = cleanBody.replace(/<p>\s*<img[^>]*alt="Logo"[^>]*>\s*<\/p>/g, '');
+          cleanBody = cleanBody.replace(/<img[^>]*alt="Logo"[^>]*>/g, '');
           
           return { 
             ...f, 
             logoFile: file, 
             logoFileName: file.name,
-            body: hasWorkingLogo ? cleanBody : logoHtml + cleanBody
+            body: cleanBody
           };
         });
       };
@@ -132,13 +124,12 @@ export default function EmailTemplates() {
   function removeLogo() {
     setForm(f => ({ ...f, logoFile: null, logoFileName: '' }));
     setLogoPreview(null);
-    // Remove logo from body if it exists at the beginning
+    // Clean up any empty logo tags that might exist
     const currentBody = form.body;
-    const workingLogoPattern = /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/;
-    const brokenLogoPattern = /<img[^>]*alt="Logo"[^>]*>/g;
-    let bodyWithoutLogo = currentBody.replace(workingLogoPattern, '');
-    bodyWithoutLogo = bodyWithoutLogo.replace(brokenLogoPattern, '');
-    setForm(f => ({ ...f, body: bodyWithoutLogo }));
+    let cleanBody = currentBody;
+    cleanBody = cleanBody.replace(/<p>\s*<img[^>]*alt="Logo"[^>]*>\s*<\/p>/g, '');
+    cleanBody = cleanBody.replace(/<img[^>]*alt="Logo"[^>]*>/g, '');
+    setForm(f => ({ ...f, body: cleanBody }));
   }
   async function handleFormSubmit(e) {
     e.preventDefault();

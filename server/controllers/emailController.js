@@ -11,39 +11,23 @@ function fillTemplate(str, data) {
 // Helper to add logo to email body
 function addLogoToEmail(body, logoFile) {
   console.log('addLogoToEmail called with logoFile:', logoFile ? logoFile.substring(0, 100) + '...' : 'null/undefined');
-  console.log('logoFile type:', typeof logoFile);
-  console.log('logoFile length:', logoFile ? logoFile.length : 'null/undefined');
   
   if (!logoFile) {
     console.log('No logo file provided, returning body as-is');
     return body;
   }
   
-  // Check if logo is already present in the body (from frontend)
-  const logoPatterns = [
-    /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/,
-    /<img[^>]*alt="Logo"[^>]*>/g,
-    /<div style="text-align: start; margin-bottom: 20px;">[^<]*<img[^>]*alt="Logo"[^>]*>[^<]*<\/div>/
-  ];
-  
-  const hasLogo = logoPatterns.some(pattern => pattern.test(body));
-  if (hasLogo) {
-    console.log('Logo already present in body, skipping addition');
-    return body;
-  }
-  
-  // Check if logoFile is a base64 data URL or a file path
+  // Check if logoFile is a base64 data URL
   const isBase64 = logoFile.startsWith('data:image/');
   console.log('Is base64:', isBase64);
-  console.log('Base64 prefix check:', logoFile.substring(0, 30));
   
   let logoHtml;
   if (isBase64) {
-    // Use embedded image with CID for email clients
+    // Use base64 data directly in img src (no attachment needed)
     logoHtml = `<div style="text-align: start; margin-bottom: 20px;">
-      <img src="cid:logo" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
+      <img src="${logoFile}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
     </div>`;
-    console.log('Generated embedded logo HTML length:', logoHtml.length);
+    console.log('Generated base64 logo HTML length:', logoHtml.length);
   } else {
     // Fallback for file paths (legacy support)
     const backendUrl = 'https://crm-backend-0v14.onrender.com';
@@ -57,14 +41,7 @@ function addLogoToEmail(body, logoFile) {
   return logoHtml + body;
 }
 
-// Helper to convert base64 to buffer
-function base64ToBuffer(base64String) {
-  const matches = base64String.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-  if (!matches || matches.length !== 3) {
-    throw new Error('Invalid base64 string');
-  }
-  return Buffer.from(matches[2], 'base64');
-}
+
 
 // Configure your transporter as per your SMTP settings
 const transporter = nodemailer.createTransport({
@@ -114,19 +91,7 @@ async function sendBulkEmail(req, res) {
         html: body,
       };
       
-      // Add embedded image if template has base64 logo
-      if (template.logoFile && template.logoFile.startsWith('data:image/')) {
-        try {
-          const logoBuffer = base64ToBuffer(template.logoFile);
-          mailOptions.attachments = [{
-            filename: template.logoFileName || 'logo.png',
-            content: logoBuffer,
-            cid: 'logo'
-          }];
-        } catch (err) {
-          console.error('Error converting base64 to buffer:', err);
-        }
-      }
+      // No need for attachments since logo is embedded directly in HTML
       
       // Send email
       let status = 'sent', error = null;
