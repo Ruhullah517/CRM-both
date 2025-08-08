@@ -19,6 +19,19 @@ function addLogoToEmail(body, logoFile) {
     return body;
   }
   
+  // Check if logo is already present in the body (from frontend)
+  const logoPatterns = [
+    /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/,
+    /<img[^>]*alt="Logo"[^>]*>/g,
+    /<div style="text-align: start; margin-bottom: 20px;">[^<]*<img[^>]*alt="Logo"[^>]*>[^<]*<\/div>/
+  ];
+  
+  const hasLogo = logoPatterns.some(pattern => pattern.test(body));
+  if (hasLogo) {
+    console.log('Logo already present in body, skipping addition');
+    return body;
+  }
+  
   // Check if logoFile is a base64 data URL or a file path
   const isBase64 = logoFile.startsWith('data:image/');
   console.log('Is base64:', isBase64);

@@ -62,8 +62,30 @@ export default function EmailTemplates() {
     setShowForm(true);
   }
   function openEdit(t) {
-    setForm({ ...t, id: t._id || t.id, logoFile: null });
+    // Clean up any duplicate logos in the body
+    let cleanBody = t.body;
+    const workingLogoPattern = /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/;
+    const brokenLogoPattern = /<img[^>]*alt="Logo"[^>]*>/g;
+    
+    // Remove any broken logo tags first
+    cleanBody = cleanBody.replace(brokenLogoPattern, '');
+    
+    // Handle duplicate working logos
+    const logos = cleanBody.match(new RegExp(workingLogoPattern, 'g'));
+    if (logos && logos.length > 1) {
+      // Remove all but the first logo
+      cleanBody = cleanBody.replace(workingLogoPattern, '');
+      cleanBody = logos[0] + cleanBody;
+    }
+    
+    setForm({ ...t, id: t._id || t.id, logoFile: null, body: cleanBody });
     setLogoPreview(t.logoFile ? t.logoFile : null);
+    setShowForm(true);
+  }
+
+  function openAdd() {
+    setForm({ id: null, name: '', subject: '', body: '', logoFile: null, logoFileName: '', category: '' });
+    setLogoPreview(null);
     setShowForm(true);
   }
   function handleFormChange(e) {
@@ -75,14 +97,28 @@ export default function EmailTemplates() {
       const reader = new FileReader();
       reader.onload = (e) => {
         setLogoPreview(e.target.result);
-        // Add logo to the beginning of email body
+        // Add logo to the beginning of email body, but only if it's not already there
         const logoHtml = `<div style="margin-bottom: 20px;"><img src="${e.target.result}" alt="Logo" style="max-height: 60px; max-width: 200px;" /></div>`;
-        setForm(f => ({ 
-          ...f, 
-          logoFile: file, 
-          logoFileName: file.name,
-          body: logoHtml + f.body
-        }));
+        setForm(f => {
+          // Check if logo is already in the body - look for both working and broken logo tags
+          const workingLogoPattern = /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/;
+          const brokenLogoPattern = /<img[^>]*alt="Logo"[^>]*>/g;
+          const hasWorkingLogo = workingLogoPattern.test(f.body);
+          const hasBrokenLogo = brokenLogoPattern.test(f.body);
+          
+          let cleanBody = f.body;
+          // Remove any broken logo tags first
+          if (hasBrokenLogo) {
+            cleanBody = cleanBody.replace(brokenLogoPattern, '');
+          }
+          
+          return { 
+            ...f, 
+            logoFile: file, 
+            logoFileName: file.name,
+            body: hasWorkingLogo ? cleanBody : logoHtml + cleanBody
+          };
+        });
       };
       reader.readAsDataURL(file);
     } else {
@@ -98,8 +134,10 @@ export default function EmailTemplates() {
     setLogoPreview(null);
     // Remove logo from body if it exists at the beginning
     const currentBody = form.body;
-    const logoPattern = /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/;
-    const bodyWithoutLogo = currentBody.replace(logoPattern, '');
+    const workingLogoPattern = /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/;
+    const brokenLogoPattern = /<img[^>]*alt="Logo"[^>]*>/g;
+    let bodyWithoutLogo = currentBody.replace(workingLogoPattern, '');
+    bodyWithoutLogo = bodyWithoutLogo.replace(brokenLogoPattern, '');
     setForm(f => ({ ...f, body: bodyWithoutLogo }));
   }
   async function handleFormSubmit(e) {
