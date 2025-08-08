@@ -261,6 +261,44 @@ const testTemplateLogo = async (req, res) => {
   }
 };
 
+// Serve logo images for email templates
+const serveLogo = async (req, res) => {
+  try {
+    const { encodedLogo } = req.params;
+    
+    if (!encodedLogo) {
+      return res.status(400).json({ message: 'Logo parameter is required' });
+    }
+    
+    // Decode the base64 logo data
+    const logoData = Buffer.from(encodedLogo, 'base64').toString();
+    
+    // Extract the base64 data from the data URL
+    const base64Match = logoData.match(/data:image\/([^;]+);base64,(.+)/);
+    if (!base64Match) {
+      return res.status(400).json({ message: 'Invalid logo data format' });
+    }
+    
+    const mimeType = base64Match[1];
+    const base64Data = base64Match[2];
+    
+    // Convert base64 to buffer
+    const imageBuffer = Buffer.from(base64Data, 'base64');
+    
+    // Set appropriate headers
+    res.setHeader('Content-Type', `image/${mimeType}`);
+    res.setHeader('Cache-Control', 'public, max-age=31536000'); // Cache for 1 year
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    
+    // Send the image
+    res.send(imageBuffer);
+    
+  } catch (error) {
+    console.error('Logo serve error:', error);
+    res.status(500).json({ message: 'Failed to serve logo', error: error.message });
+  }
+};
+
 module.exports = {
   getAllEmailTemplates,
   getEmailTemplateById,
@@ -269,5 +307,6 @@ module.exports = {
   deleteEmailTemplate,
   migrateTemplatesToBase64,
   debugTemplates,
-  testTemplateLogo
+  testTemplateLogo,
+  serveLogo
 }; 

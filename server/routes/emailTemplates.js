@@ -9,6 +9,7 @@ const {
   migrateTemplatesToBase64,
   debugTemplates,
   testTemplateLogo,
+  serveLogo,
 } = require('../controllers/emailTemplateController');
 const { sendBulkEmail } = require('../controllers/emailController');
 const upload = require('../middleware/upload');
@@ -24,6 +25,9 @@ router.get('/debug/templates', debugTemplates);
 
 // Test endpoint to verify logo data
 router.get('/test/logo/:templateId', testTemplateLogo);
+
+// Serve logo images for email templates
+router.get('/logo/:encodedLogo', serveLogo);
 
 // Migration endpoint to convert existing templates to base64
 router.post('/migrate-to-base64', migrateTemplatesToBase64);
