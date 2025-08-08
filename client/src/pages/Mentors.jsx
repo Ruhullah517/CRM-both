@@ -9,7 +9,7 @@ import {
   UserGroupIcon,
   AcademicCapIcon,
 } from '@heroicons/react/24/outline';
-import { getMentors, createMentor, updateMentor, deleteMentor } from '../services/mentors';
+import { getMentors, createMentor, updateMentor, deleteMentor, assignMenteesToMentor } from '../services/mentors';
 import { getCandidates } from '../services/candidates';
 import Loader from '../components/Loader';
 
@@ -122,10 +122,9 @@ export default function Mentors() {
     );
   }
   async function handleAssignSave() {
-    // Update mentor's mentees in backend
     setSaving(true);
     try {
-      await updateMentor(showDetail._id, { ...showDetail, mentees: assignMentees });
+      await assignMenteesToMentor(showDetail._id, assignMentees, showDetail.name);
       fetchMentors();
       setShowAssign(false);
     } catch (err) {

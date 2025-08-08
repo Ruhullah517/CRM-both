@@ -23,4 +23,9 @@ export async function updateMentor(id, mentor) {
 export async function deleteMentor(id) {
   const res = await api.delete(`/mentors/${id}`);
   return res.data;
+}
+
+export async function assignMenteesToMentor(mentorId, menteeIds, mentorName) {
+  const res = await api.put(`/mentors/${mentorId}/assign-mentees`, { mentees: menteeIds, mentorName });
+  return res.data;
 } 

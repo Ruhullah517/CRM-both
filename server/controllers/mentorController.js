@@ -83,10 +83,42 @@ const deleteMentor = async (req, res) => {
   }
 };
 
+// Assign mentees to mentor
+const assignMenteesToMentor = async (req, res) => {
+  const { mentees, mentorName } = req.body;
+  const Candidate = require('../models/Candidate');
+  
+  try {
+    // Update mentor's mentees
+    await Mentor.findByIdAndUpdate(req.params.id, { mentees });
+    
+    // Update all candidates to reflect the mentor assignment
+    // First, clear all candidates' mentor assignments for this mentor
+    await Candidate.updateMany(
+      { mentor: mentorName },
+      { $unset: { mentor: "" } }
+    );
+    
+    // Then assign the mentor to the selected candidates
+    if (mentees && mentees.length > 0) {
+      await Candidate.updateMany(
+        { _id: { $in: mentees } },
+        { mentor: mentorName }
+      );
+    }
+    
+    res.json({ msg: 'Mentees assigned successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 module.exports = {
   getAllMentors,
   getMentorById,
   createMentor,
   updateMentor,
   deleteMentor,
+  assignMenteesToMentor,
 }; 

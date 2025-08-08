@@ -77,10 +77,23 @@ const deleteCandidate = async (req, res) => {
   }
 };
 
+// Assign mentor to candidate
+const assignMentorToCandidate = async (req, res) => {
+  const { mentor } = req.body;
+  try {
+    await Candidate.findByIdAndUpdate(req.params.id, { mentor });
+    res.json({ msg: 'Mentor assigned successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 module.exports = {
   getAllCandidates,
   getCandidateById,
   createCandidate,
   updateCandidate,
   deleteCandidate,
+  assignMentorToCandidate,
 }; 

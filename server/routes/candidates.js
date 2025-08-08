@@ -7,6 +7,7 @@ const {
   createCandidate,
   updateCandidate,
   deleteCandidate,
+  assignMentorToCandidate,
 } = require('../controllers/candidateController');
 
 // Document upload endpoint
@@ -20,6 +21,7 @@ router.get('/', getAllCandidates);
 router.get('/:id', getCandidateById);
 router.post('/', createCandidate);
 router.put('/:id', updateCandidate);
+router.put('/:id/assign-mentor', assignMentorToCandidate);
 router.delete('/:id', deleteCandidate);
 
 module.exports = router; 

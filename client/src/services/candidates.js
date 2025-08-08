@@ -24,3 +24,8 @@ export async function deleteCandidate(id) {
   const res = await api.delete(`/candidates/${id}`);
   return res.data;
 }
+
+export async function assignMentorToCandidate(candidateId, mentorName) {
+  const res = await api.put(`/candidates/${candidateId}/assign-mentor`, { mentor: mentorName });
+  return res.data;
+}
