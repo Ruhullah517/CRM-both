@@ -13,6 +13,17 @@ import {
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 
+// Custom CSS for full-screen editor
+const editorStyles = `
+  .ql-editor {
+    min-height: 400px !important;
+    height: 100% !important;
+  }
+  .ql-container {
+    height: calc(100% - 42px) !important;
+  }
+`;
+
 const categoryOptions = ['Follow-up', 'Newsletter', 'Invite', 'Training', 'Mentoring', 'Other'];
 
 export default function EmailTemplates() {
@@ -20,7 +31,7 @@ export default function EmailTemplates() {
   const isAdminOrStaff = user.user?.role === 'admin' || user?.role === 'staff';
   const [templates, setTemplates] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ id: null, name: '', subject: '', body: '', logoFile: null, logoFileName: '', primaryColor: '', fontFamily: '', category: '' });
+  const [form, setForm] = useState({ id: null, name: '', subject: '', body: '', logoFile: null, logoFileName: '', category: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
@@ -46,7 +57,7 @@ export default function EmailTemplates() {
   }
 
   function openAdd() {
-    setForm({ id: null, name: '', subject: '', body: '', logoFile: null, logoFileName: '', primaryColor: '', fontFamily: '', category: '' });
+    setForm({ id: null, name: '', subject: '', body: '', logoFile: null, logoFileName: '', category: '' });
     setLogoPreview(null);
     setShowForm(true);
   }
@@ -62,7 +73,17 @@ export default function EmailTemplates() {
       setForm(f => ({ ...f, logoFile: file, logoFileName: file.name }));
       // Create preview
       const reader = new FileReader();
-      reader.onload = (e) => setLogoPreview(e.target.result);
+      reader.onload = (e) => {
+        setLogoPreview(e.target.result);
+        // Add logo to the beginning of email body
+        const logoHtml = `<div style="margin-bottom: 20px;"><img src="${e.target.result}" alt="Logo" style="max-height: 60px; max-width: 200px;" /></div>`;
+        setForm(f => ({ 
+          ...f, 
+          logoFile: file, 
+          logoFileName: file.name,
+          body: logoHtml + f.body
+        }));
+      };
       reader.readAsDataURL(file);
     } else {
       setForm(f => ({ ...f, [name]: value }));
@@ -70,6 +91,16 @@ export default function EmailTemplates() {
   }
   function handleQuillChange(value) {
     setForm(f => ({ ...f, body: value }));
+  }
+
+  function removeLogo() {
+    setForm(f => ({ ...f, logoFile: null, logoFileName: '' }));
+    setLogoPreview(null);
+    // Remove logo from body if it exists at the beginning
+    const currentBody = form.body;
+    const logoPattern = /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/;
+    const bodyWithoutLogo = currentBody.replace(logoPattern, '');
+    setForm(f => ({ ...f, body: bodyWithoutLogo }));
   }
   async function handleFormSubmit(e) {
     e.preventDefault();
@@ -80,8 +111,6 @@ export default function EmailTemplates() {
       formData.append('name', form.name);
       formData.append('subject', form.subject);
       formData.append('body', form.body);
-      formData.append('primaryColor', form.primaryColor);
-      formData.append('fontFamily', form.fontFamily);
       formData.append('category', form.category);
       
       if (form.logoFile) {
@@ -114,7 +143,9 @@ export default function EmailTemplates() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto mt-10 bg-white rounded shadow p-8">
+    <>
+      <style>{editorStyles}</style>
+      <div className="max-w-3xl mx-auto mt-10 bg-white rounded shadow p-8">
       <h1 className="text-2xl font-bold mb-6">Email Templates</h1>
       {error && <div className="mb-4 text-red-600">{error}</div>}
       {loading && <div className="mb-4 text-blue-600">Loading templates...</div>}
@@ -154,9 +185,9 @@ export default function EmailTemplates() {
                     <td className="px-4 py-2">{t.subject}</td>
                     <td className="px-4 py-2 text-gray-600 text-sm max-w-xs break-words" dangerouslySetInnerHTML={{ __html: t.body.replace(/<[^>]+>/g, '') }} />
                     <td className="px-4 py-2">{t.category}</td>
-                    <td className="px-4 py-2">
-                      {t.logoFile && <img src={t.logoFile} alt="logo" className="inline h-6 align-middle mr-2" />}
-                    </td>
+                                    <td className="px-4 py-2">
+                  {t.logoFile && <img src={t.logoFile} alt="logo" className="inline h-6 align-middle" />}
+                </td>
                     {isAdminOrStaff && (
                       <td className="px-4 py-2 flex flex-col gap-2">
                         <button className="text-[#2EAB2C] hover:underline flex items-center gap-1" onClick={() => openEdit(t)}>
@@ -196,8 +227,7 @@ export default function EmailTemplates() {
                   <span className="font-semibold">Category:</span> {t.category}
                 </div>
                 <div className="text-sm text-gray-700 flex items-center gap-2">
-                  {t.logoFile && <img src={t.logoFile} alt="logo" className="inline h-6 align-middle mr-2" />}
-                  <span style={{ color: t.primaryColor, fontFamily: t.fontFamily || undefined }}>{t.primaryColor || t.fontFamily ? 'Aa' : ''}</span>
+                  {t.logoFile && <img src={t.logoFile} alt="logo" className="inline h-6 align-middle" />}
                 </div>
               </div>
             ))}
@@ -206,8 +236,8 @@ export default function EmailTemplates() {
       )}
       {/* Add/Edit Modal */}
       {showForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded shadow-lg w-full max-w-lg max-h-[95vh] flex flex-col">
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded shadow-lg w-full h-full max-w-none flex flex-col">
             <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-xl font-bold">{form.id ? 'Edit' : 'Add'} Email Template</h2>
               <button className="text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center" onClick={() => setShowForm(false)}>✕</button>
@@ -229,9 +259,9 @@ export default function EmailTemplates() {
                 className="w-full px-4 py-2 border rounded"
                 required
               />
-              <div>
+              <div className="flex-1 flex flex-col">
                 <label className="block font-semibold mb-1">Email Body</label>
-                <div className="border rounded">
+                <div className="border rounded flex-1 flex flex-col">
                   <ReactQuill
                     value={form.body}
                     onChange={handleQuillChange}
@@ -250,7 +280,7 @@ export default function EmailTemplates() {
                         ['clean']
                       ]
                     }}
-                    style={{ minHeight: 120, maxHeight: 200 }}
+                    style={{ height: '100%', minHeight: '400px' }}
                   />
                 </div>
               </div>
@@ -264,25 +294,19 @@ export default function EmailTemplates() {
                   className="w-full px-4 py-2 border rounded"
                 />
                 {logoPreview && (
-                  <div className="mt-2">
+                  <div className="mt-2 flex items-center gap-2">
                     <img src={logoPreview} alt="Logo preview" className="h-12 w-auto" />
+                    <button
+                      type="button"
+                      onClick={removeLogo}
+                      className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                    >
+                      Remove Logo
+                    </button>
                   </div>
                 )}
               </div>
-              <input
-                name="primaryColor"
-                value={form.primaryColor}
-                onChange={handleFormChange}
-                placeholder="Primary Color (e.g. #2EAB2C or green)"
-                className="w-full px-4 py-2 border rounded"
-              />
-              <input
-                name="fontFamily"
-                value={form.fontFamily}
-                onChange={handleFormChange}
-                placeholder="Font Family (e.g. Arial, 'Open Sans')"
-                className="w-full px-4 py-2 border rounded"
-              />
+
               <select
                 name="category"
                 value={form.category}
@@ -301,6 +325,7 @@ export default function EmailTemplates() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 } 

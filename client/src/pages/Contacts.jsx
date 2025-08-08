@@ -366,7 +366,7 @@ const Contacts = () => {
           <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
             <div className="bg-white rounded shadow-lg p-8 w-full max-w-2xl relative">
               <button className="absolute top-2 right-2 text-gray-500 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center" onClick={closeBulkEmail}>✕</button>
-              <h2 className="text-xl font-bold mb-4">Send Bulk Email</h2>
+              <h2 className="text-xl font-bold mb-4">Send Email</h2>
               <div className="mb-4">
                 <label className="block font-semibold mb-1">Select Template</label>
                 <select className="w-full px-4 py-2 border rounded" value={selectedTemplateId} onChange={handleTemplateChange}>

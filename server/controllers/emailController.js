@@ -27,14 +27,14 @@ function addLogoToEmail(body, logoFile) {
   let logoHtml;
   if (isBase64) {
     // Use embedded image with CID for email clients
-    logoHtml = `<div style="text-align: center; margin-bottom: 20px;">
+    logoHtml = `<div style="text-align: start; margin-bottom: 20px;">
       <img src="cid:logo" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
     </div>`;
     console.log('Generated embedded logo HTML length:', logoHtml.length);
   } else {
     // Fallback for file paths (legacy support)
     const backendUrl = 'https://crm-backend-0v14.onrender.com';
-    logoHtml = `<div style="text-align: center; margin-bottom: 20px;">
+    logoHtml = `<div style="text-align: start; margin-bottom: 20px;">
       <img src="${backendUrl}${logoFile}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
     </div>`;
     console.log('Generated file path logo HTML length:', logoHtml.length);
