@@ -118,7 +118,7 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
   );
 };
 
-const CandidateDetail = ({ candidate, onBack, onEdit, mentors, onMentorAssign }) => (
+const CandidateDetail = ({ candidate, onBack, onEdit }) => (
   <div className="max-w-2xl mx-auto p-4 bg-white rounded shadow mt-6">
     <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
     <h2 className="text-xl font-bold mb-2">{candidate.name}</h2>
@@ -169,21 +169,7 @@ const CandidateDetail = ({ candidate, onBack, onEdit, mentors, onMentorAssign })
         </li>
       )}
     </ul>
-    <div className="flex gap-2 mt-4">
-      <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
-      {mentors && mentors.length > 0 && (
-        <select 
-          onChange={(e) => onMentorAssign(candidate._id, e.target.value)}
-          className="px-4 py-2 border rounded"
-          defaultValue=""
-        >
-          <option value="">Assign Mentor</option>
-          {mentors.filter(m => m.status === 'Active').map(m => (
-            <option key={m._id} value={m.name}>{m.name}</option>
-          ))}
-        </select>
-      )}
-    </div>
+    <button onClick={onEdit} className="mt-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
   </div>
 );
 
@@ -425,10 +411,19 @@ const Candidates = () => {
     try {
       if (candidate._id) {
         await updateCandidate(candidate._id, candidate);
+        // If mentor was changed, update the mentor-candidate relationship
+        if (candidate.mentor) {
+          await assignMentorToCandidate(candidate._id, candidate.mentor);
+        }
       } else {
-        await createCandidate(candidate);
+        const newCandidate = await createCandidate(candidate);
+        // If mentor was assigned during creation, update the mentor-candidate relationship
+        if (candidate.mentor && newCandidate._id) {
+          await assignMentorToCandidate(newCandidate._id, candidate.mentor);
+        }
       }
       await fetchCandidates();
+      await fetchMentors(); // Refresh mentors to show updated mentees
       setView("list");
     } catch (err) {
       setError('Failed to save candidate');
@@ -448,22 +443,11 @@ const Candidates = () => {
     }
   }
 
-  async function handleMentorAssign(candidateId, mentorName) {
-    if (!mentorName) return;
-    setError(null);
-    try {
-      await assignMentorToCandidate(candidateId, mentorName);
-      await fetchCandidates();
-      // Also refresh mentors to show updated mentees
-      await fetchMentors();
-    } catch (err) {
-      setError('Failed to assign mentor');
-    }
-  }
 
 
 
-  if (view === "detail" && selected) return <CandidateDetail candidate={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} mentors={mentors} onMentorAssign={handleMentorAssign} />;
+
+  if (view === "detail" && selected) return <CandidateDetail candidate={selected} onBack={() => setView("list")} onEdit={() => setView("edit")} />;
   if (view === "edit" && selected) return <CandidateForm candidate={selected} onBack={() => setView("detail")} onSave={handleSaveCandidate} mentors={mentors} />;
   if (view === "add") return <CandidateForm onBack={() => setView("list")} onSave={handleSaveCandidate} mentors={mentors} />;
   return (
