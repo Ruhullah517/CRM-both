@@ -1,4 +1,5 @@
 const InitialAssessment = require('../models/InitialAssessment');
+const mongoose = require('mongoose');
 
 // Create a new assessment
 const createAssessment = async (req, res) => {
@@ -23,6 +24,11 @@ const createAssessment = async (req, res) => {
 // Get assessment by enquiry ID
 const getAssessmentByEnquiryId = async (req, res) => {
   try {
+    // Check if the parameter is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.enquiryId)) {
+      return res.status(400).json({ msg: 'Invalid enquiry ID format' });
+    }
+    
     const assessment = await InitialAssessment.findOne({ enquiry_id: req.params.enquiryId });
     if (!assessment) return res.status(404).json({ msg: 'Assessment not found' });
     res.json(assessment);

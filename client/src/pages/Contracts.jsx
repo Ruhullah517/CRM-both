@@ -287,7 +287,7 @@ const ContractForm = ({ contract, onBack, onSave, saving }) => {
   function handleSubmit(e) {
     e.preventDefault();
     const selectedTemplate = templates.find(t => t._id === selectedTemplateId || t.id === selectedTemplateId);
-    const userId = user?.user?.id;
+    const userId = user?.user?.id || user?.id;
     if (!userId) {
       alert('User ID not found. Please log in again.');
       return;
@@ -420,7 +420,9 @@ const Contracts = () => {
       fetchContracts();
       setView("list");
     } catch (err) {
-      setError('Failed to save contract');
+      console.error('Contract save error:', err);
+      const errorMessage = err.response?.data?.msg || err.message || 'Failed to save contract';
+      setError(errorMessage);
     } finally {
       setSaving(false); // stop loader
     }

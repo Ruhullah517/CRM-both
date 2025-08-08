@@ -1,4 +1,5 @@
 const Application = require('../models/Application');
+const mongoose = require('mongoose');
 const path = require('path');
 
 const uploadApplication = async (req, res) => {
@@ -38,6 +39,11 @@ const uploadApplication = async (req, res) => {
 
 const getApplicationByEnquiryId = async (req, res) => {
   try {
+    // Check if the parameter is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(req.params.enquiryId)) {
+      return res.status(400).json({ msg: 'Invalid enquiry ID format' });
+    }
+    
     const application = await Application.findOne({ enquiry_id: req.params.enquiryId });
     if (!application) return res.status(404).json({ msg: 'Application not found' });
     res.json(application);

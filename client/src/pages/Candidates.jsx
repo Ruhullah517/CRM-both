@@ -297,7 +297,7 @@ const CandidateForm = ({ candidate, onBack, onSave, mentors }) => {
             {documents.map((d, i) => (
               <li key={i} className="flex items-center gap-2">
                 <a
-                  href={d.url}
+                  href={`https://crm-backend-0v14.onrender.com${d.url}`}
                   className="text-blue-700 hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"
