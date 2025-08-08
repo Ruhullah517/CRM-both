@@ -11,6 +11,8 @@ function fillTemplate(str, data) {
 // Helper to add logo to email body
 function addLogoToEmail(body, logoFile) {
   console.log('addLogoToEmail called with logoFile:', logoFile ? logoFile.substring(0, 100) + '...' : 'null/undefined');
+  console.log('logoFile type:', typeof logoFile);
+  console.log('logoFile length:', logoFile ? logoFile.length : 'null/undefined');
   
   if (!logoFile) {
     console.log('No logo file provided, returning body as-is');
@@ -20,6 +22,7 @@ function addLogoToEmail(body, logoFile) {
   // Check if logoFile is a base64 data URL
   const isBase64 = logoFile.startsWith('data:image/');
   console.log('Is base64:', isBase64);
+  console.log('Base64 prefix check:', logoFile.substring(0, 30));
   
   let logoHtml;
   if (isBase64) {
@@ -28,6 +31,7 @@ function addLogoToEmail(body, logoFile) {
       <img src="${logoFile}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
     </div>`;
     console.log('Generated base64 logo HTML length:', logoHtml.length);
+    console.log('Generated base64 logo HTML preview:', logoHtml.substring(0, 200) + '...');
   } else {
     // Fallback for file paths (legacy support)
     const backendUrl = 'https://crm-backend-0v14.onrender.com';
@@ -35,6 +39,7 @@ function addLogoToEmail(body, logoFile) {
       <img src="${backendUrl}${logoFile}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
     </div>`;
     console.log('Generated file path logo HTML length:', logoHtml.length);
+    console.log('Generated file path logo HTML preview:', logoHtml.substring(0, 200) + '...');
   }
   
   console.log('Final logo HTML preview:', logoHtml.substring(0, 200) + '...');
@@ -65,9 +70,18 @@ async function sendBulkEmail(req, res) {
     console.log('Template found:', {
       id: template._id,
       name: template.name,
-      logoFile: template.logoFile,
-      logoFileName: template.logoFileName
+      hasLogoFile: !!template.logoFile,
+      logoFileLength: template.logoFile ? template.logoFile.length : 0,
+      logoFilePrefix: template.logoFile ? template.logoFile.substring(0, 50) : 'null',
+      logoFileName: template.logoFileName,
+      logoFileType: template.logoFile ? typeof template.logoFile : 'null'
     });
+    
+    // Debug: Check if logo is base64
+    if (template.logoFile) {
+      console.log('Logo is base64:', template.logoFile.startsWith('data:image/'));
+      console.log('Logo starts with:', template.logoFile.substring(0, 30));
+    }
     
     const results = [];
     for (const recipient of recipients) {
@@ -82,6 +96,9 @@ async function sendBulkEmail(req, res) {
       
       // Add logo to email body if template has one
       body = addLogoToEmail(body, template.logoFile);
+      
+      // Debug: Log the final email body
+      console.log('Final email body preview:', body.substring(0, 500) + '...');
       
       // Prepare email options
       const mailOptions = {
