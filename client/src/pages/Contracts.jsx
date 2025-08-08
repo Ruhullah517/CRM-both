@@ -4,12 +4,12 @@ import { getGeneratedContracts, generateContract, downloadContract, deleteContra
 import { getContractTemplates } from '../services/contractTemplates';
 import Loader from '../components/Loader';
 
-const statuses = ['Signed', 'Pending', 'Expired'];
+const statuses = ['signed', 'pending', 'cancelled'];
 const roles = ['Trainer', 'Mentor'];
 const statusColors = {
   signed: 'bg-green-100 text-[#2EAB2C]',
   pending: 'bg-yellow-100 text-yellow-800',
-  expired: 'bg-red-100 text-red-800',
+  cancelled: 'bg-red-100 text-red-800',
 };
 
 const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
@@ -330,9 +330,9 @@ const ContractForm = ({ contract, onBack, onSave, saving }) => {
             required
           >
             <option value="">Select status</option>
-            <option value="Signed">Signed</option>
-            <option value="Pending">Pending</option>
-            <option value="Expired">Expired</option>
+            <option value="signed">Signed</option>
+            <option value="pending">Pending</option>
+            <option value="cancelled">Cancelled</option>
           </select>
         </div>
         {/* Placeholder fields */}

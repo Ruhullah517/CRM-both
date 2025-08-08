@@ -15,10 +15,10 @@ const stages = ['Inquiry', 'Application', 'Assessment', 'Mentoring', 'Final Appr
 const statuses = ['New', 'Active', 'Paused', 'Completed'];
 
 const statusColors = {
-  new: 'bg-gray-200 text-gray-800',
-  active: 'bg-green-100 text-[#2EAB2C]',
-  paused: 'bg-yellow-100 text-yellow-800',
-  completed: 'bg-blue-100 text-blue-800',
+  New: 'bg-gray-200 text-gray-800',
+  Active: 'bg-green-100 text-[#2EAB2C]',
+  Paused: 'bg-yellow-100 text-yellow-800',
+  Completed: 'bg-blue-100 text-blue-800',
 };
 const stageColors = {
   'Initial Enquiry': 'bg-gray-100 text-gray-700',
