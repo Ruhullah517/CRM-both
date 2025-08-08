@@ -4,11 +4,13 @@ import { getCases } from '../services/cases';
 import { getGeneratedContracts } from '../services/contracts';
 import { getFreelancers } from '../services/freelancers';
 import { getEnquiries } from '../services/enquiries';
+import { getMentors } from '../services/mentors';
 import {
   UserGroupIcon,
   DocumentTextIcon,
   BriefcaseIcon,
   InboxIcon,
+  AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import Loader from '../components/Loader';
@@ -21,20 +23,23 @@ export default function Dashboard() {
   const [contracts, setContracts] = useState([]);
   const [freelancers, setFreelancers] = useState([]);
   const [enquiries, setEnquiries] = useState([]);
+  const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchAll() {
-      const [casesData, contractsData, freelancersData, enquiriesData] = await Promise.all([
+      const [casesData, contractsData, freelancersData, enquiriesData, mentorsData] = await Promise.all([
         getCases(),
         getGeneratedContracts(),
         getFreelancers(),
         getEnquiries(),
+        getMentors(),
       ]);
       setCases(casesData);
       setContracts(contractsData);
       setFreelancers(freelancersData);
       setEnquiries(enquiriesData);
+      setMentors(mentorsData);
       setLoading(false);
     }
     fetchAll();
@@ -45,6 +50,7 @@ export default function Dashboard() {
     { label: 'Total Contracts', value: contracts.length, icon: DocumentTextIcon, color: 'bg-purple-100', iconColor: 'text-purple-700' },
     { label: 'Total Freelancers', value: freelancers.length, icon: UserGroupIcon, color: 'bg-green-100', iconColor: 'text-green-700' },
     { label: 'Total Enquiries', value: enquiries.length, icon: InboxIcon, color: 'bg-yellow-100', iconColor: 'text-yellow-700' },
+    // { label: 'Total Mentors', value: mentors.length, icon: AcademicCapIcon, color: 'bg-indigo-100', iconColor: 'text-indigo-700' },
   ];
 
   const pieData = summary.map((s) => ({ name: s.label, value: s.value }));
@@ -205,6 +211,27 @@ export default function Dashboard() {
               {enquiries.length === 0 && <li className="text-gray-400">No enquiries found.</li>}
             </ul>
           </div>
+          {/* Recent Mentors */}
+          {/* <div className="bg-white rounded shadow p-6">
+            <h2 className="text-lg font-bold mb-4">Recent Mentors</h2>
+            <ul className="flex flex-col gap-2">
+              {mentors.slice(0, 5).map((m) => (
+                <li
+                  key={m._id}
+                  className="rounded bg-indigo-50 sm:bg-transparent p-3 sm:p-0 flex flex-col sm:flex-row sm:justify-between sm:items-center"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+                    <span className="font-semibold">{m.name}</span>
+                    <span className="text-gray-600">{m.email}</span>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded bg-indigo-100 text-indigo-700 w-max mt-2 sm:mt-0">
+                    {m.status}
+                  </span>
+                </li>
+              ))}
+              {mentors.length === 0 && <li className="text-gray-400">No mentors found.</li>}
+            </ul>
+          </div> */}
         </div>
       </div>
     </div>

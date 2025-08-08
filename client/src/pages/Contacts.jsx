@@ -133,7 +133,43 @@ const ContactDetail = ({ contact, onBack, onEdit }) => (
     <h3 className="font-semibold mt-4 mb-1">Communication History</h3>
     <ul className="mb-2 list-disc ml-6 text-sm">{(contact.communicationHistory || []).map((c, i) => <li key={i}>{c.type} - {c.summary} <span className="text-gray-400">({c.date ? new Date(c.date).toLocaleDateString() : ''})</span></li>)}</ul>
     <h3 className="font-semibold mt-4 mb-1">Email History</h3>
-    <ul className="mb-2 list-disc ml-6 text-sm">{(contact.emailHistory || []).map((e, i) => <li key={i}>{e.subject} <span className="text-gray-400">({e.date})</span></li>)}</ul>
+    {contact.emailHistory && contact.emailHistory.length > 0 ? (
+      <div className="mb-4">
+        <div className="bg-gray-50 rounded p-3">
+          {contact.emailHistory.map((email, i) => (
+            <div key={i} className="mb-3 pb-3 border-b border-gray-200 last:border-b-0">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="font-semibold text-sm text-gray-900">{email.subject || 'No Subject'}</div>
+                  <div className="text-xs text-gray-600 mt-1">
+                    {email.templateName && <span className="mr-2">Template: {email.templateName}</span>}
+                    {email.status && (
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        email.status === 'sent' ? 'bg-green-100 text-green-700' : 
+                        email.status === 'failed' ? 'bg-red-100 text-red-700' : 
+                        'bg-yellow-100 text-yellow-700'
+                      }`}>
+                        {email.status}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 ml-2">
+                  {email.date ? new Date(email.date).toLocaleString() : 'Unknown date'}
+                </div>
+              </div>
+              {email.error && (
+                <div className="text-xs text-red-600 mt-1">
+                  Error: {email.error}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    ) : (
+      <div className="text-gray-500 text-sm mb-4">No emails sent to this contact yet.</div>
+    )}
     <div className="flex gap-2 mt-4">
       <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
     </div>
@@ -321,11 +357,31 @@ const Contacts = () => {
       data: placeholders[id] || {},
     }));
     try {
-      const result = await sendBulkEmail({ templateId: selectedTemplateId, recipients });
-      setSendResults(result.results);
+      const emailResult = await sendBulkEmail({ templateId: selectedTemplateId, recipients });
+      setSendResults(emailResult.results);
+      
+      // Update email history for each contact
+      const updatedContacts = contacts.map(contact => {
+        const emailResultItem = emailResult.results?.find(r => r.email === contact.email);
+        if (emailResultItem) {
+          const emailRecord = {
+            subject: template.subject,
+            templateName: template.name,
+            date: new Date().toISOString(),
+            status: emailResultItem.status,
+            error: emailResultItem.error || null
+          };
+          return {
+            ...contact,
+            emailHistory: [...(contact.emailHistory || []), emailRecord]
+          };
+        }
+        return contact;
+      });
+      setContacts(updatedContacts);
       
       // Check if all emails were sent successfully
-      const allSuccessful = result.results.every(r => r.status === 'sent');
+      const allSuccessful = emailResult.results.every(r => r.status === 'sent');
       if (allSuccessful) {
         // Show success message and redirect after a short delay
         setTimeout(() => {
