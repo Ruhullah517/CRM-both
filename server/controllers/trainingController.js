@@ -92,7 +92,7 @@ const createTrainingEvent = async (req, res) => {
       maxParticipants,
       price,
       currency,
-      tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+      tags: Array.isArray(tags) ? tags : (tags ? tags.split(',').map(tag => tag.trim()) : []),
       bookingLink,
       createdBy: req.user.id
     });

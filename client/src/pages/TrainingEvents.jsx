@@ -526,12 +526,13 @@ const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Virtual Meeting Link</label>
+                <label className="block text-sm font-medium mb-1">Virtual Meeting Link (Optional)</label>
                 <input
                   type="url"
                   value={form.virtualMeetingLink}
                   onChange={(e) => setForm({...form, virtualMeetingLink: e.target.value})}
                   className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="https://meet.google.com/xxx-xxxx-xxx or Zoom link"
                 />
               </div>
               
