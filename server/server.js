@@ -3,15 +3,6 @@ dotenv.config();
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
-
-// Test database connection
-db.on('error', (error) => {
-  console.error('MongoDB connection error:', error);
-});
-
-db.once('open', () => {
-  console.log('Connected to MongoDB');
-});
 const path = require('path');
 const reportsRouter = require('./routes/reports');
 const adobeRoutes = require('./routes/adobe');
@@ -50,14 +41,22 @@ app.use('/api/referrals', require('./routes/referrals'));
 app.use('/reports', reportsRouter);
 app.use('/api/adobe', adobeRoutes);
 // Training, Invoices, and Calendar routes
-try {
-  app.use('/api/training', require('./routes/training'));
-  app.use('/api/invoices', require('./routes/invoices'));
-  app.use('/api/calendar', require('./routes/calendar'));
-} catch (error) {
-  console.error('Error loading routes:', error);
-}
+app.use('/api/training', require('./routes/training'));
+app.use('/api/invoices', require('./routes/invoices'));
+app.use('/api/calendar', require('./routes/calendar'));
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled Promise Rejection:', err);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  process.exit(1);
 });

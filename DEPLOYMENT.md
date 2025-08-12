@@ -10,6 +10,11 @@ JWT_SECRET=your_jwt_secret_key
 PORT=10000
 ```
 
+**Important:** The MONGODB_URI must be a valid MongoDB connection string. For MongoDB Atlas, it should look like:
+```
+mongodb+srv://username:password@cluster.mongodb.net/database_name?retryWrites=true&w=majority
+```
+
 ## Build Commands
 
 **Build Command:** `npm install`
@@ -45,6 +50,16 @@ The application creates an `uploads` directory for file storage. Ensure the serv
 ## Common Issues
 
 - **"argument handler is required"**: Usually caused by incorrect middleware import
+- **"db.on is not a function"**: Fixed by exporting the correct database connection object
 - **MongoDB connection failed**: Check MONGODB_URI environment variable
 - **JWT errors**: Ensure JWT_SECRET is set
 - **File upload errors**: Check server permissions for uploads directory
+
+## Testing Database Connection
+
+You can test the database connection locally by running:
+```bash
+node test-db.js
+```
+
+This will verify that your MONGODB_URI is correctly configured.
