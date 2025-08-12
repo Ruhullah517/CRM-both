@@ -30,6 +30,9 @@ const TrainingEvents = () => {
   const [importPreview, setImportPreview] = useState([]);
   const [importing, setImporting] = useState(false);
   const [importResults, setImportResults] = useState(null);
+  const [showBookings, setShowBookings] = useState(false);
+  const [selectedEventBookings, setSelectedEventBookings] = useState([]);
+  const [loadingBookings, setLoadingBookings] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -90,6 +93,19 @@ const TrainingEvents = () => {
       }
     } catch (error) {
       console.error('Error deleting event:', error);
+    }
+  };
+
+  const handleViewBookings = async (eventId) => {
+    setLoadingBookings(true);
+    try {
+      const response = await api.get(`/training/events/${eventId}/bookings`);
+      setSelectedEventBookings(response.data);
+      setShowBookings(true);
+    } catch (error) {
+      console.error('Error fetching bookings:', error);
+    } finally {
+      setLoadingBookings(false);
     }
   };
 
@@ -229,13 +245,20 @@ const TrainingEvents = () => {
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setSelectedEvent(event)}
                 className="flex-1 bg-blue-100 text-blue-700 px-3 py-2 rounded text-sm font-medium hover:bg-blue-200"
               >
                 <EyeIcon className="w-4 h-4 inline mr-1" />
                 View
+              </button>
+              <button
+                onClick={() => handleViewBookings(event._id)}
+                className="flex-1 bg-green-100 text-green-700 px-3 py-2 rounded text-sm font-medium hover:bg-green-200"
+              >
+                <ClipboardDocumentListIcon className="w-4 h-4 inline mr-1" />
+                Bookings
               </button>
               <button
                 onClick={() => setEditingEvent(event)}
@@ -415,6 +438,112 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
               <div className="mt-6 flex gap-3">
                 <button
                   onClick={resetBulkImport}
+                  className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bookings Modal */}
+      {showBookings && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold">Training Event Bookings</h2>
+                <button
+                  onClick={() => setShowBookings(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {loadingBookings ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                  <p>Loading bookings...</p>
+                </div>
+              ) : selectedEventBookings.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No bookings found for this training event.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left">Participant</th>
+                        <th className="px-4 py-2 text-left">Email</th>
+                        <th className="px-4 py-2 text-left">Phone</th>
+                        <th className="px-4 py-2 text-left">Organization</th>
+                        <th className="px-4 py-2 text-left">Status</th>
+                        <th className="px-4 py-2 text-left">Attendance</th>
+                        <th className="px-4 py-2 text-left">Completion</th>
+                        <th className="px-4 py-2 text-left">Payment</th>
+                        <th className="px-4 py-2 text-left">Booking Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedEventBookings.map((booking) => (
+                        <tr key={booking._id} className="border-t hover:bg-gray-50">
+                          <td className="px-4 py-2 font-medium">
+                            {booking.participant.name}
+                          </td>
+                          <td className="px-4 py-2">{booking.participant.email}</td>
+                          <td className="px-4 py-2">{booking.participant.phone || '-'}</td>
+                          <td className="px-4 py-2">{booking.participant.organization || '-'}</td>
+                          <td className="px-4 py-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              booking.status === 'confirmed' ? 'bg-green-100 text-green-800' :
+                              booking.status === 'registered' ? 'bg-blue-100 text-blue-800' :
+                              booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {booking.status}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              booking.attendance?.attended ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {booking.attendance?.attended ? 'Attended' : 'Not Attended'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              booking.completion?.completed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {booking.completion?.completed ? 'Completed' : 'Not Completed'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              booking.payment?.status === 'paid' ? 'bg-green-100 text-green-800' :
+                              booking.payment?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              booking.payment?.status === 'overdue' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {booking.payment?.status || 'N/A'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-2 text-sm text-gray-600">
+                            {formatDate(booking.createdAt)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <div className="mt-6 flex gap-3">
+                <button
+                  onClick={() => setShowBookings(false)}
                   className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
                 >
                   Close

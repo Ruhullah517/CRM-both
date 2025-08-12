@@ -45,15 +45,15 @@ const getTrainingEventById = async (req, res) => {
     const event = await TrainingEvent.findById(req.params.id)
       .populate('trainer', 'name email')
       .populate('createdBy', 'name');
-    
+
     if (!event) {
       return res.status(404).json({ msg: 'Training event not found' });
     }
-    
+
     // Get bookings for this event
     const bookings = await TrainingBooking.find({ trainingEvent: req.params.id })
       .sort({ created_at: -1 });
-    
+
     res.json({ event, bookings });
   } catch (error) {
     console.error(error);
@@ -113,11 +113,11 @@ const updateTrainingEvent = async (req, res) => {
       { ...req.body, updated_at: new Date() },
       { new: true }
     );
-    
+
     if (!event) {
       return res.status(404).json({ msg: 'Training event not found' });
     }
-    
+
     res.json(event);
   } catch (error) {
     console.error(error);
@@ -168,11 +168,11 @@ const createBooking = async (req, res) => {
     }
 
     // Check capacity
-    const existingBookings = await TrainingBooking.countDocuments({ 
+    const existingBookings = await TrainingBooking.countDocuments({
       trainingEvent: trainingEventId,
       status: { $nin: ['cancelled'] }
     });
-    
+
     if (existingBookings >= trainingEvent.maxParticipants) {
       return res.status(400).json({ msg: 'Training event is full' });
     }
@@ -242,6 +242,14 @@ const createBooking = async (req, res) => {
       }
     }
 
+    // Send booking confirmation email
+    try {
+      await sendBookingConfirmationEmail(booking, trainingEvent);
+    } catch (emailError) {
+      console.error('Error sending booking confirmation email:', emailError);
+      // Don't fail the booking if email fails
+    }
+
     res.status(201).json(booking);
   } catch (error) {
     console.error(error);
@@ -253,14 +261,14 @@ const createBooking = async (req, res) => {
 const updateBookingStatus = async (req, res) => {
   try {
     const { status, attendance, completion } = req.body;
-    
+
     const booking = await TrainingBooking.findById(req.params.id);
     if (!booking) {
       return res.status(404).json({ msg: 'Booking not found' });
     }
 
     const updateData = { updated_at: new Date() };
-    
+
     if (status) updateData.status = status;
     if (attendance) updateData.attendance = { ...booking.attendance, ...attendance };
     if (completion) updateData.completion = { ...booking.completion, ...completion };
@@ -338,25 +346,68 @@ const bulkImportParticipants = async (req, res) => {
   }
 };
 
+// Send booking confirmation email
+const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
+  try {
+    // Create transporter (you'll need to configure this with your email service)
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'ruhullah517@gmail.com',
+        pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
+      }
+    });
+
+    // Email content
+    const mailOptions = {
+      from: "ruhullah517@gmail.com",
+      to: booking.participant.email,
+      subject: `Booking Confirmation - ${trainingEvent.title}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #007bff;">Booking Confirmation</h2>
+          <p>Dear ${booking.participant.name},</p>
+          <p>Thank you for registering for our training event!</p>
+          <h3 style="color: #212529;">Event Details</h3>
+          <p><strong>Event:</strong> ${trainingEvent.title}</p>
+          <p><strong>Date:</strong> ${new Date(trainingEvent.startDate).toLocaleDateString()} - ${new Date(trainingEvent.endDate).toLocaleDateString()}</p>
+          <p><strong>Time:</strong> ${new Date(trainingEvent.startDate).toLocaleTimeString()} - ${new Date(trainingEvent.endDate).toLocaleTimeString()}</p>
+          <p><strong>Location:</strong> ${trainingEvent.location || 'To be confirmed'}</p>
+          ${trainingEvent.virtualMeetingLink ? `<p><strong>Virtual Meeting Link:</strong> <a href="${trainingEvent.virtualMeetingLink}">${trainingEvent.virtualMeetingLink}</a></p>` : ''}
+          <p><strong>Booking Reference:</strong> ${booking._id}</p>
+          ${trainingEvent.price > 0 ? `<p><strong>Amount:</strong> £${trainingEvent.price} ${trainingEvent.currency}</p>` : '<p><strong>Amount:</strong> Free</p>'}
+          <p>We will send you a reminder closer to the event date. If you have any questions, please don't hesitate to contact us.</p>
+          <br>
+          <p>Best regards,<br>CRM Training Team</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Error sending booking confirmation email:', error);
+    throw error;
+  }
+};
+
 // Send certificate via email
 const sendCertificateEmail = async (certificate) => {
   try {
     // Create transporter (you'll need to configure this with your email service)
-    const transporter = nodemailer.createTransporter({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: process.env.SMTP_PORT || 587,
-      secure: false,
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        user: 'ruhullah517@gmail.com',
+        pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
       }
     });
 
     const pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
-    
+
     // Email content
     const mailOptions = {
-      from: process.env.SMTP_USER,
+      from: 'ruhullah517@gmail.com',
       to: certificate.participant.email,
       subject: `Certificate of Completion - ${certificate.courseTitle}`,
       html: `
@@ -408,7 +459,7 @@ const generateCertificatePDF = async (certificate) => {
 
       const filename = `certificate-${certificate.certificateNumber}.pdf`;
       const filepath = path.join(uploadDir, filename);
-      
+
       // Create PDF document
       const doc = new PDFDocument({
         size: 'A4',
@@ -427,115 +478,115 @@ const generateCertificatePDF = async (certificate) => {
 
       // Add background
       doc.rect(0, 0, doc.page.width, doc.page.height)
-         .fill('#f8f9fa');
+        .fill('#f8f9fa');
 
       // Add border
       doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40)
-         .lineWidth(3)
-         .stroke('#007bff');
+        .lineWidth(3)
+        .stroke('#007bff');
 
       // Add inner border
       doc.rect(40, 40, doc.page.width - 80, doc.page.height - 80)
-         .lineWidth(1)
-         .stroke('#dee2e6');
+        .lineWidth(1)
+        .stroke('#dee2e6');
 
       // Add certificate title
       doc.fontSize(36)
-         .font('Helvetica-Bold')
-         .fill('#007bff')
-         .text('Certificate of Completion', 0, 120, {
-           align: 'center',
-           width: doc.page.width
-         });
+        .font('Helvetica-Bold')
+        .fill('#007bff')
+        .text('Certificate of Completion', 0, 120, {
+          align: 'center',
+          width: doc.page.width
+        });
 
       // Add decorative line
       doc.moveTo(100, 180)
-         .lineTo(doc.page.width - 100, 180)
-         .lineWidth(2)
-         .stroke('#007bff');
+        .lineTo(doc.page.width - 100, 180)
+        .lineWidth(2)
+        .stroke('#007bff');
 
       // Add participant name
       doc.fontSize(28)
-         .font('Helvetica-Bold')
-         .fill('#212529')
-         .text('This is to certify that', 0, 220, {
-           align: 'center',
-           width: doc.page.width
-         });
+        .font('Helvetica-Bold')
+        .fill('#212529')
+        .text('This is to certify that', 0, 220, {
+          align: 'center',
+          width: doc.page.width
+        });
 
       doc.fontSize(32)
-         .font('Helvetica-Bold')
-         .fill('#007bff')
-         .text(certificate.participant.name, 0, 260, {
-           align: 'center',
-           width: doc.page.width
-         });
+        .font('Helvetica-Bold')
+        .fill('#007bff')
+        .text(certificate.participant.name, 0, 260, {
+          align: 'center',
+          width: doc.page.width
+        });
 
       // Add course details
       doc.fontSize(18)
-         .font('Helvetica')
-         .fill('#6c757d')
-         .text('has successfully completed the training course', 0, 310, {
-           align: 'center',
-           width: doc.page.width
-         });
+        .font('Helvetica')
+        .fill('#6c757d')
+        .text('has successfully completed the training course', 0, 310, {
+          align: 'center',
+          width: doc.page.width
+        });
 
       doc.fontSize(24)
-         .font('Helvetica-Bold')
-         .fill('#212529')
-         .text(certificate.courseTitle, 0, 350, {
-           align: 'center',
-           width: doc.page.width
-         });
+        .font('Helvetica-Bold')
+        .fill('#212529')
+        .text(certificate.courseTitle, 0, 350, {
+          align: 'center',
+          width: doc.page.width
+        });
 
       // Add completion details
       doc.fontSize(16)
-         .font('Helvetica')
-         .fill('#6c757d')
-         .text(`Duration: ${certificate.duration}`, 0, 400, {
-           align: 'center',
-           width: doc.page.width
-         });
+        .font('Helvetica')
+        .fill('#6c757d')
+        .text(`Duration: ${certificate.duration}`, 0, 400, {
+          align: 'center',
+          width: doc.page.width
+        });
 
       doc.fontSize(16)
-         .font('Helvetica')
-         .fill('#6c757d')
-         .text(`Completed on: ${certificate.completionDate.toLocaleDateString()}`, 0, 430, {
-           align: 'center',
-           width: doc.page.width
-         });
+        .font('Helvetica')
+        .fill('#6c757d')
+        .text(`Completed on: ${certificate.completionDate.toLocaleDateString()}`, 0, 430, {
+          align: 'center',
+          width: doc.page.width
+        });
 
       // Add certificate number
       doc.fontSize(12)
-         .font('Helvetica')
-         .fill('#6c757d')
-         .text(`Certificate Number: ${certificate.certificateNumber}`, 0, 480, {
-           align: 'center',
-           width: doc.page.width
-         });
+        .font('Helvetica')
+        .fill('#6c757d')
+        .text(`Certificate Number: ${certificate.certificateNumber}`, 0, 480, {
+          align: 'center',
+          width: doc.page.width
+        });
 
       // Add signature line
       doc.fontSize(14)
-         .font('Helvetica')
-         .fill('#6c757d')
-         .text('Authorized Signature', doc.page.width - 200, 520, {
-           align: 'center',
-           width: 150
-         });
+        .font('Helvetica')
+        .fill('#6c757d')
+        .text('Authorized Signature', doc.page.width - 200, 520, {
+          align: 'center',
+          width: 150
+        });
 
       doc.moveTo(doc.page.width - 200, 540)
-         .lineTo(doc.page.width - 50, 540)
-         .lineWidth(1)
-         .stroke('#6c757d');
+        .lineTo(doc.page.width - 50, 540)
+        .lineWidth(1)
+        .stroke('#6c757d');
 
       // Add company logo/name area
       doc.fontSize(16)
-         .font('Helvetica-Bold')
-         .fill('#007bff')
-         .text('CRM Training System', 50, 520, {
-           align: 'center',
-           width: 150
-         });
+        .font('Helvetica-Bold')
+        .fill('#007bff')
+        .text('CRM Training System', 50, 520, {
+          align: 'center',
+          width: 150
+        });
 
       // Finalize PDF
       doc.end();
@@ -559,7 +610,7 @@ const generateCertificatePDF = async (certificate) => {
 const generateCertificate = async (booking) => {
   try {
     const trainingEvent = await TrainingEvent.findById(booking.trainingEvent);
-    
+
     const certificate = new Certificate({
       participant: {
         name: booking.participant.name,
@@ -601,12 +652,28 @@ const generateCertificate = async (booking) => {
   }
 };
 
+// Get bookings for a specific training event
+const getBookingsByEvent = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    const bookings = await TrainingBooking.find({ trainingEvent: eventId })
+      .populate('trainingEvent', 'title startDate endDate')
+      .sort({ createdAt: -1 });
+
+    res.json(bookings);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 // Get public booking link
 const getPublicBookingLink = async (req, res) => {
   try {
     const { bookingLink } = req.params;
-    
-    const trainingEvent = await TrainingEvent.findOne({ 
+
+    const trainingEvent = await TrainingEvent.findOne({
       bookingLink,
       status: 'published'
     }).populate('trainer', 'name');
@@ -635,14 +702,14 @@ const getPublicBookingLink = async (req, res) => {
 const downloadCertificate = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const certificate = await Certificate.findById(id);
     if (!certificate) {
       return res.status(404).json({ msg: 'Certificate not found' });
     }
 
     const pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
-    
+
     if (!fs.existsSync(pdfPath)) {
       return res.status(404).json({ msg: 'Certificate file not found' });
     }
@@ -661,7 +728,7 @@ const getAllCertificates = async (req, res) => {
       .populate('trainingEvent', 'title')
       .populate('trainer', 'name')
       .sort({ created_at: -1 });
-    
+
     res.json(certificates);
   } catch (error) {
     console.error(error);
@@ -673,14 +740,14 @@ const getAllCertificates = async (req, res) => {
 const resendCertificateEmail = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const certificate = await Certificate.findById(id);
     if (!certificate) {
       return res.status(404).json({ msg: 'Certificate not found' });
     }
 
     await sendCertificateEmail(certificate);
-    
+
     res.json({ msg: 'Certificate email sent successfully' });
   } catch (error) {
     console.error(error);
@@ -697,9 +764,11 @@ module.exports = {
   createBooking,
   updateBookingStatus,
   bulkImportParticipants,
+  getBookingsByEvent,
   getPublicBookingLink,
   getAllCertificates,
   downloadCertificate,
   resendCertificateEmail,
+  sendBookingConfirmationEmail,
   upload
 };

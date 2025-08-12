@@ -10,6 +10,7 @@ const {
   createBooking,
   updateBookingStatus,
   bulkImportParticipants,
+  getBookingsByEvent,
   getPublicBookingLink,
   getAllCertificates,
   downloadCertificate,
@@ -30,6 +31,9 @@ router.get('/events/:id', getTrainingEventById);
 router.post('/events', createTrainingEvent);
 router.put('/events/:id', updateTrainingEvent);
 router.delete('/events/:id', deleteTrainingEvent);
+
+// Training Bookings
+router.get('/events/:eventId/bookings', getBookingsByEvent);
 
 // Certificates
 router.get('/certificates', getAllCertificates);
