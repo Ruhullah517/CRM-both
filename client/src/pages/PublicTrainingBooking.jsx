@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CalendarIcon, UserGroupIcon, CurrencyPoundIcon, MapPinIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { formatDate } from '../utils/dateUtils';
+import api from '../services/api';
 
 const PublicTrainingBooking = () => {
   const { bookingLink } = useParams();
@@ -18,14 +19,10 @@ const PublicTrainingBooking = () => {
 
   const fetchEventDetails = async () => {
     try {
-      const response = await fetch(`/api/training/public/${bookingLink}`);
-      if (!response.ok) {
-        throw new Error('Training event not found or not available');
-      }
-      const data = await response.json();
-      setEvent(data.event);
+      const response = await api.get(`/training/public/${bookingLink}`);
+      setEvent(response.data.event);
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.msg || 'Training event not found or not available');
     } finally {
       setLoading(false);
     }
@@ -33,26 +30,15 @@ const PublicTrainingBooking = () => {
 
   const handleBooking = async (participantData) => {
     try {
-      const response = await fetch('/api/training/bookings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          trainingEventId: event._id,
-          participant: participantData,
-          bookingMethod: 'public_link'
-        })
+      await api.post('/training/public/bookings', {
+        trainingEventId: event._id,
+        participant: participantData,
+        bookingMethod: 'public_link'
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.msg || 'Booking failed');
-      }
 
       setBookingSuccess(true);
     } catch (error) {
-      setError(error.message);
+      setError(error.response?.data?.msg || 'Booking failed');
     }
   };
 

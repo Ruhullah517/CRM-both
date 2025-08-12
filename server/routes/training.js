@@ -17,6 +17,10 @@ const {
   upload
 } = require('../controllers/trainingController');
 
+// Public routes (no authentication required)
+router.get('/public/:bookingLink', getPublicBookingLink);
+router.post('/public/bookings', createBooking);
+
 // Protected routes (require authentication)
 router.use(authenticate);
 
@@ -57,8 +61,5 @@ router.post('/events/:id/materials', upload.single('material'), (req, res) => {
     res.status(500).send('Server error');
   }
 });
-
-// Public routes (no authentication required)
-router.get('/public/:bookingLink', getPublicBookingLink);
 
 module.exports = router;
