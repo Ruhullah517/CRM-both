@@ -21,6 +21,11 @@ import EnquiryDetail from '../pages/EnquiryDetail';
 import AdobeCallback from '../pages/AdobeCallback';
 import Settings from '../pages/settings';
 import FreelancerPublicForm from '../pages/FreelancerPublicForm';
+import TrainingEvents from '../pages/TrainingEvents';
+import PublicTrainingBooking from '../pages/PublicTrainingBooking';
+import Certificates from '../pages/Certificates';
+import Invoices from '../pages/Invoices';
+import Calendar from '../pages/Calendar';
 
 export default function AppRouter() {
   return (
@@ -44,11 +49,16 @@ export default function AppRouter() {
             <Route path="/users" element={<Users />} />
             <Route path="/enquiries" element={<Enquiries />} />
             <Route path="/enquiries/:id" element={<EnquiryDetail />} />
-            <Route path="/adobe/callback" element={<AdobeCallback />} />
-            <Route path="/settings" element={<Settings />} />
+                          <Route path="/adobe/callback" element={<AdobeCallback />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/training" element={<TrainingEvents />} />
+              <Route path="/certificates" element={<Certificates />} />
+              <Route path="/invoices" element={<Invoices />} />
+              <Route path="/calendar" element={<Calendar />} />
           </Route>
         </Route>
         <Route path="/freelancer-form/:token" element={<FreelancerPublicForm />} />
+        <Route path="/training/:bookingLink" element={<PublicTrainingBooking />} />
       </Routes>
     </BrowserRouter>
   );

@@ -40,6 +40,9 @@ app.use('/api/contract-templates', require('./routes/contractTemplates'));
 app.use('/api/referrals', require('./routes/referrals'));
 app.use('/reports', reportsRouter);
 app.use('/api/adobe', adobeRoutes);
+app.use('/api/training', require('./routes/training'));
+app.use('/api/invoices', require('./routes/invoices'));
+app.use('/api/calendar', require('./routes/calendar'));
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

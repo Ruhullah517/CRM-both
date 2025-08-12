@@ -13,7 +13,9 @@ import {
   ClipboardDocumentListIcon,
   AcademicCapIcon,
   QuestionMarkCircleIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
+  AcademicCapIcon as TrainingIcon,
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 import img3 from '../../public/img3.png';
 const navItems = [
@@ -22,8 +24,12 @@ const navItems = [
   { name: 'Candidates', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon },
   { name: 'Cases', path: '/cases', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon },
   { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon },
-  { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon },
-  { name: 'Contacts', path: '/contacts', roles: ['admin', 'staff'], icon: IdentificationIcon },
+          { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon },
+        { name: 'Contacts', path: '/contacts', roles: ['admin', 'staff'], icon: IdentificationIcon },
+        { name: 'Training Events', path: '/training', roles: ['admin', 'staff'], icon: TrainingIcon },
+        { name: 'Certificates', path: '/certificates', roles: ['admin', 'staff'], icon: AcademicCapIcon },
+        { name: 'Invoices', path: '/invoices', roles: ['admin', 'staff'], icon: DocumentTextIcon },
+        { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon },
   { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: EnvelopeIcon },
   { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon },
   { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon },
