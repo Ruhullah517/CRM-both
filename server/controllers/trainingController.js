@@ -202,33 +202,44 @@ const createBooking = async (req, res) => {
 
     // Create invoice if training is paid
     if (trainingEvent.price > 0) {
-      const invoice = new Invoice({
-        client: {
-          name: participant.name,
-          email: participant.email,
-          phone: participant.phone,
-          organization: participant.organization
-        },
-        items: [{
-          description: trainingEvent.title,
-          quantity: 1,
-          unitPrice: trainingEvent.price,
+      try {
+        // Generate invoice number manually to ensure it's set
+        const invoiceCount = await Invoice.countDocuments();
+        const year = new Date().getFullYear();
+        const invoiceNumber = `INV-${year}-${String(invoiceCount + 1).padStart(4, '0')}`;
+
+        const invoice = new Invoice({
+          invoiceNumber,
+          client: {
+            name: participant.name,
+            email: participant.email,
+            phone: participant.phone,
+            organization: participant.organization
+          },
+          items: [{
+            description: trainingEvent.title,
+            quantity: 1,
+            unitPrice: trainingEvent.price,
+            total: trainingEvent.price,
+            type: 'training',
+            relatedId: trainingEventId
+          }],
+          subtotal: trainingEvent.price,
           total: trainingEvent.price,
-          type: 'training',
-          relatedId: trainingEventId
-        }],
-        subtotal: trainingEvent.price,
-        total: trainingEvent.price,
-        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-        relatedTrainingEvent: trainingEventId,
-        createdBy: req.user?.id || null
-      });
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+          relatedTrainingEvent: trainingEventId,
+          createdBy: req.user?.id || trainingEvent.createdBy
+        });
 
-      await invoice.save();
+        await invoice.save();
 
-      // Link invoice to booking
-      booking.payment.invoiceId = invoice._id;
-      await booking.save();
+        // Link invoice to booking
+        booking.payment.invoiceId = invoice._id;
+        await booking.save();
+      } catch (invoiceError) {
+        console.error('Error creating invoice:', invoiceError);
+        // Don't fail the booking if invoice creation fails
+      }
     }
 
     res.status(201).json(booking);

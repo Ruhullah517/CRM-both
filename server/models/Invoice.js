@@ -36,7 +36,7 @@ const InvoiceSchema = new mongoose.Schema({
   paymentMethod: String,
   notes: String,
   terms: String,
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   relatedTrainingEvent: { type: mongoose.Schema.Types.ObjectId, ref: 'TrainingEvent' },
   relatedCase: { type: mongoose.Schema.Types.ObjectId, ref: 'Case' },
   created_at: { type: Date, default: Date.now },
@@ -44,12 +44,16 @@ const InvoiceSchema = new mongoose.Schema({
 });
 
 // Auto-generate invoice number
-InvoiceSchema.pre('save', async function(next) {
+InvoiceSchema.pre('validate', async function(next) {
   if (this.isNew && !this.invoiceNumber) {
     const count = await this.constructor.countDocuments();
     const year = new Date().getFullYear();
     this.invoiceNumber = `INV-${year}-${String(count + 1).padStart(4, '0')}`;
   }
+  next();
+});
+
+InvoiceSchema.pre('save', function(next) {
   this.updated_at = new Date();
   next();
 });
