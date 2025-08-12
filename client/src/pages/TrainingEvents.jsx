@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 import {
   PlusIcon,
   EyeIcon,
@@ -37,13 +38,8 @@ const TrainingEvents = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('/api/training/events', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      setEvents(data);
+      const response = await api.get('/training/events');
+      setEvents(response.data);
     } catch (error) {
       console.error('Error fetching events:', error);
     } finally {
@@ -53,13 +49,8 @@ const TrainingEvents = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('/api/users', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      const data = await response.json();
-      setUsers(data);
+      const response = await api.get('/users');
+      setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
     }
@@ -67,16 +58,8 @@ const TrainingEvents = () => {
 
   const handleCreateEvent = async (eventData) => {
     try {
-      const response = await fetch('/api/training/events', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(eventData)
-      });
-      
-      if (response.ok) {
+      const response = await api.post('/training/events', eventData);
+      if (response.status === 201 || response.status === 200) {
         fetchEvents();
         setShowForm(false);
       }
@@ -87,16 +70,8 @@ const TrainingEvents = () => {
 
   const handleUpdateEvent = async (id, eventData) => {
     try {
-      const response = await fetch(`/api/training/events/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(eventData)
-      });
-      
-      if (response.ok) {
+      const response = await api.put(`/training/events/${id}`, eventData);
+      if (response.status === 200) {
         fetchEvents();
         setEditingEvent(null);
       }
@@ -109,14 +84,8 @@ const TrainingEvents = () => {
     if (!window.confirm('Are you sure you want to delete this training event?')) return;
     
     try {
-      const response = await fetch(`/api/training/events/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
+      const response = await api.delete(`/training/events/${id}`);
+      if (response.status === 200) {
         fetchEvents();
       }
     } catch (error) {
@@ -161,22 +130,14 @@ const TrainingEvents = () => {
 
     setImporting(true);
     try {
-      const response = await fetch('/api/training/bookings/bulk-import', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          trainingEventId,
-          participants: importPreview
-        })
+      const response = await api.post('/training/bookings/bulk-import', {
+        trainingEventId,
+        participants: importPreview
       });
 
-      const result = await response.json();
-      setImportResults(result);
+      setImportResults(response.data);
       
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         // Refresh events to show updated booking counts
         fetchEvents();
       }
@@ -476,8 +437,8 @@ const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
     virtualMeetingLink: event?.virtualMeetingLink || '',
     startDate: event?.startDate ? event.startDate.slice(0, 16) : '',
     endDate: event?.endDate ? event.endDate.slice(0, 16) : '',
-    maxParticipants: event?.maxParticipants || 20,
-    price: event?.price || 0,
+    maxParticipants: event?.maxParticipants ? parseInt(event.maxParticipants) || 20 : 20,
+    price: event?.price ? parseFloat(event.price) || 0 : 0,
     currency: event?.currency || 'GBP',
     status: event?.status || 'draft',
     tags: event?.tags?.join(', ') || ''
@@ -578,8 +539,8 @@ const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
                 <label className="block text-sm font-medium mb-1">Max Participants</label>
                 <input
                   type="number"
-                  value={form.maxParticipants}
-                  onChange={(e) => setForm({...form, maxParticipants: parseInt(e.target.value)})}
+                  value={form.maxParticipants || ''}
+                  onChange={(e) => setForm({...form, maxParticipants: parseInt(e.target.value) || ''})}
                   className="w-full px-3 py-2 border rounded-lg"
                   min="1"
                 />
@@ -589,8 +550,8 @@ const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
                 <label className="block text-sm font-medium mb-1">Price</label>
                 <input
                   type="number"
-                  value={form.price}
-                  onChange={(e) => setForm({...form, price: parseFloat(e.target.value)})}
+                  value={form.price || ''}
+                  onChange={(e) => setForm({...form, price: parseFloat(e.target.value) || ''})}
                   className="w-full px-3 py-2 border rounded-lg"
                   min="0"
                   step="0.01"
