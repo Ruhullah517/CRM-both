@@ -3,6 +3,15 @@ dotenv.config();
 const express = require('express');
 const cors = require('cors');
 const db = require('./config/db');
+
+// Test database connection
+db.on('error', (error) => {
+  console.error('MongoDB connection error:', error);
+});
+
+db.once('open', () => {
+  console.log('Connected to MongoDB');
+});
 const path = require('path');
 const reportsRouter = require('./routes/reports');
 const adobeRoutes = require('./routes/adobe');
@@ -40,9 +49,14 @@ app.use('/api/contract-templates', require('./routes/contractTemplates'));
 app.use('/api/referrals', require('./routes/referrals'));
 app.use('/reports', reportsRouter);
 app.use('/api/adobe', adobeRoutes);
-app.use('/api/training', require('./routes/training'));
-app.use('/api/invoices', require('./routes/invoices'));
-app.use('/api/calendar', require('./routes/calendar'));
+// Training, Invoices, and Calendar routes
+try {
+  app.use('/api/training', require('./routes/training'));
+  app.use('/api/invoices', require('./routes/invoices'));
+  app.use('/api/calendar', require('./routes/calendar'));
+} catch (error) {
+  console.error('Error loading routes:', error);
+}
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

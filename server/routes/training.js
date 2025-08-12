@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const {
   getAllTrainingEvents,
   getTrainingEventById,
@@ -18,7 +18,7 @@ const {
 } = require('../controllers/trainingController');
 
 // Protected routes (require authentication)
-router.use(auth);
+router.use(authenticate);
 
 // Training Events
 router.get('/events', getAllTrainingEvents);

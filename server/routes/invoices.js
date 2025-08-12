@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 const {
   getAllInvoices,
   getInvoiceById,
@@ -14,7 +14,7 @@ const {
 } = require('../controllers/invoiceController');
 
 // All routes require authentication
-router.use(auth);
+router.use(authenticate);
 
 // Invoice CRUD operations
 router.get('/', getAllInvoices);
