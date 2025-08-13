@@ -13,10 +13,212 @@ import {
   ClipboardDocumentListIcon,
   DocumentArrowUpIcon,
   XMarkIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
+
+// Booking Status Form Component
+const BookingStatusForm = ({ booking, onSubmit, onCancel, loading }) => {
+  const [formData, setFormData] = useState({
+    status: booking.status || 'registered',
+    attendance: {
+      attended: booking.attendance?.attended || false,
+      attendanceDate: booking.attendance?.attendanceDate ? new Date(booking.attendance.attendanceDate).toISOString().split('T')[0] : '',
+      duration: booking.attendance?.duration || '',
+      notes: booking.attendance?.notes || ''
+    },
+    completion: {
+      completed: booking.completion?.completed || false,
+      completionDate: booking.completion?.completionDate ? new Date(booking.completion.completionDate).toISOString().split('T')[0] : ''
+    },
+    payment: {
+      status: booking.payment?.status || 'pending'
+    }
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(booking._id, formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Status */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Booking Status
+        </label>
+        <select
+          value={formData.status}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="registered">Registered</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="attended">Attended</option>
+          <option value="completed">Completed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
+
+      {/* Attendance */}
+      <div className="border-t pt-4">
+        <h3 className="font-medium text-gray-900 mb-3">Attendance</h3>
+        <div className="space-y-3">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="attended"
+              checked={formData.attendance.attended}
+              onChange={(e) => setFormData({
+                ...formData,
+                attendance: { ...formData.attendance, attended: e.target.checked }
+              })}
+              className="mr-2"
+            />
+            <label htmlFor="attended" className="text-sm text-gray-700">
+              Attended the training
+            </label>
+          </div>
+          
+          {formData.attendance.attended && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Attendance Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.attendance.attendanceDate}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    attendance: { ...formData.attendance, attendanceDate: e.target.value }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Duration
+                </label>
+                <input
+                  type="text"
+                  value={formData.attendance.duration}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    attendance: { ...formData.attendance, duration: e.target.value }
+                  })}
+                  placeholder="e.g., 2.5 hours"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </>
+          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Notes
+            </label>
+            <textarea
+              value={formData.attendance.notes}
+              onChange={(e) => setFormData({
+                ...formData,
+                attendance: { ...formData.attendance, notes: e.target.value }
+              })}
+              placeholder="Any additional notes..."
+              rows="2"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Completion */}
+      <div className="border-t pt-4">
+        <h3 className="font-medium text-gray-900 mb-3">Completion</h3>
+        <div className="space-y-3">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="completed"
+              checked={formData.completion.completed}
+              onChange={(e) => setFormData({
+                ...formData,
+                completion: { ...formData.completion, completed: e.target.checked }
+              })}
+              className="mr-2"
+            />
+            <label htmlFor="completed" className="text-sm text-gray-700">
+              Completed the training
+            </label>
+          </div>
+          
+          {formData.completion.completed && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Completion Date
+              </label>
+              <input
+                type="date"
+                value={formData.completion.completionDate}
+                onChange={(e) => setFormData({
+                  ...formData,
+                  completion: { ...formData.completion, completionDate: e.target.value }
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Payment Status */}
+      <div className="border-t pt-4">
+        <h3 className="font-medium text-gray-900 mb-3">Payment</h3>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Payment Status
+          </label>
+          <select
+            value={formData.payment.status}
+            onChange={(e) => setFormData({
+              ...formData,
+              payment: { ...formData.payment, status: e.target.value }
+            })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="pending">Pending</option>
+            <option value="paid">Paid</option>
+            <option value="overdue">Overdue</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex gap-3 pt-4">
+        <button
+          type="submit"
+          disabled={loading}
+          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50"
+        >
+          {loading ? 'Updating...' : 'Update Status'}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={loading}
+          className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+};
 
 const TrainingEvents = () => {
   const { user } = useAuth();
@@ -34,6 +236,9 @@ const TrainingEvents = () => {
   const [showBookings, setShowBookings] = useState(false);
   const [selectedEventBookings, setSelectedEventBookings] = useState([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
+  const [updatingBooking, setUpdatingBooking] = useState(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState(null);
 
   useEffect(() => {
     fetchEvents();
@@ -122,6 +327,46 @@ const TrainingEvents = () => {
       console.error('Error generating certificates:', error);
       alert('Error generating certificates');
     }
+  };
+
+  const handleGenerateInvoices = async (eventId) => {
+    if (!window.confirm('Generate invoices for all bookings without invoices?')) return;
+    
+    try {
+      const response = await api.post(`/training/events/${eventId}/generate-invoices`);
+      alert(response.data.message);
+      // Refresh the page to show updated data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error generating invoices:', error);
+      alert('Error generating invoices');
+    }
+  };
+
+  const handleUpdateBookingStatus = async (bookingId, updateData) => {
+    try {
+      setUpdatingBooking(bookingId);
+      const response = await api.put(`/training/bookings/${bookingId}/status`, updateData);
+      
+      // Refresh bookings list
+      if (showBookings) {
+        handleViewBookings(selectedEventBookings[0]?.trainingEvent);
+      }
+      
+      setShowUpdateModal(false);
+      setSelectedBooking(null);
+      alert('Booking status updated successfully!');
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      alert('Error updating booking status');
+    } finally {
+      setUpdatingBooking(null);
+    }
+  };
+
+  const openUpdateModal = (booking) => {
+    setSelectedBooking(booking);
+    setShowUpdateModal(true);
   };
 
   // Bulk Import Functions
@@ -281,6 +526,13 @@ const TrainingEvents = () => {
               >
                 <AcademicCapIcon className="w-4 h-4 inline mr-1" />
                 Certificates
+              </button>
+              <button
+                onClick={() => handleGenerateInvoices(event._id)}
+                className="flex-1 bg-orange-100 text-orange-700 px-3 py-2 rounded text-sm font-medium hover:bg-orange-200"
+              >
+                <DocumentTextIcon className="w-4 h-4 inline mr-1" />
+                Invoices
               </button>
               <button
                 onClick={() => setEditingEvent(event)}
@@ -508,6 +760,7 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
                         <th className="px-4 py-2 text-left">Completion</th>
                         <th className="px-4 py-2 text-left">Payment</th>
                         <th className="px-4 py-2 text-left">Booking Date</th>
+                        <th className="px-4 py-2 text-left">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -556,6 +809,15 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
                           <td className="px-4 py-2 text-sm text-gray-600">
                             {formatDate(booking.createdAt)}
                           </td>
+                          <td className="px-4 py-2">
+                            <button
+                              onClick={() => openUpdateModal(booking)}
+                              className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+                              disabled={updatingBooking === booking._id}
+                            >
+                              {updatingBooking === booking._id ? 'Updating...' : 'Update Status'}
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -571,6 +833,41 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Booking Status Modal */}
+      {showUpdateModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h2 className="text-xl font-bold">Update Booking Status</h2>
+                <button
+                  onClick={() => setShowUpdateModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">
+                  <strong>Participant:</strong> {selectedBooking.participant.name}
+                </p>
+                <p className="text-sm text-gray-600 mb-4">
+                  <strong>Email:</strong> {selectedBooking.participant.email}
+                </p>
+              </div>
+
+              <BookingStatusForm
+                booking={selectedBooking}
+                onSubmit={handleUpdateBookingStatus}
+                onCancel={() => setShowUpdateModal(false)}
+                loading={updatingBooking === selectedBooking._id}
+              />
             </div>
           </div>
         </div>
