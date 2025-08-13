@@ -1,6 +1,6 @@
 name,email,phone,organization,role,status,attended,completed,notes
-John Doe,john.doe@example.com,07700900123,ABC Corporation,Manager,registered,true,false,Experienced professional
-Jane Smith,jane.smith@example.com,07700900124,XYZ Ltd,Director,confirmed,false,false,First time attendee
-Mike Johnson,mike.johnson@example.com,07700900125,123 Industries,Supervisor,registered,true,true,Completed previous training
-Sarah Wilson,sarah.wilson@example.com,07700900126,Best Company,Coordinator,registered,false,false,Interested in advanced topics
-David Brown,david.brown@example.com,07700900127,Top Corp,Manager,confirmed,true,false,Needs follow-up
+John Doe,john.doe@example.com,7700900123,ABC Corporation,Manager,registered,TRUE,FALSE,Experienced professional
+Jane Smith,jane.smith@example.com,7700900124,XYZ Ltd,Director,confirmed,FALSE,FALSE,First time attendee
+Mike Johnson,sericc716@gmail.com,7700900125,123 Industries,Supervisor,registered,TRUE,TRUE,Completed previous training
+Sarah Wilson,sarah.wilson@example.com,7700900126,Best Company,Coordinator,registered,FALSE,FALSE,Interested in advanced topics
+David Brown,david.brown@example.com,7700900127,Top Corp,Manager,confirmed,TRUE,FALSE,Needs follow-up

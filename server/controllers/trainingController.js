@@ -304,6 +304,16 @@ const bulkImportParticipants = async (req, res) => {
     const results = [];
     for (const participant of participants) {
       try {
+        // Convert string boolean values to actual booleans
+        const convertToBoolean = (value) => {
+          if (typeof value === 'boolean') return value;
+          if (typeof value === 'string') {
+            const lowerValue = value.toLowerCase().trim();
+            return lowerValue === 'true' || lowerValue === '1' || lowerValue === 'yes';
+          }
+          return false;
+        };
+
         const booking = new TrainingBooking({
           trainingEvent: trainingEventId,
           participant: {
@@ -316,13 +326,13 @@ const bulkImportParticipants = async (req, res) => {
           status: participant.status || 'registered',
           bookingMethod: 'admin',
           attendance: {
-            attended: participant.attended || false,
+            attended: convertToBoolean(participant.attended),
             attendanceDate: participant.attendanceDate ? new Date(participant.attendanceDate) : null,
             duration: participant.duration || '',
             notes: participant.notes || ''
           },
           completion: {
-            completed: participant.completed || false,
+            completed: convertToBoolean(participant.completed),
             completionDate: participant.completionDate ? new Date(participant.completionDate) : null
           },
           payment: {
@@ -335,7 +345,7 @@ const bulkImportParticipants = async (req, res) => {
         await booking.save();
         
         // Generate certificate if the participant completed the training
-        if (participant.completed && !booking.completion.certificateGenerated) {
+        if (convertToBoolean(participant.completed) && !booking.completion.certificateGenerated) {
           try {
             await generateCertificate(booking);
           } catch (certError) {
