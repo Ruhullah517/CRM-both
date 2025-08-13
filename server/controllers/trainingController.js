@@ -632,7 +632,13 @@ const generateCertificate = async (booking) => {
   try {
     const trainingEvent = await TrainingEvent.findById(booking.trainingEvent);
 
+    // Generate certificate number manually to ensure it's set
+    const count = await Certificate.countDocuments();
+    const year = new Date().getFullYear();
+    const certificateNumber = `CERT-${year}-${String(count + 1).padStart(4, '0')}`;
+
     const certificate = new Certificate({
+      certificateNumber,
       participant: {
         name: booking.participant.name,
         email: booking.participant.email

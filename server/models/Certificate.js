@@ -26,7 +26,7 @@ const CertificateSchema = new mongoose.Schema({
 });
 
 // Auto-generate certificate number
-CertificateSchema.pre('save', async function(next) {
+CertificateSchema.pre('validate', async function(next) {
   if (this.isNew && !this.certificateNumber) {
     const count = await this.constructor.countDocuments();
     const year = new Date().getFullYear();
