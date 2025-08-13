@@ -333,6 +333,17 @@ const bulkImportParticipants = async (req, res) => {
         });
 
         await booking.save();
+        
+        // Generate certificate if the participant completed the training
+        if (participant.completed && !booking.completion.certificateGenerated) {
+          try {
+            await generateCertificate(booking);
+          } catch (certError) {
+            console.error('Error generating certificate for', participant.name, ':', certError);
+            // Don't fail the import if certificate generation fails
+          }
+        }
+        
         results.push({ success: true, participant: participant.name });
       } catch (error) {
         results.push({ success: false, participant: participant.name, error: error.message });
@@ -736,6 +747,38 @@ const getAllCertificates = async (req, res) => {
   }
 };
 
+// Generate missing certificates for completed bookings
+const generateMissingCertificates = async (req, res) => {
+  try {
+    const { trainingEventId } = req.params;
+    
+    // Find all completed bookings without certificates
+    const completedBookings = await TrainingBooking.find({
+      trainingEvent: trainingEventId,
+      'completion.completed': true,
+      'completion.certificateGenerated': { $ne: true }
+    });
+
+    const results = [];
+    for (const booking of completedBookings) {
+      try {
+        await generateCertificate(booking);
+        results.push({ success: true, participant: booking.participant.name });
+      } catch (error) {
+        results.push({ success: false, participant: booking.participant.name, error: error.message });
+      }
+    }
+
+    res.json({ 
+      message: `Generated ${results.filter(r => r.success).length} certificates`,
+      results 
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 // Resend certificate email
 const resendCertificateEmail = async (req, res) => {
   try {
@@ -770,5 +813,6 @@ module.exports = {
   downloadCertificate,
   resendCertificateEmail,
   sendBookingConfirmationEmail,
+  generateMissingCertificates,
   upload
 };

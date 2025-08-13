@@ -12,7 +12,8 @@ import {
   LinkIcon,
   ClipboardDocumentListIcon,
   DocumentArrowUpIcon,
-  XMarkIcon
+  XMarkIcon,
+  AcademicCapIcon
 } from '@heroicons/react/24/outline';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
@@ -106,6 +107,20 @@ const TrainingEvents = () => {
       console.error('Error fetching bookings:', error);
     } finally {
       setLoadingBookings(false);
+    }
+  };
+
+  const handleGenerateCertificates = async (eventId) => {
+    if (!window.confirm('Generate certificates for all completed bookings without certificates?')) return;
+    
+    try {
+      const response = await api.post(`/training/events/${eventId}/generate-certificates`);
+      alert(response.data.message);
+      // Refresh the page to show updated data
+      window.location.reload();
+    } catch (error) {
+      console.error('Error generating certificates:', error);
+      alert('Error generating certificates');
     }
   };
 
@@ -259,6 +274,13 @@ const TrainingEvents = () => {
               >
                 <ClipboardDocumentListIcon className="w-4 h-4 inline mr-1" />
                 Bookings
+              </button>
+              <button
+                onClick={() => handleGenerateCertificates(event._id)}
+                className="flex-1 bg-purple-100 text-purple-700 px-3 py-2 rounded text-sm font-medium hover:bg-purple-200"
+              >
+                <AcademicCapIcon className="w-4 h-4 inline mr-1" />
+                Certificates
               </button>
               <button
                 onClick={() => setEditingEvent(event)}

@@ -8,6 +8,7 @@ import {
   ClockIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
+import api from '../services/api';
 
 const Certificates = () => {
   const [certificates, setCertificates] = useState([]);
@@ -21,16 +22,8 @@ const Certificates = () => {
 
   const fetchCertificates = async () => {
     try {
-      const response = await fetch('/api/training/certificates', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setCertificates(data);
-      }
+      const response = await api.get('/training/certificates');
+      setCertificates(response.data);
     } catch (error) {
       console.error('Error fetching certificates:', error);
     } finally {
@@ -40,23 +33,19 @@ const Certificates = () => {
 
   const downloadCertificate = async (certificateId) => {
     try {
-      const response = await fetch(`/api/training/certificates/${certificateId}/download`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await api.get(`/training/certificates/${certificateId}/download`, {
+        responseType: 'blob'
       });
       
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `certificate-${certificateId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `certificate-${certificateId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading certificate:', error);
     }
@@ -64,18 +53,9 @@ const Certificates = () => {
 
   const resendCertificateEmail = async (certificateId) => {
     try {
-      const response = await fetch(`/api/training/certificates/${certificateId}/resend-email`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        alert('Certificate email sent successfully!');
-        fetchCertificates(); // Refresh the list
-      }
+      await api.post(`/training/certificates/${certificateId}/resend-email`);
+      alert('Certificate email sent successfully!');
+      fetchCertificates(); // Refresh the list
     } catch (error) {
       console.error('Error resending certificate email:', error);
     }

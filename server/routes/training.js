@@ -15,6 +15,7 @@ const {
   getAllCertificates,
   downloadCertificate,
   resendCertificateEmail,
+  generateMissingCertificates,
   upload
 } = require('../controllers/trainingController');
 
@@ -46,6 +47,7 @@ router.post('/bookings/bulk-import', bulkImportParticipants);
 // Certificate routes
 router.get('/certificates/:id/download', downloadCertificate);
 router.post('/certificates/:id/resend-email', resendCertificateEmail);
+router.post('/events/:trainingEventId/generate-certificates', generateMissingCertificates);
 
 // File upload for training materials
 router.post('/events/:id/materials', upload.single('material'), (req, res) => {
