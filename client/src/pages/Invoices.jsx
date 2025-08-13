@@ -10,6 +10,7 @@ import {
   CurrencyPoundIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
+import api from '../services/api';
 
 const Invoices = () => {
   const [invoices, setInvoices] = useState([]);
@@ -46,16 +47,8 @@ const Invoices = () => {
 
   const fetchInvoices = async () => {
     try {
-      const response = await fetch('/api/invoices', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setInvoices(data);
-      }
+      const response = await api.get('/invoices');
+      setInvoices(response.data);
     } catch (error) {
       console.error('Error fetching invoices:', error);
     } finally {
@@ -65,16 +58,8 @@ const Invoices = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/invoices/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
+      const response = await api.get('/invoices/stats');
+      setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
     }
@@ -83,32 +68,22 @@ const Invoices = () => {
   const createInvoice = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/invoices', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+      await api.post('/invoices', formData);
+      setShowCreateModal(false);
+      setFormData({
+        client: { name: '', email: '', phone: '', organization: '', address: '' },
+        items: [{ description: '', quantity: 1, unitPrice: 0, total: 0, type: 'other' }],
+        subtotal: 0,
+        taxRate: 0,
+        taxAmount: 0,
+        total: 0,
+        currency: 'GBP',
+        dueDate: '',
+        notes: '',
+        terms: ''
       });
-      
-      if (response.ok) {
-        setShowCreateModal(false);
-        setFormData({
-          client: { name: '', email: '', phone: '', organization: '', address: '' },
-          items: [{ description: '', quantity: 1, unitPrice: 0, total: 0, type: 'other' }],
-          subtotal: 0,
-          taxRate: 0,
-          taxAmount: 0,
-          total: 0,
-          currency: 'GBP',
-          dueDate: '',
-          notes: '',
-          terms: ''
-        });
-        fetchInvoices();
-        fetchStats();
-      }
+      fetchInvoices();
+      fetchStats();
     } catch (error) {
       console.error('Error creating invoice:', error);
     }
@@ -116,18 +91,9 @@ const Invoices = () => {
 
   const markAsPaid = async (invoiceId) => {
     try {
-      const response = await fetch(`/api/invoices/${invoiceId}/mark-paid`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      if (response.ok) {
-        fetchInvoices();
-        fetchStats();
-      }
+      await api.put(`/invoices/${invoiceId}/mark-paid`);
+      fetchInvoices();
+      fetchStats();
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
     }
@@ -135,23 +101,19 @@ const Invoices = () => {
 
   const downloadInvoice = async (invoiceId) => {
     try {
-      const response = await fetch(`/api/invoices/${invoiceId}/pdf`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+      const response = await api.get(`/invoices/${invoiceId}/pdf`, {
+        responseType: 'blob'
       });
       
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `invoice-${invoiceId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-      }
+      const blob = response.data;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `invoice-${invoiceId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading invoice:', error);
     }

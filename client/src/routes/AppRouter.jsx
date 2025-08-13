@@ -26,6 +26,7 @@ import PublicTrainingBooking from '../pages/PublicTrainingBooking';
 import Certificates from '../pages/Certificates';
 import Invoices from '../pages/Invoices';
 import Calendar from '../pages/Calendar';
+import Feedback from '../pages/Feedback';
 
 export default function AppRouter() {
   return (
@@ -55,6 +56,7 @@ export default function AppRouter() {
               <Route path="/certificates" element={<Certificates />} />
               <Route path="/invoices" element={<Invoices />} />
               <Route path="/calendar" element={<Calendar />} />
+              <Route path="/feedback" element={<Feedback />} />
           </Route>
         </Route>
         <Route path="/freelancer-form/:token" element={<FreelancerPublicForm />} />

@@ -10,6 +10,7 @@ import {
   PencilIcon
 } from '@heroicons/react/24/outline';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import api from '../services/api';
 
 const Calendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -42,16 +43,8 @@ const Calendar = () => {
 
   const fetchTrainingEvents = async () => {
     try {
-      const response = await fetch('/api/training/events', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setTrainingEvents(data);
-      }
+      const response = await api.get('/training/events');
+      setTrainingEvents(response.data);
     } catch (error) {
       console.error('Error fetching training events:', error);
     }
@@ -59,16 +52,8 @@ const Calendar = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await fetch('/api/calendar/events', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setEvents(data);
-      }
+      const response = await api.get('/calendar/events');
+      setEvents(response.data);
     } catch (error) {
       console.error('Error fetching calendar events:', error);
     } finally {
@@ -79,31 +64,21 @@ const Calendar = () => {
   const createEvent = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/calendar/events', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+      await api.post('/calendar/events', formData);
+      setShowAddModal(false);
+      setFormData({
+        title: '',
+        description: '',
+        startDate: '',
+        endDate: '',
+        startTime: '',
+        endTime: '',
+        type: 'training',
+        location: '',
+        attendees: '',
+        notes: ''
       });
-      
-      if (response.ok) {
-        setShowAddModal(false);
-        setFormData({
-          title: '',
-          description: '',
-          startDate: '',
-          endDate: '',
-          startTime: '',
-          endTime: '',
-          type: 'training',
-          location: '',
-          attendees: '',
-          notes: ''
-        });
-        fetchEvents();
-      }
+      fetchEvents();
     } catch (error) {
       console.error('Error creating event:', error);
     }
@@ -111,17 +86,9 @@ const Calendar = () => {
 
   const deleteEvent = async (eventId) => {
     try {
-      const response = await fetch(`/api/calendar/events/${eventId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.ok) {
-        fetchEvents();
-        setShowEventModal(false);
-      }
+      await api.delete(`/calendar/events/${eventId}`);
+      fetchEvents();
+      setShowEventModal(false);
     } catch (error) {
       console.error('Error deleting event:', error);
     }
