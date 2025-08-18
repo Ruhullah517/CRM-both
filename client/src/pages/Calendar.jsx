@@ -52,7 +52,9 @@ const Calendar = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await api.get('/calendar/events');
+      console.log('Fetching calendar events...');
+      const response = await api.get('/calendar');
+      console.log('Calendar events response:', response.data);
       setEvents(response.data);
     } catch (error) {
       console.error('Error fetching calendar events:', error);
@@ -64,7 +66,9 @@ const Calendar = () => {
   const createEvent = async (e) => {
     e.preventDefault();
     try {
-      await api.post('/calendar/events', formData);
+      console.log('Creating calendar event with data:', formData);
+      const response = await api.post('/calendar', formData);
+      console.log('Calendar event created successfully:', response.data);
       setShowAddModal(false);
       setFormData({
         title: '',
@@ -81,16 +85,20 @@ const Calendar = () => {
       fetchEvents();
     } catch (error) {
       console.error('Error creating event:', error);
+      alert('Error creating calendar event. Please try again.');
     }
   };
 
   const deleteEvent = async (eventId) => {
     try {
-      await api.delete(`/calendar/events/${eventId}`);
+      console.log('Deleting calendar event:', eventId);
+      await api.delete(`/calendar/${eventId}`);
+      console.log('Calendar event deleted successfully');
       fetchEvents();
       setShowEventModal(false);
     } catch (error) {
       console.error('Error deleting event:', error);
+      alert('Error deleting calendar event. Please try again.');
     }
   };
 

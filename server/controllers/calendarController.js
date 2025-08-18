@@ -45,6 +45,9 @@ const getEventById = async (req, res) => {
 // Create new calendar event
 const createEvent = async (req, res) => {
   try {
+    console.log('Creating calendar event with data:', req.body);
+    console.log('User ID:', req.user?.id);
+    
     const {
       title,
       description,
@@ -57,6 +60,12 @@ const createEvent = async (req, res) => {
       attendees,
       notes
     } = req.body;
+
+    // Validate required fields
+    if (!title || !startDate) {
+      console.error('Missing required fields:', { title, startDate });
+      return res.status(400).json({ msg: 'Title and start date are required' });
+    }
 
     const calendarEvent = new CalendarEvent({
       title,
@@ -72,11 +81,15 @@ const createEvent = async (req, res) => {
       createdBy: req.user.id
     });
 
+    console.log('Calendar event object created, saving...');
     await calendarEvent.save();
+    console.log('Calendar event saved successfully:', calendarEvent._id);
+    
     res.status(201).json(calendarEvent);
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Server error');
+    console.error('Error creating calendar event:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ msg: 'Server error', error: error.message });
   }
 };
 
@@ -103,16 +116,21 @@ const updateEvent = async (req, res) => {
 // Delete calendar event
 const deleteEvent = async (req, res) => {
   try {
+    console.log('Deleting calendar event with ID:', req.params.id);
+    
     const event = await CalendarEvent.findById(req.params.id);
     if (!event) {
+      console.log('Calendar event not found for deletion');
       return res.status(404).json({ msg: 'Calendar event not found' });
     }
 
     await CalendarEvent.findByIdAndDelete(req.params.id);
+    console.log('Calendar event deleted successfully:', event._id);
     res.json({ msg: 'Calendar event deleted' });
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Server error');
+    console.error('Error deleting calendar event:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ msg: 'Server error', error: error.message });
   }
 };
 
