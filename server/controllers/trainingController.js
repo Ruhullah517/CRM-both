@@ -3,7 +3,7 @@ const TrainingBooking = require('../models/TrainingBooking');
 const Certificate = require('../models/Certificate');
 const Invoice = require('../models/Invoice');
 const Feedback = require('../models/Feedback');
-const { generateInvoicePDF } = require('./invoiceController');
+const { generateInvoicePDFFile } = require('./invoiceController');
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const path = require('path');
@@ -527,7 +527,7 @@ const sendInvoiceEmail = async (invoice) => {
       pdfPath = path.join(__dirname, '..', invoice.invoiceUrl.replace('/uploads/', 'uploads/'));
     } else {
       // Generate PDF if not exists
-      const pdfUrl = await generateInvoicePDF(invoice);
+      const pdfUrl = await generateInvoicePDFFile(invoice);
       pdfPath = path.join(__dirname, '..', pdfUrl.replace('/uploads/', 'uploads/'));
     }
 
@@ -605,7 +605,7 @@ const sendCertificateEmail = async (certificate) => {
           if (invoice.invoiceUrl) {
             invoicePdfPath = path.join(__dirname, '..', invoice.invoiceUrl.replace('/uploads/', 'uploads/'));
           } else {
-            const invoicePdfUrl = await generateInvoicePDF(invoice);
+            const invoicePdfUrl = await generateInvoicePDFFile(invoice);
             invoicePdfPath = path.join(__dirname, '..', invoicePdfUrl.replace('/uploads/', 'uploads/'));
           }
           

@@ -157,7 +157,115 @@ const deleteInvoice = async (req, res) => {
   }
 };
 
-// Generate PDF invoice
+// Generate PDF invoice file and return file path
+const generateInvoicePDFFile = async (invoice) => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Create uploads directory if it doesn't exist
+      const uploadDir = 'uploads/invoices';
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const filename = `invoice-${invoice.invoiceNumber}.pdf`;
+      const filepath = path.join(uploadDir, filename);
+
+      // Create PDF document
+      const doc = new PDFDocument({ margin: 50 });
+      
+      // Pipe to file
+      const stream = fs.createWriteStream(filepath);
+      doc.pipe(stream);
+
+      // Add company header
+      doc.fontSize(20).text('Your Company Name', { align: 'center' });
+      doc.fontSize(12).text('123 Business Street, City, Postcode', { align: 'center' });
+      doc.fontSize(12).text('Phone: 01234 567890 | Email: info@company.com', { align: 'center' });
+      doc.moveDown();
+
+      // Invoice details
+      doc.fontSize(16).text('INVOICE', { align: 'center' });
+      doc.moveDown();
+
+      // Invoice number and dates
+      doc.fontSize(12);
+      doc.text(`Invoice Number: ${invoice.invoiceNumber}`);
+      doc.text(`Issue Date: ${new Date(invoice.issueDate || invoice.created_at).toLocaleDateString()}`);
+      doc.text(`Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}`);
+      doc.moveDown();
+
+      // Client information
+      doc.fontSize(14).text('Bill To:', { underline: true });
+      doc.fontSize(12);
+      doc.text(invoice.client.name);
+      if (invoice.client.organization) doc.text(invoice.client.organization);
+      if (invoice.client.address) doc.text(invoice.client.address);
+      if (invoice.client.email) doc.text(invoice.client.email);
+      if (invoice.client.phone) doc.text(invoice.client.phone);
+      doc.moveDown();
+
+      // Items table
+      doc.fontSize(14).text('Items:', { underline: true });
+      doc.moveDown();
+
+      // Table header
+      doc.fontSize(10);
+      doc.text('Description', 50, doc.y);
+      doc.text('Qty', 300, doc.y);
+      doc.text('Unit Price', 350, doc.y);
+      doc.text('Total', 450, doc.y);
+      doc.moveDown();
+
+      // Table rows
+      invoice.items.forEach(item => {
+        doc.text(item.description, 50, doc.y);
+        doc.text(item.quantity.toString(), 300, doc.y);
+        doc.text(`£${item.unitPrice.toFixed(2)}`, 350, doc.y);
+        doc.text(`£${item.total.toFixed(2)}`, 450, doc.y);
+        doc.moveDown();
+      });
+
+      // Totals
+      doc.moveDown();
+      doc.text(`Subtotal: £${invoice.subtotal.toFixed(2)}`, { align: 'right' });
+      if (invoice.taxAmount > 0) {
+        doc.text(`VAT (${invoice.taxRate}%): £${invoice.taxAmount.toFixed(2)}`, { align: 'right' });
+      }
+      doc.fontSize(14).text(`Total: £${invoice.total.toFixed(2)}`, { align: 'right' });
+      doc.moveDown();
+
+      // Notes
+      if (invoice.notes) {
+        doc.fontSize(12).text('Notes:', { underline: true });
+        doc.fontSize(10).text(invoice.notes);
+        doc.moveDown();
+      }
+
+      // Terms
+      if (invoice.terms) {
+        doc.fontSize(12).text('Terms:', { underline: true });
+        doc.fontSize(10).text(invoice.terms);
+      }
+
+      // Handle stream events
+      stream.on('finish', () => {
+        const pdfUrl = `/uploads/invoices/${filename}`;
+        resolve(pdfUrl);
+      });
+
+      stream.on('error', (error) => {
+        reject(error);
+      });
+
+      // Finalize PDF
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
+// Generate PDF invoice (for API routes)
 const generateInvoicePDF = async (req, res) => {
   try {
     const invoice = await Invoice.findById(req.params.id)
@@ -192,7 +300,7 @@ const generateInvoicePDF = async (req, res) => {
     // Invoice number and dates
     doc.fontSize(12);
     doc.text(`Invoice Number: ${invoice.invoiceNumber}`);
-    doc.text(`Issue Date: ${new Date(invoice.issuedDate).toLocaleDateString()}`);
+    doc.text(`Issue Date: ${new Date(invoice.issueDate || invoice.created_at).toLocaleDateString()}`);
     doc.text(`Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}`);
     doc.moveDown();
 
@@ -348,6 +456,7 @@ module.exports = {
   markInvoiceAsPaid,
   deleteInvoice,
   generateInvoicePDF,
+  generateInvoicePDFFile,
   getInvoiceStats,
   createInvoiceFromCase
 };
