@@ -460,18 +460,18 @@ const generateInvoicePDF = async (req, res) => {
     
     doc.fontSize(10).font('Helvetica').fillColor('#666');
     doc.text('Invoice Number:', 350, 80);
-    doc.fontSize(12).font('Helvetica-Bold').fillColor('#333');
+    doc.fontSize(10).font('Helvetica-Bold').fillColor('#333');
     doc.text(invoice.invoiceNumber, 430, 80);
     
     doc.fontSize(10).font('Helvetica').fillColor('#666');
-    doc.text('Issue Date:', 350, 95);
+    doc.text('Issue Date:', 350, 100);
     doc.fontSize(11).font('Helvetica').fillColor('#333');
-    doc.text(new Date(invoice.issueDate || invoice.created_at).toLocaleDateString('en-GB'), 430, 95);
+    doc.text(new Date(invoice.issueDate || invoice.created_at).toLocaleDateString('en-GB'), 430, 100);
     
     doc.fontSize(10).font('Helvetica').fillColor('#666');
-    doc.text('Due Date:', 350, 110);
+    doc.text('Due Date:', 350, 115);
     doc.fontSize(11).font('Helvetica').fillColor('#333');
-    doc.text(new Date(invoice.dueDate).toLocaleDateString('en-GB'), 430, 110);
+    doc.text(new Date(invoice.dueDate).toLocaleDateString('en-GB'), 430, 115);
 
     // Draw header separator line
     drawLine(140);
