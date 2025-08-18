@@ -97,42 +97,52 @@ const exportTrainingBookings = async (req, res) => {
 // Export payment history
 const exportPaymentHistory = async (req, res) => {
   try {
+    console.log('Starting payment history export...');
+    
     const invoices = await Invoice.find()
       .populate('relatedTrainingEvent', 'title')
-      .populate('relatedCase', 'title')
+      .populate('relatedCase', 'caseReferenceNumber')
       .populate('createdBy', 'name')
       .lean();
+
+    console.log(`Found ${invoices.length} invoices for export`);
 
     const csvData = invoices.map(invoice => ({
       'Invoice Number': invoice.invoiceNumber,
       'Client Name': invoice.client.name,
       'Client Email': invoice.client.email || '',
+      'Client Phone': invoice.client.phone || '',
       'Client Organization': invoice.client.organization || '',
-      'Related Training': invoice.relatedTrainingEvent?.title || '',
-      'Related Case': invoice.relatedCase?.title || '',
-      'Subtotal': invoice.subtotal,
+      'Related Training Event': invoice.relatedTrainingEvent?.title || '',
+      'Related Case': invoice.relatedCase?.caseReferenceNumber || '',
+      'Subtotal': invoice.subtotal.toFixed(2),
       'Tax Rate': invoice.taxRate,
-      'Tax Amount': invoice.taxAmount,
-      'Total': invoice.total,
+      'Tax Amount': invoice.taxAmount.toFixed(2),
+      'Total Amount': invoice.total.toFixed(2),
       'Currency': invoice.currency,
       'Status': invoice.status,
-      'Due Date': new Date(invoice.dueDate).toLocaleDateString(),
-      'Issued Date': new Date(invoice.issuedDate).toLocaleDateString(),
+      'Due Date': invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : '',
+      'Issue Date': invoice.issuedDate ? new Date(invoice.issuedDate).toLocaleDateString() : '',
       'Paid Date': invoice.paidDate ? new Date(invoice.paidDate).toLocaleDateString() : '',
       'Payment Method': invoice.paymentMethod || '',
       'Created By': invoice.createdBy?.name || '',
-      'Notes': invoice.notes || ''
+      'Notes': invoice.notes || '',
+      'Created Date': invoice.created_at ? new Date(invoice.created_at).toLocaleDateString() : ''
     }));
+
+    console.log('CSV data prepared, generating CSV...');
 
     const parser = new Parser();
     const csv = parser.parse(csvData);
+
+    console.log('CSV generated successfully, sending response...');
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=payment-history.csv');
     res.send(csv);
   } catch (error) {
     console.error('Error exporting payment history:', error);
-    res.status(500).json({ msg: 'Error exporting data' });
+    res.status(500).json({ msg: 'Error exporting data', error: error.message });
   }
 };
 

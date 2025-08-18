@@ -544,10 +544,12 @@ const TrainingEvents = () => {
   // Export functions
   const exportTrainingEvents = async () => {
     try {
-      const response = await api.get('/export/training-events', {
+      console.log('Starting training events export...');
+      const response = await api.get('/exports/training-events', {
         responseType: 'blob'
       });
       
+      console.log('Export response received, creating download...');
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -555,22 +557,31 @@ const TrainingEvents = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      
+      console.log('Training events export completed successfully');
     } catch (error) {
       console.error('Error exporting training events:', error);
-      alert('Error exporting data');
+      if (error.response?.status === 404) {
+        alert('Export endpoint not found. Please contact support.');
+      } else {
+        alert('Error exporting training events. Please try again.');
+      }
     }
   };
 
   const exportTrainingBookings = async (eventId = null) => {
     try {
+      console.log('Starting training bookings export...', eventId ? `for event: ${eventId}` : 'for all events');
+      
       const apiUrl = eventId 
-        ? `/export/training-bookings?eventId=${eventId}`
-        : '/export/training-bookings';
+        ? `/exports/training-bookings?eventId=${eventId}`
+        : '/exports/training-bookings';
         
       const response = await api.get(apiUrl, {
         responseType: 'blob'
       });
       
+      console.log('Export response received, creating download...');
       const downloadUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = downloadUrl;
@@ -578,18 +589,26 @@ const TrainingEvents = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      
+      console.log('Training bookings export completed successfully');
     } catch (error) {
       console.error('Error exporting training bookings:', error);
-      alert('Error exporting data');
+      if (error.response?.status === 404) {
+        alert('Export endpoint not found. Please contact support.');
+      } else {
+        alert('Error exporting training bookings. Please try again.');
+      }
     }
   };
 
   const exportPaymentHistory = async () => {
     try {
-      const response = await api.get('/export/payment-history', {
+      console.log('Starting payment history export...');
+      const response = await api.get('/exports/payment-history', {
         responseType: 'blob'
       });
       
+      console.log('Export response received, creating download...');
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -597,9 +616,15 @@ const TrainingEvents = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      
+      console.log('Payment history export completed successfully');
     } catch (error) {
       console.error('Error exporting payment history:', error);
-      alert('Error exporting data');
+      if (error.response?.status === 404) {
+        alert('Export endpoint not found. Please contact support.');
+      } else {
+        alert('Error exporting payment history. Please try again.');
+      }
     }
   };
 

@@ -123,9 +123,12 @@ const Invoices = () => {
 
   const exportPaymentHistory = async () => {
     try {
-      const response = await api.get('/export/payment-history', {
+      console.log('Starting payment history export...');
+      const response = await api.get('/exports/payment-history', {
         responseType: 'blob'
       });
+      
+      console.log('Export response received, creating download...');
       
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -134,9 +137,15 @@ const Invoices = () => {
       document.body.appendChild(link);
       link.click();
       link.remove();
+      
+      console.log('Payment history export completed successfully');
     } catch (error) {
       console.error('Error exporting payment history:', error);
-      alert('Error exporting data');
+      if (error.response?.status === 404) {
+        alert('Export endpoint not found. Please contact support.');
+      } else {
+        alert('Error exporting payment history. Please try again.');
+      }
     }
   };
 
