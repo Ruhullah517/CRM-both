@@ -4,6 +4,7 @@ const { authenticate } = require('../middleware/auth');
 const {
   getAllTrainingEvents,
   getTrainingEventById,
+  getBookingById,
   createTrainingEvent,
   updateTrainingEvent,
   deleteTrainingEvent,
@@ -17,12 +18,14 @@ const {
   resendCertificateEmail,
   generateMissingCertificates,
   generateMissingInvoices,
+  sendBookingLinkEmail,
   upload
 } = require('../controllers/trainingController');
 
 // Public routes (no authentication required)
 router.get('/public/:bookingLink', getPublicBookingLink);
 router.post('/public/bookings', createBooking);
+router.get('/bookings/:id', getBookingById);
 
 // Protected routes (require authentication)
 router.use(authenticate);
@@ -50,6 +53,9 @@ router.get('/certificates/:id/download', downloadCertificate);
 router.post('/certificates/:id/resend-email', resendCertificateEmail);
 router.post('/events/:trainingEventId/generate-certificates', generateMissingCertificates);
 router.post('/events/:trainingEventId/generate-invoices', generateMissingInvoices);
+
+// Email routes
+router.post('/send-booking-link', sendBookingLinkEmail);
 
 // File upload for training materials
 router.post('/events/:id/materials', upload.single('material'), (req, res) => {

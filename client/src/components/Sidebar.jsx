@@ -15,8 +15,7 @@ import {
   QuestionMarkCircleIcon,
   Cog6ToothIcon,
   AcademicCapIcon as TrainingIcon,
-  CalendarIcon,
-  ChatBubbleLeftRightIcon
+  CalendarIcon
 } from '@heroicons/react/24/outline';
 import img3 from '../../public/img3.png';
 const navItems = [
@@ -31,7 +30,7 @@ const navItems = [
         { name: 'Certificates', path: '/certificates', roles: ['admin', 'staff'], icon: AcademicCapIcon },
         { name: 'Invoices', path: '/invoices', roles: ['admin', 'staff'], icon: DocumentTextIcon },
         { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon },
-        { name: 'Feedback', path: '/feedback', roles: ['admin', 'staff'], icon: ChatBubbleLeftRightIcon },
+
   { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: EnvelopeIcon },
   { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon },
   { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon },

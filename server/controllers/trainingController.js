@@ -61,6 +61,23 @@ const getTrainingEventById = async (req, res) => {
   }
 };
 
+// Get single booking by ID (for public feedback)
+const getBookingById = async (req, res) => {
+  try {
+    const booking = await TrainingBooking.findById(req.params.id)
+      .populate('trainingEvent', 'title startDate endDate');
+
+    if (!booking) {
+      return res.status(404).json({ msg: 'Booking not found' });
+    }
+
+    res.json(booking);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 // Create new training event
 const createTrainingEvent = async (req, res) => {
   try {
@@ -282,6 +299,14 @@ const updateBookingStatus = async (req, res) => {
     // Auto-generate certificate when marked as completed
     if (completion && completion.completed && !booking.completion.certificateGenerated) {
       await generateCertificate(updatedBooking);
+      
+      // Send feedback request email when training is completed
+      try {
+        await sendFeedbackRequestEmail(updatedBooking._id);
+      } catch (feedbackEmailError) {
+        console.error('Error sending feedback request email:', feedbackEmailError);
+        // Don't fail the update if feedback email fails
+      }
     }
 
     res.json(updatedBooking);
@@ -924,9 +949,129 @@ const generateMissingInvoices = async (req, res) => {
   }
 };
 
+// Send booking link via email
+const sendBookingLinkEmail = async (req, res) => {
+  try {
+    const { eventId, email, message } = req.body;
+
+    const trainingEvent = await TrainingEvent.findById(eventId);
+    if (!trainingEvent) {
+      return res.status(404).json({ msg: 'Training event not found' });
+    }
+
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: 'ruhullah517@gmail.com',
+        pass: 'vrcf pvht mrxd rnmq',
+      }
+    });
+
+    const bookingUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/training/${trainingEvent.bookingLink}`;
+    
+    const mailOptions = {
+      from: "ruhullah517@gmail.com",
+      to: email,
+      subject: `Training Event Invitation - ${trainingEvent.title}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2EAB2C;">Training Event Invitation</h2>
+          <p>${message.replace(/\n/g, '<br>')}</p>
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">Event Details:</h3>
+            <p><strong>Title:</strong> ${trainingEvent.title}</p>
+            <p><strong>Date:</strong> ${new Date(trainingEvent.startDate).toLocaleDateString()} - ${new Date(trainingEvent.endDate).toLocaleDateString()}</p>
+            <p><strong>Location:</strong> ${trainingEvent.location || 'TBD'}</p>
+            <p><strong>Price:</strong> £${trainingEvent.price} ${trainingEvent.currency}</p>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${bookingUrl}" style="background-color: #2EAB2C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Book Now
+            </a>
+          </div>
+          <p style="color: #666; font-size: 14px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${bookingUrl}">${bookingUrl}</a>
+          </p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.json({ msg: 'Booking link sent successfully' });
+  } catch (error) {
+    console.error('Error sending booking link email:', error);
+    res.status(500).json({ msg: 'Error sending email' });
+  }
+};
+
+// Send feedback request email
+const sendFeedbackRequestEmail = async (bookingId) => {
+  try {
+    const booking = await TrainingBooking.findById(bookingId)
+      .populate('trainingEvent', 'title startDate endDate');
+    
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: 'ruhullah517@gmail.com',
+        pass: 'vrcf pvht mrxd rnmq',
+      }
+    });
+
+    const feedbackUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/feedback/${bookingId}`;
+    
+    const mailOptions = {
+      from: "ruhullah517@gmail.com",
+      to: booking.participant.email,
+      subject: `Feedback Request - ${booking.trainingEvent.title}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2EAB2C;">Training Feedback Request</h2>
+          <p>Dear ${booking.participant.name},</p>
+          <p>Thank you for completing our training event: <strong>${booking.trainingEvent.title}</strong></p>
+          <p>We would greatly appreciate your feedback to help us improve our training programs.</p>
+          
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="margin-top: 0;">Training Details:</h3>
+            <p><strong>Event:</strong> ${booking.trainingEvent.title}</p>
+            <p><strong>Date:</strong> ${new Date(booking.trainingEvent.startDate).toLocaleDateString()} - ${new Date(booking.trainingEvent.endDate).toLocaleDateString()}</p>
+          </div>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${feedbackUrl}" style="background-color: #2EAB2C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Provide Feedback
+            </a>
+          </div>
+          
+          <p style="color: #666; font-size: 14px;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${feedbackUrl}">${feedbackUrl}</a>
+          </p>
+          
+          <p>Your feedback is valuable to us and will help us enhance our training programs.</p>
+          <p>Best regards,<br>Training Team</p>
+        </div>
+      `
+    };
+
+    await transporter.sendMail(mailOptions);
+    return true;
+  } catch (error) {
+    console.error('Error sending feedback request email:', error);
+    return false;
+  }
+};
+
 module.exports = {
   getAllTrainingEvents,
   getTrainingEventById,
+  getBookingById,
   createTrainingEvent,
   updateTrainingEvent,
   deleteTrainingEvent,
@@ -941,5 +1086,7 @@ module.exports = {
   sendBookingConfirmationEmail,
   generateMissingCertificates,
   generateMissingInvoices,
+  sendBookingLinkEmail,
+  sendFeedbackRequestEmail,
   upload
 };

@@ -15,7 +15,9 @@ import {
   XMarkIcon,
   AcademicCapIcon,
   DocumentTextIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  EnvelopeIcon,
+  StarIcon
 } from '@heroicons/react/24/outline';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
@@ -266,11 +268,24 @@ const TrainingEvents = () => {
   const [updatingBooking, setUpdatingBooking] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [selectedEventForEmail, setSelectedEventForEmail] = useState(null);
+  const [emailData, setEmailData] = useState({ email: '', message: '' });
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [selectedEventForImport, setSelectedEventForImport] = useState(null);
+  const [eventFeedback, setEventFeedback] = useState([]);
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
 
   useEffect(() => {
     fetchEvents();
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (selectedEvent) {
+      fetchEventFeedback(selectedEvent._id);
+    }
+  }, [selectedEvent]);
 
   const fetchEvents = async () => {
     try {
@@ -349,8 +364,12 @@ const TrainingEvents = () => {
     try {
       const response = await api.post(`/training/events/${eventId}/generate-certificates`);
       alert(response.data.message);
-      // Refresh the page to show updated data
-      window.location.reload();
+      // Refresh bookings list if modal is open
+      if (showBookings && currentEventId === eventId) {
+        handleViewBookings(eventId);
+      }
+      // Refresh events to show updated data
+      fetchEvents();
     } catch (error) {
       console.error('Error generating certificates:', error);
       alert('Error generating certificates');
@@ -363,8 +382,12 @@ const TrainingEvents = () => {
     try {
       const response = await api.post(`/training/events/${eventId}/generate-invoices`);
       alert(response.data.message);
-      // Refresh the page to show updated data
-      window.location.reload();
+      // Refresh bookings list if modal is open
+      if (showBookings && currentEventId === eventId) {
+        handleViewBookings(eventId);
+      }
+      // Refresh events to show updated data
+      fetchEvents();
     } catch (error) {
       console.error('Error generating invoices:', error);
       alert('Error generating invoices');
@@ -441,10 +464,15 @@ const TrainingEvents = () => {
 
       setImportResults(response.data);
       
-      if (response.status === 200 || response.status === 201) {
-        // Refresh events to show updated booking counts
-        fetchEvents();
-      }
+             if (response.status === 200 || response.status === 201) {
+         // Refresh events to show updated booking counts
+         fetchEvents();
+         
+         // Refresh bookings list if modal is open for this event
+         if (showBookings && currentEventId === trainingEventId) {
+           handleViewBookings(trainingEventId);
+         }
+       }
     } catch (error) {
       console.error('Error importing participants:', error);
       setImportResults({ error: 'Import failed' });
@@ -458,6 +486,61 @@ const TrainingEvents = () => {
     setImportPreview([]);
     setImportResults(null);
     setShowBulkImport(false);
+    setSelectedEventForImport(null);
+  };
+
+  const openBulkImportModal = (event) => {
+    setSelectedEventForImport(event);
+    setShowBulkImport(true);
+  };
+
+  const fetchEventFeedback = async (eventId) => {
+    setLoadingFeedback(true);
+    try {
+      const response = await api.get(`/feedback/event/${eventId}`);
+      setEventFeedback(response.data);
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+      setEventFeedback([]);
+    } finally {
+      setLoadingFeedback(false);
+    }
+  };
+
+  // Email functions
+  const openEmailModal = (event) => {
+    setSelectedEventForEmail(event);
+    setEmailData({ 
+      email: '', 
+      message: `Hi there,\n\nYou're invited to join our training event: ${event.title}\n\nEvent Details:\n- Date: ${formatDate(event.startDate)} - ${formatDate(event.endDate)}\n- Location: ${event.location || 'TBD'}\n- Price: £${event.price} ${event.currency}\n\nPlease click the booking link below to register:\n${window.location.origin}/training/${event.bookingLink}\n\nBest regards,\nTraining Team` 
+    });
+    setShowEmailModal(true);
+  };
+
+  const sendBookingLinkEmail = async () => {
+    if (!emailData.email.trim()) {
+      alert('Please enter an email address');
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const response = await api.post('/training/send-booking-link', {
+        eventId: selectedEventForEmail._id,
+        email: emailData.email,
+        message: emailData.message
+      });
+      
+      alert('Booking link sent successfully!');
+      setShowEmailModal(false);
+      setSelectedEventForEmail(null);
+      setEmailData({ email: '', message: '' });
+    } catch (error) {
+      console.error('Error sending booking link:', error);
+      alert('Error sending booking link');
+    } finally {
+      setSendingEmail(false);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -490,16 +573,20 @@ const TrainingEvents = () => {
     }
   };
 
-  const exportTrainingBookings = async () => {
+  const exportTrainingBookings = async (eventId = null) => {
     try {
-      const response = await api.get('/export/training-bookings', {
+      const apiUrl = eventId 
+        ? `/export/training-bookings?eventId=${eventId}`
+        : '/export/training-bookings';
+        
+      const response = await api.get(apiUrl, {
         responseType: 'blob'
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const downloadUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', 'training-bookings.csv');
+      link.href = downloadUrl;
+      link.setAttribute('download', eventId ? `training-bookings-event-${eventId}.csv` : 'training-bookings.csv');
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -534,43 +621,22 @@ const TrainingEvents = () => {
     <div className="max-w-7xl mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Training Events</h1>
-        <div className="flex gap-2">
-          <button
-            onClick={exportTrainingEvents}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-700"
-          >
-            <ArrowDownTrayIcon className="w-5 h-5" />
-            Export Events
-          </button>
-          <button
-            onClick={exportTrainingBookings}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700"
-          >
-            <ArrowDownTrayIcon className="w-5 h-5" />
-            Export Bookings
-          </button>
-          <button
-            onClick={exportPaymentHistory}
-            className="bg-teal-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-teal-700"
-          >
-            <ArrowDownTrayIcon className="w-5 h-5" />
-            Export Payments
-          </button>
-          <button
-            onClick={() => setShowBulkImport(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
-          >
-            <DocumentArrowUpIcon className="w-5 h-5" />
-            Bulk Import
-          </button>
-          <button
-            onClick={() => setShowForm(true)}
-            className="bg-[#2EAB2C] text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Create Event
-          </button>
-        </div>
+                 <div className="flex gap-2">
+           <button
+             onClick={exportTrainingEvents}
+             className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-700"
+           >
+             <ArrowDownTrayIcon className="w-5 h-5" />
+             Export Events
+           </button>
+           <button
+             onClick={() => setShowForm(true)}
+             className="bg-[#2EAB2C] text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700"
+           >
+             <PlusIcon className="w-5 h-5" />
+             Create Event
+           </button>
+         </div>
       </div>
 
       {/* Events Grid */}
@@ -586,11 +652,17 @@ const TrainingEvents = () => {
             
             <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
             
-            <div className="space-y-2 mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <CalendarIcon className="w-4 h-4" />
-                <span>{formatDate(event.startDate)} - {formatDate(event.endDate)}</span>
-              </div>
+                         <div className="space-y-2 mb-4">
+               <div className="flex items-center gap-2 text-sm text-gray-600">
+                 <CalendarIcon className="w-4 h-4" />
+                 <span>{formatDate(event.startDate)} - {formatDate(event.endDate)}</span>
+               </div>
+               
+               {/* Quick Rating Display - Placeholder for now */}
+               {/* <div className="flex items-center gap-2 text-sm text-gray-600">
+                 <StarIcon className="w-4 h-4 text-yellow-400" />
+                 <span>4.2 (12 reviews)</span>
+               </div> */}
               
               {event.location && (
                 <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -612,50 +684,50 @@ const TrainingEvents = () => {
               )}
             </div>
 
-            <div className="flex gap-2 flex-wrap">
-              <button
-                onClick={() => setSelectedEvent(event)}
-                className="flex-1 bg-blue-100 text-blue-700 px-3 py-2 rounded text-sm font-medium hover:bg-blue-200"
-              >
-                <EyeIcon className="w-4 h-4 inline mr-1" />
-                View
-              </button>
-              <button
-                onClick={() => handleViewBookings(event._id)}
-                className="flex-1 bg-green-100 text-green-700 px-3 py-2 rounded text-sm font-medium hover:bg-green-200"
-              >
-                <ClipboardDocumentListIcon className="w-4 h-4 inline mr-1" />
-                Bookings
-              </button>
-              <button
-                onClick={() => handleGenerateCertificates(event._id)}
-                className="flex-1 bg-purple-100 text-purple-700 px-3 py-2 rounded text-sm font-medium hover:bg-purple-200"
-              >
-                <AcademicCapIcon className="w-4 h-4 inline mr-1" />
-                Certificates
-              </button>
-              <button
-                onClick={() => handleGenerateInvoices(event._id)}
-                className="flex-1 bg-orange-100 text-orange-700 px-3 py-2 rounded text-sm font-medium hover:bg-orange-200"
-              >
-                <DocumentTextIcon className="w-4 h-4 inline mr-1" />
-                Invoices
-              </button>
-              <button
-                onClick={() => setEditingEvent(event)}
-                className="flex-1 bg-yellow-100 text-yellow-700 px-3 py-2 rounded text-sm font-medium hover:bg-yellow-200"
-              >
-                <PencilSquareIcon className="w-4 h-4 inline mr-1" />
-                Edit
-              </button>
-              <button
-                onClick={() => handleDeleteEvent(event._id)}
-                className="flex-1 bg-red-100 text-red-700 px-3 py-2 rounded text-sm font-medium hover:bg-red-200"
-              >
-                <TrashIcon className="w-4 h-4 inline mr-1" />
-                Delete
-              </button>
-            </div>
+                         <div className="flex gap-2 flex-wrap">
+               <button
+                 onClick={() => setSelectedEvent(event)}
+                 className="flex-1 bg-blue-100 text-blue-700 px-3 py-2 rounded text-sm font-medium hover:bg-blue-200"
+               >
+                 <EyeIcon className="w-4 h-4 inline mr-1" />
+                 View
+               </button>
+               <button
+                 onClick={() => handleViewBookings(event._id)}
+                 className="flex-1 bg-green-100 text-green-700 px-3 py-2 rounded text-sm font-medium hover:bg-green-200"
+               >
+                 <ClipboardDocumentListIcon className="w-4 h-4 inline mr-1" />
+                 Bookings
+               </button>
+               <button
+                 onClick={() => openEmailModal(event)}
+                 className="flex-1 bg-indigo-100 text-indigo-700 px-3 py-2 rounded text-sm font-medium hover:bg-indigo-200"
+               >
+                 <EnvelopeIcon className="w-4 h-4 inline mr-1" />
+                 Send Link
+               </button>
+               <button
+                 onClick={() => openBulkImportModal(event)}
+                 className="flex-1 bg-cyan-100 text-cyan-700 px-3 py-2 rounded text-sm font-medium hover:bg-cyan-200"
+               >
+                 <DocumentArrowUpIcon className="w-4 h-4 inline mr-1" />
+                 Import
+               </button>
+               <button
+                 onClick={() => setEditingEvent(event)}
+                 className="flex-1 bg-yellow-100 text-yellow-700 px-3 py-2 rounded text-sm font-medium hover:bg-yellow-200"
+               >
+                 <PencilSquareIcon className="w-4 h-4 inline mr-1" />
+                 Edit
+               </button>
+               <button
+                 onClick={() => handleDeleteEvent(event._id)}
+                 className="flex-1 bg-red-100 text-red-700 px-3 py-2 rounded text-sm font-medium hover:bg-red-200"
+               >
+                 <TrashIcon className="w-4 h-4 inline mr-1" />
+                 Delete
+               </button>
+             </div>
           </div>
         ))}
       </div>
@@ -673,28 +745,38 @@ const TrainingEvents = () => {
         />
       )}
 
-      {/* Event Details Modal */}
-      {selectedEvent && (
-        <EventDetailsModal
-          event={selectedEvent}
-          onClose={() => setSelectedEvent(null)}
-        />
-      )}
+             {/* Event Details Modal */}
+       {selectedEvent && (
+         <EventDetailsModal
+           event={selectedEvent}
+           feedback={eventFeedback}
+           loadingFeedback={loadingFeedback}
+           onClose={() => setSelectedEvent(null)}
+         />
+       )}
 
-      {/* Bulk Import Modal */}
-      {showBulkImport && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-bold">Bulk Import Participants</h2>
-                <button 
-                  onClick={resetBulkImport} 
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <XMarkIcon className="w-6 h-6" />
-                </button>
-              </div>
+             {/* Bulk Import Modal */}
+       {showBulkImport && (
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+             <div className="p-6">
+               <div className="flex justify-between items-start mb-4">
+                 <h2 className="text-xl font-bold">Bulk Import Participants</h2>
+                 <button 
+                   onClick={resetBulkImport} 
+                   className="text-gray-500 hover:text-gray-700"
+                 >
+                   <XMarkIcon className="w-6 h-6" />
+                 </button>
+               </div>
+
+               {selectedEventForImport && (
+                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+                   <h3 className="font-semibold text-blue-900 mb-2">Selected Training Event:</h3>
+                   <p className="text-blue-800"><strong>{selectedEventForImport.title}</strong></p>
+                   <p className="text-blue-700 text-sm">{formatDate(selectedEventForImport.startDate)} - {formatDate(selectedEventForImport.endDate)}</p>
+                 </div>
+               )}
 
               {!importFile ? (
                 <div className="space-y-4">
@@ -764,28 +846,25 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
                     </div>
                   )}
 
-                  <div>
-                    <h4 className="font-semibold mb-2">Select Training Event</h4>
-                    <select
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          handleBulkImport(e.target.value);
-                        }
-                      }}
-                      disabled={importing}
-                      className="w-full px-3 py-2 border rounded-lg"
-                    >
-                      <option value="">Choose a training event...</option>
-                      {events
-                        .filter(event => event.status === 'published')
-                        .map(event => (
-                          <option key={event._id} value={event._id}>
-                            {event.title} ({formatDate(event.startDate)})
-                          </option>
-                        ))
-                      }
-                    </select>
-                  </div>
+                                     <div>
+                     <button
+                       onClick={() => handleBulkImport(selectedEventForImport._id)}
+                       disabled={importing || !selectedEventForImport}
+                       className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                     >
+                       {importing ? (
+                         <span className="flex items-center justify-center">
+                           <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                           </svg>
+                           Importing...
+                         </span>
+                       ) : (
+                         `Import ${importPreview.length} Participants to "${selectedEventForImport?.title}"`
+                       )}
+                     </button>
+                   </div>
 
                   {importing && (
                     <div className="text-center py-4">
@@ -834,15 +913,31 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-bold">Training Event Bookings</h2>
-                <button
-                  onClick={() => setShowBookings(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ✕
-                </button>
-              </div>
+                             <div className="flex justify-between items-start mb-4">
+                 <h2 className="text-xl font-bold">Training Event Bookings</h2>
+                 <div className="flex gap-2">
+                   <button
+                     onClick={() => handleGenerateCertificates(currentEventId)}
+                     className="bg-purple-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-purple-700 flex items-center gap-1"
+                   >
+                     <AcademicCapIcon className="w-4 h-4" />
+                     Generate Certificates
+                   </button>
+                   <button
+                     onClick={() => handleGenerateInvoices(currentEventId)}
+                     className="bg-orange-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-orange-700 flex items-center gap-1"
+                   >
+                     <DocumentTextIcon className="w-4 h-4" />
+                     Generate Invoices
+                   </button>
+                   <button
+                     onClick={() => setShowBookings(false)}
+                     className="text-gray-500 hover:text-gray-700"
+                   >
+                     ✕
+                   </button>
+                 </div>
+               </div>
 
               {loadingBookings ? (
                 <div className="text-center py-8">
@@ -932,12 +1027,19 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
                 </div>
               )}
 
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex gap-3 justify-between">
                 <button
                   onClick={() => setShowBookings(false)}
                   className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
                 >
                   Close
+                </button>
+                <button
+                  onClick={() => exportTrainingBookings(currentEventId)}
+                  className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2"
+                >
+                  <ArrowDownTrayIcon className="w-4 h-4" />
+                  Export Bookings
                 </button>
               </div>
             </div>
@@ -978,6 +1080,22 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
             </div>
           </div>
         </div>
+      )}
+
+      {/* Email Modal */}
+      {showEmailModal && selectedEventForEmail && (
+        <EmailModal
+          event={selectedEventForEmail}
+          emailData={emailData}
+          setEmailData={setEmailData}
+          onSend={sendBookingLinkEmail}
+          onClose={() => {
+            setShowEmailModal(false);
+            setSelectedEventForEmail(null);
+            setEmailData({ email: '', message: '' });
+          }}
+          sending={sendingEmail}
+        />
       )}
     </div>
   );
@@ -1172,19 +1290,63 @@ const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
   );
 };
 
-const EventDetailsModal = ({ event, onClose }) => {
+  const EventDetailsModal = ({ event, feedback, loadingFeedback, onClose }) => {
+    const [activeTab, setActiveTab] = useState('details');
+
+  const getRatingStars = (rating) => {
+    return [...Array(5)].map((_, i) => (
+      <StarIcon 
+        key={i} 
+        className={`h-4 w-4 ${i < rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+      />
+    ));
+  };
+
+  const getAverageRating = () => {
+    if (feedback.length === 0) return 0;
+    const total = feedback.reduce((sum, feedbackItem) => sum + feedbackItem.feedback.overallRating, 0);
+    return (total / feedback.length).toFixed(1);
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
-          <div className="flex justify-between items-start mb-4">
-            <h2 className="text-xl font-bold">{event.title}</h2>
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-              ✕
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="flex justify-between items-start mb-4">
+             <h2 className="text-xl font-bold">{event.title}</h2>
+             <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+               ✕
+             </button>
+           </div>
+
+           {/* Tabs */}
+           <div className="border-b border-gray-200 mb-6">
+             <nav className="-mb-px flex space-x-8">
+               <button
+                 onClick={() => setActiveTab('details')}
+                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                   activeTab === 'details'
+                     ? 'border-blue-500 text-blue-600'
+                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                 }`}
+               >
+                 Event Details
+               </button>
+                                <button
+                   onClick={() => setActiveTab('feedback')}
+                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                     activeTab === 'feedback'
+                       ? 'border-blue-500 text-blue-600'
+                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                   }`}
+                 >
+                   Reviews ({feedback.length})
+                 </button>
+             </nav>
+           </div>
+
+           {activeTab === 'details' && (
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="font-semibold mb-2">Event Details</h3>
               <div className="space-y-2 text-sm">
@@ -1217,10 +1379,102 @@ const EventDetailsModal = ({ event, onClose }) => {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-          
-          <div className="mt-6 flex gap-3">
+                         </div>
+           </div>
+           )}
+
+           {activeTab === 'feedback' && (
+             <div className="space-y-6">
+               {/* Feedback Summary */}
+               <div className="bg-gray-50 p-4 rounded-lg">
+                 <div className="flex items-center gap-4">
+                   <div className="text-center">
+                     <div className="text-3xl font-bold text-gray-900">{getAverageRating()}</div>
+                     <div className="flex justify-center mt-1">
+                       {getRatingStars(Math.round(getAverageRating()))}
+                     </div>
+                     <div className="text-sm text-gray-600 mt-1">
+                       {feedback.length} {feedback.length === 1 ? 'review' : 'reviews'}
+                     </div>
+                   </div>
+                   <div className="flex-1">
+                     <h3 className="font-semibold text-gray-900 mb-2">Rating Distribution</h3>
+                     <div className="space-y-1">
+                       {[5, 4, 3, 2, 1].map(rating => {
+                         const count = feedback.filter(f => f.feedback.overallRating === rating).length;
+                         const percentage = feedback.length > 0 ? (count / feedback.length) * 100 : 0;
+                         return (
+                           <div key={rating} className="flex items-center gap-2">
+                             <span className="text-sm text-gray-600 w-4">{rating}</span>
+                             <div className="flex-1 bg-gray-200 rounded-full h-2">
+                               <div 
+                                 className="bg-yellow-400 h-2 rounded-full" 
+                                 style={{ width: `${percentage}%` }}
+                               ></div>
+                             </div>
+                             <span className="text-sm text-gray-600 w-8">{count}</span>
+                           </div>
+                         );
+                       })}
+                     </div>
+                   </div>
+                 </div>
+               </div>
+
+               {/* Feedback List */}
+               {loadingFeedback ? (
+                 <div className="text-center py-8">
+                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                   <p>Loading reviews...</p>
+                 </div>
+               ) : feedback.length === 0 ? (
+                 <div className="text-center py-8 text-gray-500">
+                   <p>No reviews yet for this training event.</p>
+                 </div>
+               ) : (
+                 <div className="space-y-4">
+                   {feedback.map((feedbackItem) => (
+                     <div key={feedbackItem._id} className="border border-gray-200 rounded-lg p-4">
+                       <div className="flex items-start justify-between mb-3">
+                         <div>
+                           <h4 className="font-semibold text-gray-900">{feedbackItem.participant.name}</h4>
+                           <p className="text-sm text-gray-600">{feedbackItem.participant.email}</p>
+                         </div>
+                         <div className="flex items-center gap-1">
+                           {getRatingStars(feedbackItem.feedback.overallRating)}
+                         </div>
+                       </div>
+                       
+                       <div className="space-y-2">
+                         {feedbackItem.feedback.comments && (
+                           <div>
+                             <p className="text-gray-800">{feedbackItem.feedback.comments}</p>
+                           </div>
+                         )}
+                         
+                         {feedbackItem.feedback.suggestions && (
+                           <div>
+                             <p className="text-sm text-gray-600">
+                               <strong>Suggestions:</strong> {feedbackItem.feedback.suggestions}
+                             </p>
+                           </div>
+                         )}
+                         
+                         <div className="flex items-center gap-4 text-sm text-gray-600">
+                           <span>Submitted: {formatDate(feedbackItem.submittedAt)}</span>
+                           {feedbackItem.feedback.wouldRecommend && (
+                             <span className="text-green-600">✓ Would recommend</span>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               )}
+             </div>
+           )}
+           
+           <div className="mt-6 flex gap-3">
             <button
               onClick={() => window.open(`/training/${event.bookingLink}`, '_blank')}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -1232,6 +1486,87 @@ const EventDetailsModal = ({ event, onClose }) => {
               className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
             >
               Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Email Modal Component
+const EmailModal = ({ event, emailData, setEmailData, onSend, onClose, sending }) => {
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <h2 className="text-xl font-bold">Send Booking Link</h2>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+              ✕
+            </button>
+          </div>
+
+          <div className="mb-4">
+            <h3 className="font-semibold mb-2">Training Event: {event?.title}</h3>
+            <p className="text-sm text-gray-600">
+              Send the booking link to a customer via email
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Customer Email *
+              </label>
+              <input
+                type="email"
+                value={emailData.email}
+                onChange={(e) => setEmailData({ ...emailData, email: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="customer@example.com"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Message
+              </label>
+              <textarea
+                value={emailData.message}
+                onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="8"
+                placeholder="Enter your email message..."
+              />
+            </div>
+          </div>
+
+          <div className="mt-6 flex gap-3">
+            <button
+              onClick={onSend}
+              disabled={sending || !emailData.email.trim()}
+              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {sending ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Sending...
+                </span>
+              ) : (
+                'Send Email'
+              )}
+            </button>
+            <button
+              onClick={onClose}
+              disabled={sending}
+              className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 disabled:opacity-50"
+            >
+              Cancel
             </button>
           </div>
         </div>

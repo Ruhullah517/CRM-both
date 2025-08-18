@@ -7,7 +7,8 @@ import {
   CheckCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-  CurrencyPoundIcon
+  CurrencyPoundIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import api from '../services/api';
@@ -96,6 +97,25 @@ const Invoices = () => {
       fetchStats();
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
+    }
+  };
+
+  const exportPaymentHistory = async () => {
+    try {
+      const response = await api.get('/export/payment-history', {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'payment-history.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Error exporting payment history:', error);
+      alert('Error exporting data');
     }
   };
 
@@ -215,13 +235,22 @@ const Invoices = () => {
               Manage invoices and track payments
             </p>
           </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center"
-          >
-            <PlusIcon className="h-5 w-5 mr-2" />
-            Create Invoice
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={exportPaymentHistory}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center"
+            >
+              <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
+              Export Payments
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Create Invoice
+            </button>
+          </div>
         </div>
       </div>
 
