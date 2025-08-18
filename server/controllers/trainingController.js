@@ -340,12 +340,20 @@ const updateBookingStatus = async (req, res) => {
       }
     }
 
-    // Auto-generate invoice when marked as completed (if not already exists)
-    if (completion && completion.completed && !booking.payment.invoiceId) {
+    // Auto-generate invoice when marked as completed
+    if (completion && completion.completed) {
+      console.log('Training marked as completed, checking for invoice generation...');
       try {
         const trainingEvent = await TrainingEvent.findById(booking.trainingEvent);
-        if (trainingEvent && trainingEvent.price > 0) {
+        console.log('Training event price:', trainingEvent?.price);
+        console.log('Updated booking invoice ID:', updatedBooking.payment.invoiceId);
+        
+        if (trainingEvent && trainingEvent.price > 0 && !updatedBooking.payment.invoiceId) {
+          console.log('Generating invoice for completed training...');
           await generateInvoiceForBooking(updatedBooking, trainingEvent);
+          console.log('Invoice generated successfully');
+        } else {
+          console.log('Invoice generation skipped - conditions not met');
         }
       } catch (invoiceError) {
         console.error('Error creating invoice during completion:', invoiceError);
@@ -709,10 +717,15 @@ const generateCertificatePDF = async (certificate) => {
 // Generate invoice for a booking
 const generateInvoiceForBooking = async (booking, trainingEvent) => {
   try {
+    console.log('Starting invoice generation for booking:', booking._id);
+    console.log('Training event:', trainingEvent.title, 'Price:', trainingEvent.price);
+    
     // Generate invoice number manually to ensure it's set
     const invoiceCount = await Invoice.countDocuments();
     const year = new Date().getFullYear();
     const invoiceNumber = `INV-${year}-${String(invoiceCount + 1).padStart(4, '0')}`;
+    
+    console.log('Generated invoice number:', invoiceNumber);
 
     const invoice = new Invoice({
       invoiceNumber,
@@ -737,11 +750,14 @@ const generateInvoiceForBooking = async (booking, trainingEvent) => {
       createdBy: trainingEvent.createdBy
     });
 
+    console.log('Invoice object created, saving...');
     await invoice.save();
+    console.log('Invoice saved successfully:', invoice._id);
 
     // Link invoice to booking
     booking.payment.invoiceId = invoice._id;
     await booking.save();
+    console.log('Invoice linked to booking successfully');
 
     return invoice;
   } catch (error) {
@@ -789,12 +805,16 @@ const generateCertificate = async (booking) => {
 
     // Create invoice if not already exists and training has a price
     if (trainingEvent.price > 0 && !booking.payment.invoiceId) {
+      console.log('Certificate generated, now generating invoice...');
       try {
         await generateInvoiceForBooking(booking, trainingEvent);
+        console.log('Invoice generated successfully during certificate generation');
       } catch (invoiceError) {
         console.error('Error creating invoice during certificate generation:', invoiceError);
         // Don't fail the certificate generation if invoice creation fails
       }
+    } else {
+      console.log('Invoice generation skipped during certificate generation - conditions not met');
     }
 
     // Send certificate via email
