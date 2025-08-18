@@ -279,6 +279,7 @@ const createBooking = async (req, res) => {
           subtotal: trainingEvent.price,
           total: trainingEvent.price,
           dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+          issuedDate: new Date(), // Set the issue date explicitly
           relatedTrainingEvent: trainingEventId,
           createdBy: req.user?.id || trainingEvent.createdBy
         });
@@ -550,7 +551,7 @@ const sendInvoiceEmail = async (invoice) => {
           <p>Thank you for registering for our training event. Please find attached the invoice for your training registration.</p>
           <h3 style="color: #212529;">Invoice Details:</h3>
           <p><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</p>
-          <p><strong>Issue Date:</strong> ${invoice.issueDate.toLocaleDateString()}</p>
+          <p><strong>Issue Date:</strong> ${(invoice.issuedDate || invoice.created_at || new Date()).toLocaleDateString()}</p>
           <p><strong>Due Date:</strong> ${invoice.dueDate.toLocaleDateString()}</p>
           <p><strong>Total Amount:</strong> £${invoice.total}</p>
           <p>Please review the attached invoice and process the payment by the due date to confirm your registration.</p>
@@ -856,6 +857,7 @@ const generateInvoiceForBooking = async (booking, trainingEvent) => {
       subtotal: trainingEvent.price,
       total: trainingEvent.price,
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      issuedDate: new Date(), // Set the issue date explicitly
       relatedTrainingEvent: trainingEvent._id,
       createdBy: trainingEvent.createdBy
     });

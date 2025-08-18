@@ -218,7 +218,7 @@ const generateInvoicePDFFile = async (invoice) => {
       doc.fontSize(10).font('Helvetica').fillColor('#666');
       doc.text('Issue Date:', 350, 95);
       doc.fontSize(11).font('Helvetica').fillColor('#333');
-      doc.text(new Date(invoice.issueDate || invoice.created_at).toLocaleDateString('en-GB'), 430, 95);
+      doc.text(new Date(invoice.issuedDate || invoice.created_at).toLocaleDateString('en-GB'), 430, 95);
       
       doc.fontSize(10).font('Helvetica').fillColor('#666');
       doc.text('Due Date:', 350, 110);
@@ -466,7 +466,7 @@ const generateInvoicePDF = async (req, res) => {
     doc.fontSize(10).font('Helvetica').fillColor('#666');
     doc.text('Issue Date:', 350, 100);
     doc.fontSize(11).font('Helvetica').fillColor('#333');
-    doc.text(new Date(invoice.issueDate || invoice.created_at).toLocaleDateString('en-GB'), 430, 100);
+          doc.text(new Date(invoice.issuedDate || invoice.created_at).toLocaleDateString('en-GB'), 430, 100);
     
     doc.fontSize(10).font('Helvetica').fillColor('#666');
     doc.text('Due Date:', 350, 115);
@@ -733,6 +733,7 @@ const createInvoiceFromCase = async (req, res) => {
       taxAmount,
       total,
       dueDate: dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      issuedDate: new Date(), // Set the issue date explicitly
       notes,
       relatedCase: caseId,
       createdBy: req.user.id

@@ -54,7 +54,17 @@ The training invoice system has been modified so that invoices are now generated
 - Removed invoice attachment (invoices are now sent at registration)
 - Updated payment information section to reflect that invoice was sent at registration
 
-### 5. Booking Status Flow
+### 5. Bug Fixes
+
+#### Issue Date Field Fix
+- **Problem**: Email function was trying to access `invoice.issueDate` but the field is actually called `issuedDate`
+- **Solution**: Updated all references to use `invoice.issuedDate` with fallbacks
+- **Files Fixed**: 
+  - `trainingController.js` - `sendInvoiceEmail` function
+  - `invoiceController.js` - PDF generation functions
+- **Added**: Explicit `issuedDate` field when creating invoices for consistency
+
+### 6. Booking Status Flow
 
 1. **Registration**: User registers for training → Status: "registered"
    - Invoice is generated and sent immediately (if training has a price)
@@ -68,7 +78,7 @@ The training invoice system has been modified so that invoices are now generated
    - Certificate is generated and sent
    - No new invoice is generated
 
-### 6. Benefits of Changes
+### 7. Benefits of Changes
 
 1. **Immediate Payment Request**: Users receive invoices right away, allowing for earlier payment processing
 2. **Better Cash Flow**: Earlier invoice generation improves cash flow for the organization
@@ -76,13 +86,13 @@ The training invoice system has been modified so that invoices are now generated
 4. **Proper Confirmation Process**: Confirmation emails are sent only when registration is actually confirmed
 5. **Reduced Confusion**: No more waiting until completion to receive an invoice
 
-### 7. Backward Compatibility
+### 8. Backward Compatibility
 
 - Existing invoices in the system remain unchanged
 - The `generateMissingInvoices` function can be used to generate invoices for existing bookings that don't have invoices
 - All existing API endpoints continue to work as expected
 
-### 8. Testing
+### 9. Testing
 
 To test the new system:
 
@@ -94,14 +104,14 @@ To test the new system:
 6. Verify that a confirmation email is sent
 7. Mark the training as completed and verify no new invoice is generated
 
-### 9. Error Handling
+### 10. Error Handling
 
 - If invoice generation fails during registration, the booking still succeeds
 - If email sending fails, the invoice is still created but not sent
 - If confirmation email fails, the status update still succeeds
 - All errors are logged for debugging purposes
 
-### 10. Debugging
+### 11. Debugging
 
 The system now includes detailed logging for invoice creation and sending:
 - Logs when invoice creation starts
