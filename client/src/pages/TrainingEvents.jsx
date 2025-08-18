@@ -380,41 +380,7 @@ const TrainingEvents = () => {
     }
   };
 
-  const handleGenerateCertificates = async (eventId) => {
-    if (!window.confirm('Generate certificates for all completed bookings without certificates?')) return;
-    
-    try {
-      const response = await api.post(`/training/events/${eventId}/generate-certificates`);
-      alert(response.data.message);
-      // Refresh bookings list if modal is open
-      if (showBookings && currentEventId === eventId) {
-        handleViewBookings(eventId);
-      }
-      // Refresh events to show updated data
-      fetchEvents();
-    } catch (error) {
-      console.error('Error generating certificates:', error);
-      alert('Error generating certificates');
-    }
-  };
 
-  const handleGenerateInvoices = async (eventId) => {
-    if (!window.confirm('Generate invoices for all bookings without invoices?')) return;
-    
-    try {
-      const response = await api.post(`/training/events/${eventId}/generate-invoices`);
-      alert(response.data.message);
-      // Refresh bookings list if modal is open
-      if (showBookings && currentEventId === eventId) {
-        handleViewBookings(eventId);
-      }
-      // Refresh events to show updated data
-      fetchEvents();
-    } catch (error) {
-      console.error('Error generating invoices:', error);
-      alert('Error generating invoices');
-    }
-  };
 
   const handleUpdateBookingStatus = async (bookingId, updateData) => {
     try {
@@ -938,20 +904,6 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
                              <div className="flex justify-between items-start mb-4">
                  <h2 className="text-xl font-bold">Training Event Bookings</h2>
                  <div className="flex gap-2">
-                   <button
-                     onClick={() => handleGenerateCertificates(currentEventId)}
-                     className="bg-purple-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-purple-700 flex items-center gap-1"
-                   >
-                     <AcademicCapIcon className="w-4 h-4" />
-                     Generate Certificates
-                   </button>
-                   <button
-                     onClick={() => handleGenerateInvoices(currentEventId)}
-                     className="bg-orange-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-orange-700 flex items-center gap-1"
-                   >
-                     <DocumentTextIcon className="w-4 h-4" />
-                     Generate Invoices
-                   </button>
                    <button
                      onClick={() => setShowBookings(false)}
                      className="text-gray-500 hover:text-gray-700"
