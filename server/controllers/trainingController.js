@@ -3,6 +3,7 @@ const TrainingBooking = require('../models/TrainingBooking');
 const Certificate = require('../models/Certificate');
 const Invoice = require('../models/Invoice');
 const Feedback = require('../models/Feedback');
+const { generateInvoicePDF } = require('./invoiceController');
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const path = require('path');
@@ -506,9 +507,79 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
   }
 };
 
+// Send invoice via email
+const sendInvoiceEmail = async (invoice) => {
+  try {
+    console.log('Starting to send invoice email for invoice:', invoice.invoiceNumber);
+    
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'ruhullah517@gmail.com',
+        pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
+      }
+    });
+
+    // Generate invoice PDF if not already generated
+    let pdfPath;
+    if (invoice.invoiceUrl) {
+      pdfPath = path.join(__dirname, '..', invoice.invoiceUrl.replace('/uploads/', 'uploads/'));
+    } else {
+      // Generate PDF if not exists
+      const pdfUrl = await generateInvoicePDF(invoice);
+      pdfPath = path.join(__dirname, '..', pdfUrl.replace('/uploads/', 'uploads/'));
+    }
+
+    // Email content
+    const mailOptions = {
+      from: 'ruhullah517@gmail.com',
+      to: invoice.client.email,
+      subject: `Invoice for Training - ${invoice.invoiceNumber}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #dc3545;">Training Invoice</h2>
+          <p>Dear ${invoice.client.name},</p>
+          <p>Please find attached the invoice for your training completion.</p>
+          <h3 style="color: #212529;">Invoice Details:</h3>
+          <p><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</p>
+          <p><strong>Issue Date:</strong> ${invoice.issueDate.toLocaleDateString()}</p>
+          <p><strong>Due Date:</strong> ${invoice.dueDate.toLocaleDateString()}</p>
+          <p><strong>Total Amount:</strong> £${invoice.total}</p>
+          <p>Please review the attached invoice and process the payment by the due date.</p>
+          <p>If you have any questions about this invoice, please don't hesitate to contact us.</p>
+          <br>
+          <p>Best regards,<br>CRM Training Team</p>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: `invoice-${invoice.invoiceNumber}.pdf`,
+          path: pdfPath
+        }
+      ]
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('Invoice email sent successfully to:', invoice.client.email);
+
+    // Update invoice status
+    invoice.status = 'sent';
+    invoice.sentAt = new Date();
+    await invoice.save();
+
+    return true;
+  } catch (error) {
+    console.error('Error sending invoice email:', error);
+    throw error;
+  }
+};
+
 // Send certificate via email
 const sendCertificateEmail = async (certificate) => {
   try {
+    console.log('Starting to send certificate email for certificate:', certificate.certificateNumber);
+    
     // Create transporter (you'll need to configure this with your email service)
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -519,6 +590,45 @@ const sendCertificateEmail = async (certificate) => {
     });
 
     const pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
+
+    // Check if there's an associated invoice to include
+    const booking = await TrainingBooking.findById(certificate.trainingBooking);
+    let invoiceAttachment = null;
+    let invoiceInfo = '';
+    
+    if (booking && booking.payment.invoiceId) {
+      try {
+        const invoice = await Invoice.findById(booking.payment.invoiceId);
+        if (invoice) {
+          // Generate invoice PDF if not already generated
+          let invoicePdfPath;
+          if (invoice.invoiceUrl) {
+            invoicePdfPath = path.join(__dirname, '..', invoice.invoiceUrl.replace('/uploads/', 'uploads/'));
+          } else {
+            const invoicePdfUrl = await generateInvoicePDF(invoice);
+            invoicePdfPath = path.join(__dirname, '..', invoicePdfUrl.replace('/uploads/', 'uploads/'));
+          }
+          
+          invoiceAttachment = {
+            filename: `invoice-${invoice.invoiceNumber}.pdf`,
+            path: invoicePdfPath
+          };
+          
+          invoiceInfo = `
+            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
+              <h4 style="color: #dc3545; margin-top: 0;">Invoice Information</h4>
+              <p><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</p>
+              <p><strong>Amount Due:</strong> £${invoice.total}</p>
+              <p><strong>Due Date:</strong> ${invoice.dueDate.toLocaleDateString()}</p>
+              <p>Your invoice is also attached to this email for your records.</p>
+            </div>
+          `;
+        }
+      } catch (invoiceError) {
+        console.error('Error processing invoice for certificate email:', invoiceError);
+        // Continue with certificate email even if invoice processing fails
+      }
+    }
 
     // Email content
     const mailOptions = {
@@ -535,6 +645,7 @@ const sendCertificateEmail = async (certificate) => {
           <p><strong>Duration:</strong> ${certificate.duration}</p>
           <p><strong>Certificate Number:</strong> ${certificate.certificateNumber}</p>
           <p>Your certificate is attached to this email. You can also download it from your training dashboard.</p>
+          ${invoiceInfo}
           <p>Thank you for participating in our training program!</p>
           <br>
           <p>Best regards,<br>CRM Training Team</p>
@@ -544,11 +655,13 @@ const sendCertificateEmail = async (certificate) => {
         {
           filename: `certificate-${certificate.certificateNumber}.pdf`,
           path: pdfPath
-        }
+        },
+        ...(invoiceAttachment ? [invoiceAttachment] : [])
       ]
     };
 
     await transporter.sendMail(mailOptions);
+    console.log('Certificate email sent successfully to:', certificate.participant.email);
 
     // Update certificate status
     certificate.status = 'sent';
@@ -1081,6 +1194,22 @@ const sendBookingLinkEmail = async (req, res) => {
   }
 };
 
+// Resend invoice email
+const resendInvoiceEmail = async (req, res) => {
+  try {
+    const invoice = await Invoice.findById(req.params.id);
+    if (!invoice) {
+      return res.status(404).json({ msg: 'Invoice not found' });
+    }
+
+    await sendInvoiceEmail(invoice);
+    res.json({ msg: 'Invoice email sent successfully' });
+  } catch (error) {
+    console.error('Error resending invoice email:', error);
+    res.status(500).json({ msg: 'Error sending invoice email', error: error.message });
+  }
+};
+
 // Send feedback request email
 const sendFeedbackRequestEmail = async (bookingId) => {
   try {
@@ -1159,6 +1288,8 @@ module.exports = {
   getAllCertificates,
   downloadCertificate,
   resendCertificateEmail,
+  sendInvoiceEmail,
+  resendInvoiceEmail,
   sendBookingConfirmationEmail,
   generateMissingCertificates,
   generateMissingInvoices,

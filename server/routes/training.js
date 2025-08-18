@@ -17,6 +17,8 @@ const {
   getAllCertificates,
   downloadCertificate,
   resendCertificateEmail,
+  sendInvoiceEmail,
+  resendInvoiceEmail,
   generateMissingCertificates,
   generateMissingInvoices,
   sendBookingLinkEmail,
@@ -55,6 +57,9 @@ router.get('/certificates/:id/download', downloadCertificate);
 router.post('/certificates/:id/resend-email', resendCertificateEmail);
 router.post('/events/:trainingEventId/generate-certificates', generateMissingCertificates);
 router.post('/events/:trainingEventId/generate-invoices', generateMissingInvoices);
+
+// Invoice routes
+router.post('/invoices/:id/resend-email', resendInvoiceEmail);
 
 // Email routes
 router.post('/send-booking-link', sendBookingLinkEmail);

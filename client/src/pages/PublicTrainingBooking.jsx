@@ -56,16 +56,35 @@ const PublicTrainingBooking = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-6">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Event Not Available</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-[#2EAB2C] text-white px-6 py-2 rounded-lg hover:bg-green-700"
-          >
-            Go Home
-          </button>
+          <p className="text-gray-600 mb-6">{error}</p>
+          
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <h3 className="font-semibold text-gray-900 mb-2">Possible Reasons:</h3>
+            <ul className="text-sm text-gray-600 space-y-1 text-left">
+              <li>• The event may have been cancelled</li>
+              <li>• The booking link may have expired</li>
+              <li>• The event may be full</li>
+              <li>• The event may not be published yet</li>
+            </ul>
+          </div>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 mr-3"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-[#2EAB2C] text-white px-6 py-2 rounded-lg hover:bg-green-700"
+            >
+              Contact Support
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -74,18 +93,36 @@ const PublicTrainingBooking = () => {
   if (bookingSuccess) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-6">
           <div className="text-green-500 text-6xl mb-4">✅</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Booking Successful!</h1>
-          <p className="text-gray-600 mb-4">
-            Thank you for registering for "{event.title}". You will receive a confirmation email shortly.
+          <p className="text-gray-600 mb-6">
+            Thank you for registering for <strong>"{event.title}"</strong>. You will receive a confirmation email shortly with all the details.
           </p>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-[#2EAB2C] text-white px-6 py-2 rounded-lg hover:bg-green-700"
-          >
-            Return Home
-          </button>
+          
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <h3 className="font-semibold text-gray-900 mb-2">What's Next?</h3>
+            <ul className="text-sm text-gray-600 space-y-1 text-left">
+              <li>• Check your email for booking confirmation</li>
+              <li>• Save the event details to your calendar</li>
+              <li>• We'll send you a reminder before the event</li>
+            </ul>
+          </div>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => window.print()}
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 mr-3"
+            >
+              Print Confirmation
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-[#2EAB2C] text-white px-6 py-2 rounded-lg hover:bg-green-700"
+            >
+              Book Another Event
+            </button>
+          </div>
         </div>
       </div>
     );

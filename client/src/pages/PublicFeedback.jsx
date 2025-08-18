@@ -58,6 +58,8 @@ const PublicFeedback = () => {
     ));
   };
 
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -75,8 +77,7 @@ const PublicFeedback = () => {
         issues: []
       });
 
-      alert('Thank you for your feedback!');
-      navigate('/');
+      setFeedbackSubmitted(true);
     } catch (error) {
       console.error('Error submitting feedback:', error);
       alert('Error submitting feedback. Please try again.');
@@ -90,15 +91,35 @@ const PublicFeedback = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Go Home
-          </button>
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Error</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
+          
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <h3 className="font-semibold text-gray-900 mb-2">Possible Reasons:</h3>
+            <ul className="text-sm text-gray-600 space-y-1 text-left">
+              <li>• The feedback link may have expired</li>
+              <li>• The booking may not be completed yet</li>
+              <li>• You may not have permission to access this feedback form</li>
+              <li>• The training event may have been cancelled</li>
+            </ul>
+          </div>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 mr-3"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={() => window.close()}
+              className="bg-[#2EAB2C] text-white px-6 py-2 rounded-lg hover:bg-green-700"
+            >
+              Close Window
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -111,11 +132,50 @@ const PublicFeedback = () => {
           <h1 className="text-2xl font-bold text-gray-800 mb-4">Booking Not Found</h1>
           <p className="text-gray-600 mb-4">The booking link is invalid or has expired.</p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => window.location.reload()}
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
           >
-            Go Home
+            Try Again
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (feedbackSubmitted) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-green-500 text-6xl mb-4">✅</div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Feedback Submitted!</h1>
+          <p className="text-gray-600 mb-6">
+            Thank you for your valuable feedback on <strong>"{booking.trainingEvent.title}"</strong>. 
+            Your input helps us improve our training programs.
+          </p>
+          
+          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+            <h3 className="font-semibold text-gray-900 mb-2">What happens next?</h3>
+            <ul className="text-sm text-gray-600 space-y-1 text-left">
+              <li>• Your feedback has been recorded</li>
+              <li>• Our team will review your comments</li>
+              <li>• We'll use your input to improve future training</li>
+            </ul>
+          </div>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => window.print()}
+              className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 mr-3"
+            >
+              Print Confirmation
+            </button>
+            <button
+              onClick={() => window.close()}
+              className="bg-[#2EAB2C] text-white px-6 py-2 rounded-lg hover:bg-green-700"
+            >
+              Close Window
+            </button>
+          </div>
         </div>
       </div>
     );
