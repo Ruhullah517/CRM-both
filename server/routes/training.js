@@ -8,6 +8,7 @@ const {
   createTrainingEvent,
   updateTrainingEvent,
   deleteTrainingEvent,
+  forceDeleteTrainingEvent,
   createBooking,
   updateBookingStatus,
   bulkImportParticipants,
@@ -36,6 +37,7 @@ router.get('/events/:id', getTrainingEventById);
 router.post('/events', createTrainingEvent);
 router.put('/events/:id', updateTrainingEvent);
 router.delete('/events/:id', deleteTrainingEvent);
+router.delete('/events/:id/force', forceDeleteTrainingEvent);
 
 // Training Bookings
 router.get('/events/:eventId/bookings', getBookingsByEvent);

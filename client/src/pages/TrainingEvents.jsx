@@ -338,9 +338,31 @@ const TrainingEvents = () => {
       const response = await api.delete(`/training/events/${id}`);
       if (response.status === 200) {
         fetchEvents();
+        alert('Training event deleted successfully!');
       }
     } catch (error) {
       console.error('Error deleting event:', error);
+      if (error.response?.data?.msg && error.response.data.msg.includes('existing bookings')) {
+        const deleteWithBookings = window.confirm(
+          'This training event has existing bookings. Would you like to delete the event and all its bookings? This action cannot be undone.'
+        );
+        if (deleteWithBookings) {
+          try {
+            const response = await api.delete(`/training/events/${id}/force`);
+            if (response.status === 200) {
+              fetchEvents();
+              alert('Training event and all bookings deleted successfully!');
+            }
+          } catch (forceDeleteError) {
+            console.error('Error force deleting event:', forceDeleteError);
+            alert('Error deleting training event with bookings. Please try again.');
+          }
+        }
+      } else if (error.response?.data?.msg) {
+        alert(`Error: ${error.response.data.msg}`);
+      } else {
+        alert('Error deleting training event. Please try again.');
+      }
     }
   };
 

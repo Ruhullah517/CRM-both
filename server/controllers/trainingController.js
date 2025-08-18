@@ -2,6 +2,7 @@ const TrainingEvent = require('../models/TrainingEvent');
 const TrainingBooking = require('../models/TrainingBooking');
 const Certificate = require('../models/Certificate');
 const Invoice = require('../models/Invoice');
+const Feedback = require('../models/Feedback');
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const path = require('path');
@@ -158,6 +159,36 @@ const deleteTrainingEvent = async (req, res) => {
 
     await TrainingEvent.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Training event deleted' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Force delete training event with all bookings
+const forceDeleteTrainingEvent = async (req, res) => {
+  try {
+    const event = await TrainingEvent.findById(req.params.id);
+    if (!event) {
+      return res.status(404).json({ msg: 'Training event not found' });
+    }
+
+    // Delete all related bookings first
+    await TrainingBooking.deleteMany({ trainingEvent: req.params.id });
+    
+    // Delete all related certificates
+    await Certificate.deleteMany({ trainingEvent: req.params.id });
+    
+    // Delete all related invoices
+    await Invoice.deleteMany({ 'items.relatedId': req.params.id });
+    
+    // Delete all related feedback
+    await Feedback.deleteMany({ trainingEvent: req.params.id });
+
+    // Finally delete the training event
+    await TrainingEvent.findByIdAndDelete(req.params.id);
+    
+    res.json({ msg: 'Training event and all related data deleted successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -1075,6 +1106,7 @@ module.exports = {
   createTrainingEvent,
   updateTrainingEvent,
   deleteTrainingEvent,
+  forceDeleteTrainingEvent,
   createBooking,
   updateBookingStatus,
   bulkImportParticipants,
