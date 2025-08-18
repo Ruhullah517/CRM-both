@@ -170,82 +170,220 @@ const generateInvoicePDFFile = async (invoice) => {
       const filename = `invoice-${invoice.invoiceNumber}.pdf`;
       const filepath = path.join(uploadDir, filename);
 
-      // Create PDF document
-      const doc = new PDFDocument({ margin: 50 });
+      // Create PDF document with better margins
+      const doc = new PDFDocument({ 
+        size: 'A4',
+        margin: 40,
+        autoFirstPage: true
+      });
       
       // Pipe to file
       const stream = fs.createWriteStream(filepath);
       doc.pipe(stream);
 
-      // Add company header
-      doc.fontSize(20).text('Your Company Name', { align: 'center' });
-      doc.fontSize(12).text('123 Business Street, City, Postcode', { align: 'center' });
-      doc.fontSize(12).text('Phone: 01234 567890 | Email: info@company.com', { align: 'center' });
-      doc.moveDown();
+      // Helper function to draw a line
+      const drawLine = (y) => {
+        doc.moveTo(40, y).lineTo(550, y).stroke();
+      };
 
-      // Invoice details
-      doc.fontSize(16).text('INVOICE', { align: 'center' });
-      doc.moveDown();
+      // Helper function to draw a box
+      const drawBox = (x, y, width, height, fill = false) => {
+        if (fill) {
+          doc.rect(x, y, width, height).fill('#f8f9fa');
+        } else {
+          doc.rect(x, y, width, height).stroke();
+        }
+      };
 
-      // Invoice number and dates
-      doc.fontSize(12);
-      doc.text(`Invoice Number: ${invoice.invoiceNumber}`);
-      doc.text(`Issue Date: ${new Date(invoice.issueDate || invoice.created_at).toLocaleDateString()}`);
-      doc.text(`Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}`);
-      doc.moveDown();
+      // ===== HEADER SECTION =====
+      // Company logo/name area (left side)
+      doc.fontSize(24).font('Helvetica-Bold').fillColor('#2EAB2C');
+      doc.text('BFCA', 40, 40);
+      doc.fontSize(12).font('Helvetica').fillColor('#666');
+      doc.text('Black Foster Carers Alliance', 40, 70);
+      doc.fontSize(10);
+      doc.text('Training & Development Services', 40, 85);
+      doc.text('Email: info@bfca.org.uk', 40, 100);
+      doc.text('Phone: +44 123 456 7890', 40, 115);
 
-      // Client information
-      doc.fontSize(14).text('Bill To:', { underline: true });
-      doc.fontSize(12);
-      doc.text(invoice.client.name);
-      if (invoice.client.organization) doc.text(invoice.client.organization);
-      if (invoice.client.address) doc.text(invoice.client.address);
-      if (invoice.client.email) doc.text(invoice.client.email);
-      if (invoice.client.phone) doc.text(invoice.client.phone);
-      doc.moveDown();
+      // Invoice title and details (right side)
+      doc.fontSize(28).font('Helvetica-Bold').fillColor('#333');
+      doc.text('INVOICE', 350, 40);
+      
+      doc.fontSize(10).font('Helvetica').fillColor('#666');
+      doc.text('Invoice Number:', 350, 80);
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#333');
+      doc.text(invoice.invoiceNumber, 430, 80);
+      
+      doc.fontSize(10).font('Helvetica').fillColor('#666');
+      doc.text('Issue Date:', 350, 95);
+      doc.fontSize(11).font('Helvetica').fillColor('#333');
+      doc.text(new Date(invoice.issueDate || invoice.created_at).toLocaleDateString('en-GB'), 430, 95);
+      
+      doc.fontSize(10).font('Helvetica').fillColor('#666');
+      doc.text('Due Date:', 350, 110);
+      doc.fontSize(11).font('Helvetica').fillColor('#333');
+      doc.text(new Date(invoice.dueDate).toLocaleDateString('en-GB'), 430, 110);
 
-      // Items table
-      doc.fontSize(14).text('Items:', { underline: true });
-      doc.moveDown();
+      // Draw header separator line
+      drawLine(140);
+
+      // ===== BILL TO SECTION =====
+      doc.fontSize(14).font('Helvetica-Bold').fillColor('#333');
+      doc.text('Bill To:', 40, 160);
+      
+      // Bill to box
+      drawBox(40, 175, 250, 80, true);
+      
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#333');
+      doc.text(invoice.client.name, 50, 185);
+      
+      doc.fontSize(10).font('Helvetica').fillColor('#666');
+      if (invoice.client.organization) {
+        doc.text(invoice.client.organization, 50, 200);
+      }
+      if (invoice.client.address) {
+        doc.text(invoice.client.address, 50, 215);
+      }
+      if (invoice.client.email) {
+        doc.text(invoice.client.email, 50, 230);
+      }
+      if (invoice.client.phone) {
+        doc.text(invoice.client.phone, 50, 245);
+      }
+
+      // ===== INVOICE SUMMARY =====
+      doc.fontSize(14).font('Helvetica-Bold').fillColor('#333');
+      doc.text('Invoice Summary:', 320, 160);
+      
+      // Summary box
+      drawBox(320, 175, 230, 80, true);
+      
+      doc.fontSize(10).font('Helvetica').fillColor('#666');
+      doc.text('Total Amount:', 330, 185);
+      doc.fontSize(16).font('Helvetica-Bold').fillColor('#2EAB2C');
+      doc.text(`£${invoice.total.toFixed(2)}`, 430, 185);
+      
+      doc.fontSize(10).font('Helvetica').fillColor('#666');
+      doc.text('Status:', 330, 205);
+      doc.fontSize(11).font('Helvetica-Bold').fillColor('#dc3545');
+      doc.text(invoice.status || 'Pending', 430, 205);
+      
+      doc.fontSize(10).font('Helvetica').fillColor('#666');
+      doc.text('Payment Terms:', 330, 225);
+      doc.fontSize(10).font('Helvetica').fillColor('#333');
+      doc.text('30 days from invoice date', 430, 225);
+
+      // ===== ITEMS TABLE =====
+      doc.fontSize(16).font('Helvetica-Bold').fillColor('#333');
+      doc.text('Items & Services:', 40, 280);
 
       // Table header
-      doc.fontSize(10);
-      doc.text('Description', 50, doc.y);
-      doc.text('Qty', 300, doc.y);
-      doc.text('Unit Price', 350, doc.y);
-      doc.text('Total', 450, doc.y);
-      doc.moveDown();
+      const tableY = 300;
+      drawBox(40, tableY, 510, 25, true);
+      
+      doc.fontSize(11).font('Helvetica-Bold').fillColor('#333');
+      doc.text('Description', 50, tableY + 8);
+      doc.text('Qty', 350, tableY + 8);
+      doc.text('Unit Price', 400, tableY + 8);
+      doc.text('Total', 480, tableY + 8);
 
       // Table rows
-      invoice.items.forEach(item => {
-        doc.text(item.description, 50, doc.y);
-        doc.text(item.quantity.toString(), 300, doc.y);
-        doc.text(`£${item.unitPrice.toFixed(2)}`, 350, doc.y);
-        doc.text(`£${item.total.toFixed(2)}`, 450, doc.y);
-        doc.moveDown();
+      let currentY = tableY + 25;
+      invoice.items.forEach((item, index) => {
+        const rowHeight = 30;
+        const isEven = index % 2 === 0;
+        
+        if (isEven) {
+          drawBox(40, currentY, 510, rowHeight, true);
+        } else {
+          drawBox(40, currentY, 510, rowHeight, false);
+        }
+        
+        doc.fontSize(10).font('Helvetica').fillColor('#333');
+        doc.text(item.description, 50, currentY + 10);
+        doc.text(item.quantity.toString(), 350, currentY + 10);
+        doc.text(`£${item.unitPrice.toFixed(2)}`, 400, currentY + 10);
+        doc.text(`£${item.total.toFixed(2)}`, 480, currentY + 10);
+        
+        currentY += rowHeight;
       });
 
-      // Totals
-      doc.moveDown();
-      doc.text(`Subtotal: £${invoice.subtotal.toFixed(2)}`, { align: 'right' });
+      // ===== TOTALS SECTION =====
+      const totalsY = currentY + 20;
+      const totalsBoxWidth = 200;
+      const totalsBoxX = 350;
+      
+      drawBox(totalsBoxX, totalsY, totalsBoxWidth, 80, true);
+      
+      doc.fontSize(11).font('Helvetica').fillColor('#666');
+      doc.text('Subtotal:', totalsBoxX + 10, totalsY + 15);
+      doc.fontSize(11).font('Helvetica-Bold').fillColor('#333');
+      doc.text(`£${invoice.subtotal.toFixed(2)}`, totalsBoxX + 120, totalsY + 15);
+      
       if (invoice.taxAmount > 0) {
-        doc.text(`VAT (${invoice.taxRate}%): £${invoice.taxAmount.toFixed(2)}`, { align: 'right' });
+        doc.fontSize(11).font('Helvetica').fillColor('#666');
+        doc.text(`VAT (${invoice.taxRate}%):`, totalsBoxX + 10, totalsY + 35);
+        doc.fontSize(11).font('Helvetica-Bold').fillColor('#333');
+        doc.text(`£${invoice.taxAmount.toFixed(2)}`, totalsBoxX + 120, totalsY + 35);
       }
-      doc.fontSize(14).text(`Total: £${invoice.total.toFixed(2)}`, { align: 'right' });
-      doc.moveDown();
+      
+      // Total line
+      drawLine(totalsY + 55);
+      
+      doc.fontSize(14).font('Helvetica-Bold').fillColor('#2EAB2C');
+      doc.text('Total Amount:', totalsBoxX + 10, totalsY + 65);
+      doc.fontSize(16).font('Helvetica-Bold').fillColor('#2EAB2C');
+      doc.text(`£${invoice.total.toFixed(2)}`, totalsBoxX + 120, totalsY + 65);
 
-      // Notes
+      // ===== FOOTER SECTION =====
+      const footerY = totalsY + 120;
+      
+      // Payment instructions
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#333');
+      doc.text('Payment Instructions:', 40, footerY);
+      
+      doc.fontSize(10).font('Helvetica').fillColor('#666');
+      doc.text('Please make payment within 30 days of the invoice date.', 40, footerY + 20);
+      doc.text('Bank Transfer Details:', 40, footerY + 35);
+      doc.text('Account Name: Black Foster Carers Alliance', 40, footerY + 50);
+      doc.text('Account Number: 12345678', 40, footerY + 65);
+      doc.text('Sort Code: 12-34-56', 40, footerY + 80);
+      doc.text('Reference: ' + invoice.invoiceNumber, 40, footerY + 95);
+
+      // Notes section (if exists)
       if (invoice.notes) {
-        doc.fontSize(12).text('Notes:', { underline: true });
-        doc.fontSize(10).text(invoice.notes);
-        doc.moveDown();
+        doc.fontSize(12).font('Helvetica-Bold').fillColor('#333');
+        doc.text('Notes:', 320, footerY);
+        
+        doc.fontSize(10).font('Helvetica').fillColor('#666');
+        // Split notes into multiple lines if needed
+        const words = invoice.notes.split(' ');
+        let line = '';
+        let lineY = footerY + 20;
+        
+        words.forEach(word => {
+          const testLine = line + word + ' ';
+          if (testLine.length > 40) {
+            doc.text(line, 320, lineY);
+            line = word + ' ';
+            lineY += 15;
+          } else {
+            line = testLine;
+          }
+        });
+        if (line) {
+          doc.text(line, 320, lineY);
+        }
       }
 
-      // Terms
-      if (invoice.terms) {
-        doc.fontSize(12).text('Terms:', { underline: true });
-        doc.fontSize(10).text(invoice.terms);
-      }
+      // ===== BOTTOM FOOTER =====
+      const bottomY = 750;
+      drawLine(bottomY);
+      
+      doc.fontSize(9).font('Helvetica').fillColor('#999');
+      doc.text('Thank you for your business!', { align: 'center' });
+      doc.text('For any questions, please contact us at info@bfca.org.uk', { align: 'center' });
 
       // Handle stream events
       stream.on('finish', () => {
@@ -277,8 +415,12 @@ const generateInvoicePDF = async (req, res) => {
       return res.status(404).json({ msg: 'Invoice not found' });
     }
 
-    // Create PDF
-    const doc = new PDFDocument({ margin: 50 });
+    // Create PDF document with better margins
+    const doc = new PDFDocument({ 
+      size: 'A4',
+      margin: 40,
+      autoFirstPage: true
+    });
     
     // Set response headers
     res.setHeader('Content-Type', 'application/pdf');
@@ -287,75 +429,209 @@ const generateInvoicePDF = async (req, res) => {
     // Pipe PDF to response
     doc.pipe(res);
 
-    // Add company header
-    doc.fontSize(20).text('Your Company Name', { align: 'center' });
-    doc.fontSize(12).text('123 Business Street, City, Postcode', { align: 'center' });
-    doc.fontSize(12).text('Phone: 01234 567890 | Email: info@company.com', { align: 'center' });
-    doc.moveDown();
+    // Helper function to draw a line
+    const drawLine = (y) => {
+      doc.moveTo(40, y).lineTo(550, y).stroke();
+    };
 
-    // Invoice details
-    doc.fontSize(16).text('INVOICE', { align: 'center' });
-    doc.moveDown();
+    // Helper function to draw a box
+    const drawBox = (x, y, width, height, fill = false) => {
+      if (fill) {
+        doc.rect(x, y, width, height).fill('#f8f9fa');
+      } else {
+        doc.rect(x, y, width, height).stroke();
+      }
+    };
 
-    // Invoice number and dates
-    doc.fontSize(12);
-    doc.text(`Invoice Number: ${invoice.invoiceNumber}`);
-    doc.text(`Issue Date: ${new Date(invoice.issueDate || invoice.created_at).toLocaleDateString()}`);
-    doc.text(`Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}`);
-    doc.moveDown();
+    // ===== HEADER SECTION =====
+    // Company logo/name area (left side)
+    doc.fontSize(24).font('Helvetica-Bold').fillColor('#2EAB2C');
+    doc.text('BFCA', 40, 40);
+    doc.fontSize(12).font('Helvetica').fillColor('#666');
+    doc.text('Black Foster Carers Alliance', 40, 70);
+    doc.fontSize(10);
+    doc.text('Training & Development Services', 40, 85);
+    doc.text('Email: info@bfca.org.uk', 40, 100);
+    doc.text('Phone: +44 123 456 7890', 40, 115);
 
-    // Client information
-    doc.fontSize(14).text('Bill To:', { underline: true });
-    doc.fontSize(12);
-    doc.text(invoice.client.name);
-    if (invoice.client.organization) doc.text(invoice.client.organization);
-    if (invoice.client.address) doc.text(invoice.client.address);
-    if (invoice.client.email) doc.text(invoice.client.email);
-    if (invoice.client.phone) doc.text(invoice.client.phone);
-    doc.moveDown();
+    // Invoice title and details (right side)
+    doc.fontSize(28).font('Helvetica-Bold').fillColor('#333');
+    doc.text('INVOICE', 350, 40);
+    
+    doc.fontSize(10).font('Helvetica').fillColor('#666');
+    doc.text('Invoice Number:', 350, 80);
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#333');
+    doc.text(invoice.invoiceNumber, 430, 80);
+    
+    doc.fontSize(10).font('Helvetica').fillColor('#666');
+    doc.text('Issue Date:', 350, 95);
+    doc.fontSize(11).font('Helvetica').fillColor('#333');
+    doc.text(new Date(invoice.issueDate || invoice.created_at).toLocaleDateString('en-GB'), 430, 95);
+    
+    doc.fontSize(10).font('Helvetica').fillColor('#666');
+    doc.text('Due Date:', 350, 110);
+    doc.fontSize(11).font('Helvetica').fillColor('#333');
+    doc.text(new Date(invoice.dueDate).toLocaleDateString('en-GB'), 430, 110);
 
-    // Items table
-    doc.fontSize(14).text('Items:', { underline: true });
-    doc.moveDown();
+    // Draw header separator line
+    drawLine(140);
+
+    // ===== BILL TO SECTION =====
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#333');
+    doc.text('Bill To:', 40, 160);
+    
+    // Bill to box
+    drawBox(40, 175, 250, 80, true);
+    
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#333');
+    doc.text(invoice.client.name, 50, 185);
+    
+    doc.fontSize(10).font('Helvetica').fillColor('#666');
+    if (invoice.client.organization) {
+      doc.text(invoice.client.organization, 50, 200);
+    }
+    if (invoice.client.address) {
+      doc.text(invoice.client.address, 50, 215);
+    }
+    if (invoice.client.email) {
+      doc.text(invoice.client.email, 50, 230);
+    }
+    if (invoice.client.phone) {
+      doc.text(invoice.client.phone, 50, 245);
+    }
+
+    // ===== INVOICE SUMMARY =====
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#333');
+    doc.text('Invoice Summary:', 320, 160);
+    
+    // Summary box
+    drawBox(320, 175, 230, 80, true);
+    
+    doc.fontSize(10).font('Helvetica').fillColor('#666');
+    doc.text('Total Amount:', 330, 185);
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('#2EAB2C');
+    doc.text(`£${invoice.total.toFixed(2)}`, 430, 185);
+    
+    doc.fontSize(10).font('Helvetica').fillColor('#666');
+    doc.text('Status:', 330, 205);
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#dc3545');
+    doc.text(invoice.status || 'Pending', 430, 205);
+    
+    doc.fontSize(10).font('Helvetica').fillColor('#666');
+    doc.text('Payment Terms:', 330, 225);
+    doc.fontSize(10).font('Helvetica').fillColor('#333');
+    doc.text('30 days from invoice date', 430, 225);
+
+    // ===== ITEMS TABLE =====
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('#333');
+    doc.text('Items & Services:', 40, 280);
 
     // Table header
-    doc.fontSize(10);
-    doc.text('Description', 50, doc.y);
-    doc.text('Qty', 300, doc.y);
-    doc.text('Unit Price', 350, doc.y);
-    doc.text('Total', 450, doc.y);
-    doc.moveDown();
+    const tableY = 300;
+    drawBox(40, tableY, 510, 25, true);
+    
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#333');
+    doc.text('Description', 50, tableY + 8);
+    doc.text('Qty', 350, tableY + 8);
+    doc.text('Unit Price', 400, tableY + 8);
+    doc.text('Total', 480, tableY + 8);
 
     // Table rows
-    invoice.items.forEach(item => {
-      doc.text(item.description, 50, doc.y);
-      doc.text(item.quantity.toString(), 300, doc.y);
-      doc.text(`£${item.unitPrice.toFixed(2)}`, 350, doc.y);
-      doc.text(`£${item.total.toFixed(2)}`, 450, doc.y);
-      doc.moveDown();
+    let currentY = tableY + 25;
+    invoice.items.forEach((item, index) => {
+      const rowHeight = 30;
+      const isEven = index % 2 === 0;
+      
+      if (isEven) {
+        drawBox(40, currentY, 510, rowHeight, true);
+      } else {
+        drawBox(40, currentY, 510, rowHeight, false);
+      }
+      
+      doc.fontSize(10).font('Helvetica').fillColor('#333');
+      doc.text(item.description, 50, currentY + 10);
+      doc.text(item.quantity.toString(), 350, currentY + 10);
+      doc.text(`£${item.unitPrice.toFixed(2)}`, 400, currentY + 10);
+      doc.text(`£${item.total.toFixed(2)}`, 480, currentY + 10);
+      
+      currentY += rowHeight;
     });
 
-    // Totals
-    doc.moveDown();
-    doc.text(`Subtotal: £${invoice.subtotal.toFixed(2)}`, { align: 'right' });
+    // ===== TOTALS SECTION =====
+    const totalsY = currentY + 20;
+    const totalsBoxWidth = 200;
+    const totalsBoxX = 350;
+    
+    drawBox(totalsBoxX, totalsY, totalsBoxWidth, 80, true);
+    
+    doc.fontSize(11).font('Helvetica').fillColor('#666');
+    doc.text('Subtotal:', totalsBoxX + 10, totalsY + 15);
+    doc.fontSize(11).font('Helvetica-Bold').fillColor('#333');
+    doc.text(`£${invoice.subtotal.toFixed(2)}`, totalsBoxX + 120, totalsY + 15);
+    
     if (invoice.taxAmount > 0) {
-      doc.text(`VAT (${invoice.taxRate}%): £${invoice.taxAmount.toFixed(2)}`, { align: 'right' });
+      doc.fontSize(11).font('Helvetica').fillColor('#666');
+      doc.text(`VAT (${invoice.taxRate}%):`, totalsBoxX + 10, totalsY + 35);
+      doc.fontSize(11).font('Helvetica-Bold').fillColor('#333');
+      doc.text(`£${invoice.taxAmount.toFixed(2)}`, totalsBoxX + 120, totalsY + 35);
     }
-    doc.fontSize(14).text(`Total: £${invoice.total.toFixed(2)}`, { align: 'right' });
-    doc.moveDown();
+    
+    // Total line
+    drawLine(totalsY + 55);
+    
+    doc.fontSize(14).font('Helvetica-Bold').fillColor('#2EAB2C');
+    doc.text('Total Amount:', totalsBoxX + 10, totalsY + 65);
+    doc.fontSize(16).font('Helvetica-Bold').fillColor('#2EAB2C');
+    doc.text(`£${invoice.total.toFixed(2)}`, totalsBoxX + 120, totalsY + 65);
 
-    // Notes
+    // ===== FOOTER SECTION =====
+    const footerY = totalsY + 120;
+    
+    // Payment instructions
+    doc.fontSize(12).font('Helvetica-Bold').fillColor('#333');
+    doc.text('Payment Instructions:', 40, footerY);
+    
+    doc.fontSize(10).font('Helvetica').fillColor('#666');
+    doc.text('Please make payment within 30 days of the invoice date.', 40, footerY + 20);
+    doc.text('Bank Transfer Details:', 40, footerY + 35);
+    doc.text('Account Name: Black Foster Carers Alliance', 40, footerY + 50);
+    doc.text('Account Number: 12345678', 40, footerY + 65);
+    doc.text('Sort Code: 12-34-56', 40, footerY + 80);
+    doc.text('Reference: ' + invoice.invoiceNumber, 40, footerY + 95);
+
+    // Notes section (if exists)
     if (invoice.notes) {
-      doc.fontSize(12).text('Notes:', { underline: true });
-      doc.fontSize(10).text(invoice.notes);
-      doc.moveDown();
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#333');
+      doc.text('Notes:', 320, footerY);
+      
+      doc.fontSize(10).font('Helvetica').fillColor('#666');
+      // Split notes into multiple lines if needed
+      const words = invoice.notes.split(' ');
+      let line = '';
+      let lineY = footerY + 20;
+      
+      words.forEach(word => {
+        const testLine = line + word + ' ';
+        if (testLine.length > 40) {
+          doc.text(line, 320, lineY);
+          line = word + ' ';
+          lineY += 15;
+        } else {
+          line = testLine;
+        }
+      });
+      if (line) {
+        doc.text(line, 320, lineY);
+      }
     }
 
-    // Terms
-    if (invoice.terms) {
-      doc.fontSize(12).text('Terms:', { underline: true });
-      doc.fontSize(10).text(invoice.terms);
-    }
+    // ===== BOTTOM FOOTER =====
+    const bottomY = 750;
+    drawLine(bottomY);
+    
+    doc.fontSize(9).font('Helvetica').fillColor('#999');
+    doc.text('Thank you for your business!', { align: 'center' });
+    doc.text('For any questions, please contact us at info@bfca.org.uk', { align: 'center' });
 
     // Finalize PDF
     doc.end();
