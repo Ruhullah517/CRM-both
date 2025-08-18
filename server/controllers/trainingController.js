@@ -251,10 +251,10 @@ const createBooking = async (req, res) => {
     // Create invoice if training is paid
     if (trainingEvent.price > 0) {
       try {
-        // Generate invoice number manually to ensure it's set
-        const invoiceCount = await Invoice.countDocuments();
+        // Generate unique invoice number with timestamp to avoid duplicates
+        const timestamp = Date.now();
         const year = new Date().getFullYear();
-        const invoiceNumber = `INV-${year}-${String(invoiceCount + 1).padStart(4, '0')}`;
+        const invoiceNumber = `INV-${year}-${timestamp}`;
 
         const invoice = new Invoice({
           invoiceNumber,
@@ -348,12 +348,19 @@ const updateBookingStatus = async (req, res) => {
         console.log('Training event price:', trainingEvent?.price);
         console.log('Updated booking invoice ID:', updatedBooking.payment.invoiceId);
         
+        // Only generate invoice if it doesn't already exist and training has a price
         if (trainingEvent && trainingEvent.price > 0 && !updatedBooking.payment.invoiceId) {
           console.log('Generating invoice for completed training...');
           await generateInvoiceForBooking(updatedBooking, trainingEvent);
           console.log('Invoice generated successfully');
         } else {
           console.log('Invoice generation skipped - conditions not met');
+          if (updatedBooking.payment.invoiceId) {
+            console.log('Invoice already exists for this booking');
+          }
+          if (!trainingEvent?.price || trainingEvent.price <= 0) {
+            console.log('Training event is free or has no price');
+          }
         }
       } catch (invoiceError) {
         console.error('Error creating invoice during completion:', invoiceError);
@@ -720,10 +727,10 @@ const generateInvoiceForBooking = async (booking, trainingEvent) => {
     console.log('Starting invoice generation for booking:', booking._id);
     console.log('Training event:', trainingEvent.title, 'Price:', trainingEvent.price);
     
-    // Generate invoice number manually to ensure it's set
-    const invoiceCount = await Invoice.countDocuments();
+    // Generate unique invoice number with timestamp to avoid duplicates
+    const timestamp = Date.now();
     const year = new Date().getFullYear();
-    const invoiceNumber = `INV-${year}-${String(invoiceCount + 1).padStart(4, '0')}`;
+    const invoiceNumber = `INV-${year}-${timestamp}`;
     
     console.log('Generated invoice number:', invoiceNumber);
 
@@ -815,6 +822,12 @@ const generateCertificate = async (booking) => {
       }
     } else {
       console.log('Invoice generation skipped during certificate generation - conditions not met');
+      if (booking.payment.invoiceId) {
+        console.log('Invoice already exists for this booking during certificate generation');
+      }
+      if (!trainingEvent.price || trainingEvent.price <= 0) {
+        console.log('Training event is free or has no price during certificate generation');
+      }
     }
 
     // Send certificate via email
