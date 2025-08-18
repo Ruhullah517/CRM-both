@@ -1031,7 +1031,7 @@ const sendBookingLinkEmail = async (req, res) => {
 
     console.log('Found training event:', trainingEvent.title);
 
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: 'ruhullah517@gmail.com',
@@ -1091,7 +1091,7 @@ const sendFeedbackRequestEmail = async (bookingId) => {
       throw new Error('Booking not found');
     }
 
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: 'ruhullah517@gmail.com',
