@@ -45,7 +45,7 @@ app.use('/api/training', require('./routes/training'));
 app.use('/api/invoices', require('./routes/invoices'));
 app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/feedback', require('./routes/feedback'));
-app.use('/api/export', require('./routes/exports'));
+app.use('/api/exports', require('./routes/exports'));
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);

@@ -3,14 +3,25 @@ const CalendarEvent = require('../models/CalendarEvent');
 // Get all calendar events
 const getAllEvents = async (req, res) => {
   try {
+    console.log('Fetching all calendar events...');
+    console.log('User ID from request:', req.user?.id);
+    
+    // Check if CalendarEvent model is available
+    if (!CalendarEvent) {
+      console.error('CalendarEvent model is not available');
+      return res.status(500).json({ msg: 'CalendarEvent model not found' });
+    }
+    
     const events = await CalendarEvent.find()
       .populate('createdBy', 'name')
       .sort({ startDate: 1 });
     
+    console.log(`Found ${events.length} calendar events`);
     res.json(events);
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Server error');
+    console.error('Error fetching calendar events:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ msg: 'Server error', error: error.message });
   }
 };
 

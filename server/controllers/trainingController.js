@@ -1018,12 +1018,18 @@ const generateMissingInvoices = async (req, res) => {
 // Send booking link via email
 const sendBookingLinkEmail = async (req, res) => {
   try {
+    console.log('Sending booking link email...');
     const { eventId, email, message } = req.body;
+    
+    console.log('Request body:', { eventId, email, message: message ? 'provided' : 'not provided' });
 
     const trainingEvent = await TrainingEvent.findById(eventId);
     if (!trainingEvent) {
+      console.log('Training event not found for ID:', eventId);
       return res.status(404).json({ msg: 'Training event not found' });
     }
+
+    console.log('Found training event:', trainingEvent.title);
 
     const transporter = nodemailer.createTransporter({
       service: 'gmail',
@@ -1034,6 +1040,7 @@ const sendBookingLinkEmail = async (req, res) => {
     });
 
     const bookingUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/training/${trainingEvent.bookingLink}`;
+    console.log('Booking URL:', bookingUrl);
     
     const mailOptions = {
       from: "ruhullah517@gmail.com",
@@ -1042,7 +1049,7 @@ const sendBookingLinkEmail = async (req, res) => {
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #2EAB2C;">Training Event Invitation</h2>
-          <p>${message.replace(/\n/g, '<br>')}</p>
+          <p>${message ? message.replace(/\n/g, '<br>') : ''}</p>
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="margin-top: 0;">Event Details:</h3>
             <p><strong>Title:</strong> ${trainingEvent.title}</p>
@@ -1063,12 +1070,14 @@ const sendBookingLinkEmail = async (req, res) => {
       `
     };
 
+    console.log('Sending email to:', email);
     await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully');
 
     res.json({ msg: 'Booking link sent successfully' });
   } catch (error) {
     console.error('Error sending booking link email:', error);
-    res.status(500).json({ msg: 'Error sending email' });
+    res.status(500).json({ msg: 'Error sending email', error: error.message });
   }
 };
 
