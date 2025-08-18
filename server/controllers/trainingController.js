@@ -285,6 +285,15 @@ const createBooking = async (req, res) => {
         // Link invoice to booking
         booking.payment.invoiceId = invoice._id;
         await booking.save();
+
+        // Send invoice via email immediately after registration
+        try {
+          await sendInvoiceEmail(invoice);
+          console.log('Invoice email sent successfully for registration:', invoice.invoiceNumber);
+        } catch (emailError) {
+          console.error('Error sending invoice email during registration:', emailError);
+          // Don't fail the booking if email fails
+        }
       } catch (invoiceError) {
         console.error('Error creating invoice:', invoiceError);
         // Don't fail the booking if invoice creation fails
@@ -341,32 +350,9 @@ const updateBookingStatus = async (req, res) => {
       }
     }
 
-    // Auto-generate invoice when marked as completed
+    // Note: Invoices are now generated and sent at registration time, not completion time
     if (completion && completion.completed) {
-      console.log('Training marked as completed, checking for invoice generation...');
-      try {
-        const trainingEvent = await TrainingEvent.findById(booking.trainingEvent);
-        console.log('Training event price:', trainingEvent?.price);
-        console.log('Updated booking invoice ID:', updatedBooking.payment.invoiceId);
-        
-        // Only generate invoice if it doesn't already exist and training has a price
-        if (trainingEvent && trainingEvent.price > 0 && !updatedBooking.payment.invoiceId) {
-          console.log('Generating invoice for completed training...');
-          await generateInvoiceForBooking(updatedBooking, trainingEvent);
-          console.log('Invoice generated successfully');
-        } else {
-          console.log('Invoice generation skipped - conditions not met');
-          if (updatedBooking.payment.invoiceId) {
-            console.log('Invoice already exists for this booking');
-          }
-          if (!trainingEvent?.price || trainingEvent.price <= 0) {
-            console.log('Training event is free or has no price');
-          }
-        }
-      } catch (invoiceError) {
-        console.error('Error creating invoice during completion:', invoiceError);
-        // Don't fail the update if invoice creation fails
-      }
+      console.log('Training marked as completed - invoice was already sent at registration');
     }
 
     res.json(updatedBooking);
@@ -439,12 +425,15 @@ const bulkImportParticipants = async (req, res) => {
           }
         }
 
-        // Generate invoice if the participant completed the training and no invoice exists
-        if (convertToBoolean(participant.completed) && !booking.payment.invoiceId && trainingEvent.price > 0) {
+        // Generate invoice at registration time if training has a price and no invoice exists
+        if (!booking.payment.invoiceId && trainingEvent.price > 0) {
           try {
-            await generateInvoiceForBooking(booking, trainingEvent);
+            const invoice = await generateInvoiceForBooking(booking, trainingEvent);
+            // Send invoice via email immediately
+            await sendInvoiceEmail(invoice);
+            console.log('Invoice sent for', participant.name, 'during bulk import');
           } catch (invoiceError) {
-            console.error('Error generating invoice for', participant.name, ':', invoiceError);
+            console.error('Error generating/sending invoice for', participant.name, ':', invoiceError);
             // Don't fail the import if invoice generation fails
           }
         }
@@ -492,6 +481,7 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
           ${trainingEvent.virtualMeetingLink ? `<p><strong>Virtual Meeting Link:</strong> <a href="${trainingEvent.virtualMeetingLink}">${trainingEvent.virtualMeetingLink}</a></p>` : ''}
           <p><strong>Booking Reference:</strong> ${booking._id}</p>
           ${trainingEvent.price > 0 ? `<p><strong>Amount:</strong> £${trainingEvent.price} ${trainingEvent.currency}</p>` : '<p><strong>Amount:</strong> Free</p>'}
+          ${trainingEvent.price > 0 ? '<p><strong>Invoice:</strong> An invoice has been sent to your email address for payment.</p>' : ''}
           <p>We will send you a reminder closer to the event date. If you have any questions, please don't hesitate to contact us.</p>
           <br>
           <p>Best regards,<br>CRM Training Team</p>
@@ -535,19 +525,19 @@ const sendInvoiceEmail = async (invoice) => {
     const mailOptions = {
       from: 'ruhullah517@gmail.com',
       to: invoice.client.email,
-      subject: `Invoice for Training - ${invoice.invoiceNumber}`,
+      subject: `Invoice for Training Registration - ${invoice.invoiceNumber}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #dc3545;">Training Invoice</h2>
+          <h2 style="color: #dc3545;">Training Registration Invoice</h2>
           <p>Dear ${invoice.client.name},</p>
-          <p>Please find attached the invoice for your training completion.</p>
+          <p>Thank you for registering for our training event. Please find attached the invoice for your training registration.</p>
           <h3 style="color: #212529;">Invoice Details:</h3>
           <p><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</p>
           <p><strong>Issue Date:</strong> ${invoice.issueDate.toLocaleDateString()}</p>
           <p><strong>Due Date:</strong> ${invoice.dueDate.toLocaleDateString()}</p>
           <p><strong>Total Amount:</strong> £${invoice.total}</p>
-          <p>Please review the attached invoice and process the payment by the due date.</p>
-          <p>If you have any questions about this invoice, please don't hesitate to contact us.</p>
+          <p>Please review the attached invoice and process the payment by the due date to confirm your registration.</p>
+          <p>Your training registration is confirmed once payment is received. If you have any questions about this invoice, please don't hesitate to contact us.</p>
           <br>
           <p>Best regards,<br>CRM Training Team</p>
         </div>
@@ -591,41 +581,25 @@ const sendCertificateEmail = async (certificate) => {
 
     const pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
 
-    // Check if there's an associated invoice to include
+    // Note: Invoices are now sent at registration time, not with certificates
     const booking = await TrainingBooking.findById(certificate.trainingBooking);
-    let invoiceAttachment = null;
     let invoiceInfo = '';
     
     if (booking && booking.payment.invoiceId) {
       try {
         const invoice = await Invoice.findById(booking.payment.invoiceId);
         if (invoice) {
-          // Generate invoice PDF if not already generated
-          let invoicePdfPath;
-          if (invoice.invoiceUrl) {
-            invoicePdfPath = path.join(__dirname, '..', invoice.invoiceUrl.replace('/uploads/', 'uploads/'));
-          } else {
-            const invoicePdfUrl = await generateInvoicePDFFile(invoice);
-            invoicePdfPath = path.join(__dirname, '..', invoicePdfUrl.replace('/uploads/', 'uploads/'));
-          }
-          
-          invoiceAttachment = {
-            filename: `invoice-${invoice.invoiceNumber}.pdf`,
-            path: invoicePdfPath
-          };
-          
           invoiceInfo = `
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h4 style="color: #dc3545; margin-top: 0;">Invoice Information</h4>
+              <h4 style="color: #007bff; margin-top: 0;">Payment Information</h4>
               <p><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</p>
-              <p><strong>Amount Due:</strong> £${invoice.total}</p>
-              <p><strong>Due Date:</strong> ${invoice.dueDate.toLocaleDateString()}</p>
-              <p>Your invoice is also attached to this email for your records.</p>
+              <p><strong>Amount Paid:</strong> £${invoice.total}</p>
+              <p>Your invoice was sent to you at the time of registration.</p>
             </div>
           `;
         }
       } catch (invoiceError) {
-        console.error('Error processing invoice for certificate email:', invoiceError);
+        console.error('Error processing invoice info for certificate email:', invoiceError);
         // Continue with certificate email even if invoice processing fails
       }
     }
@@ -655,8 +629,7 @@ const sendCertificateEmail = async (certificate) => {
         {
           filename: `certificate-${certificate.certificateNumber}.pdf`,
           path: pdfPath
-        },
-        ...(invoiceAttachment ? [invoiceAttachment] : [])
+        }
       ]
     };
 
@@ -923,24 +896,9 @@ const generateCertificate = async (booking) => {
     booking.completion.certificateUrl = pdfUrl;
     await booking.save();
 
-    // Create invoice if not already exists and training has a price
+    // Note: Invoices are now generated and sent at registration time, not during certificate generation
     if (trainingEvent.price > 0 && !booking.payment.invoiceId) {
-      console.log('Certificate generated, now generating invoice...');
-      try {
-        await generateInvoiceForBooking(booking, trainingEvent);
-        console.log('Invoice generated successfully during certificate generation');
-      } catch (invoiceError) {
-        console.error('Error creating invoice during certificate generation:', invoiceError);
-        // Don't fail the certificate generation if invoice creation fails
-      }
-    } else {
-      console.log('Invoice generation skipped during certificate generation - conditions not met');
-      if (booking.payment.invoiceId) {
-        console.log('Invoice already exists for this booking during certificate generation');
-      }
-      if (!trainingEvent.price || trainingEvent.price <= 0) {
-        console.log('Training event is free or has no price during certificate generation');
-      }
+      console.log('Certificate generated - invoice should have been sent at registration time');
     }
 
     // Send certificate via email
@@ -1093,7 +1051,7 @@ const resendCertificateEmail = async (req, res) => {
   }
 };
 
-// Generate missing invoices for training bookings
+// Generate missing invoices for training bookings and send them via email
 const generateMissingInvoices = async (req, res) => {
   try {
     const { trainingEventId } = req.params;
@@ -1108,8 +1066,15 @@ const generateMissingInvoices = async (req, res) => {
     for (const booking of bookingsWithoutInvoices) {
       try {
         if (booking.trainingEvent.price > 0) {
-          await generateInvoiceForBooking(booking, booking.trainingEvent);
-          results.push({ success: true, participant: booking.participant.name, invoiceNumber: booking.payment.invoiceId });
+          const invoice = await generateInvoiceForBooking(booking, booking.trainingEvent);
+          // Send invoice via email
+          await sendInvoiceEmail(invoice);
+          results.push({ 
+            success: true, 
+            participant: booking.participant.name, 
+            invoiceNumber: invoice.invoiceNumber,
+            emailSent: true
+          });
         } else {
           results.push({ success: false, participant: booking.participant.name, error: 'Training event is free' });
         }
@@ -1119,7 +1084,7 @@ const generateMissingInvoices = async (req, res) => {
     }
 
     res.json({ 
-      message: `Generated ${results.filter(r => r.success).length} invoices`,
+      message: `Generated and sent ${results.filter(r => r.success).length} invoices`,
       results 
     });
   } catch (error) {
