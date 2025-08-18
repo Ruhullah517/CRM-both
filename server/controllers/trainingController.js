@@ -340,6 +340,19 @@ const updateBookingStatus = async (req, res) => {
       }
     }
 
+    // Auto-generate invoice when marked as completed (if not already exists)
+    if (completion && completion.completed && !booking.payment.invoiceId) {
+      try {
+        const trainingEvent = await TrainingEvent.findById(booking.trainingEvent);
+        if (trainingEvent && trainingEvent.price > 0) {
+          await generateInvoiceForBooking(updatedBooking, trainingEvent);
+        }
+      } catch (invoiceError) {
+        console.error('Error creating invoice during completion:', invoiceError);
+        // Don't fail the update if invoice creation fails
+      }
+    }
+
     res.json(updatedBooking);
   } catch (error) {
     console.error(error);
@@ -407,6 +420,16 @@ const bulkImportParticipants = async (req, res) => {
           } catch (certError) {
             console.error('Error generating certificate for', participant.name, ':', certError);
             // Don't fail the import if certificate generation fails
+          }
+        }
+
+        // Generate invoice if the participant completed the training and no invoice exists
+        if (convertToBoolean(participant.completed) && !booking.payment.invoiceId && trainingEvent.price > 0) {
+          try {
+            await generateInvoiceForBooking(booking, trainingEvent);
+          } catch (invoiceError) {
+            console.error('Error generating invoice for', participant.name, ':', invoiceError);
+            // Don't fail the import if invoice generation fails
           }
         }
         
@@ -683,6 +706,50 @@ const generateCertificatePDF = async (certificate) => {
   });
 };
 
+// Generate invoice for a booking
+const generateInvoiceForBooking = async (booking, trainingEvent) => {
+  try {
+    // Generate invoice number manually to ensure it's set
+    const invoiceCount = await Invoice.countDocuments();
+    const year = new Date().getFullYear();
+    const invoiceNumber = `INV-${year}-${String(invoiceCount + 1).padStart(4, '0')}`;
+
+    const invoice = new Invoice({
+      invoiceNumber,
+      client: {
+        name: booking.participant.name,
+        email: booking.participant.email,
+        phone: booking.participant.phone,
+        organization: booking.participant.organization
+      },
+      items: [{
+        description: trainingEvent.title,
+        quantity: 1,
+        unitPrice: trainingEvent.price,
+        total: trainingEvent.price,
+        type: 'training',
+        relatedId: trainingEvent._id
+      }],
+      subtotal: trainingEvent.price,
+      total: trainingEvent.price,
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      relatedTrainingEvent: trainingEvent._id,
+      createdBy: trainingEvent.createdBy
+    });
+
+    await invoice.save();
+
+    // Link invoice to booking
+    booking.payment.invoiceId = invoice._id;
+    await booking.save();
+
+    return invoice;
+  } catch (error) {
+    console.error('Error generating invoice for booking:', error);
+    throw error;
+  }
+};
+
 // Generate certificate
 const generateCertificate = async (booking) => {
   try {
@@ -723,39 +790,7 @@ const generateCertificate = async (booking) => {
     // Create invoice if not already exists and training has a price
     if (trainingEvent.price > 0 && !booking.payment.invoiceId) {
       try {
-        // Generate invoice number manually to ensure it's set
-        const invoiceCount = await Invoice.countDocuments();
-        const year = new Date().getFullYear();
-        const invoiceNumber = `INV-${year}-${String(invoiceCount + 1).padStart(4, '0')}`;
-
-        const invoice = new Invoice({
-          invoiceNumber,
-          client: {
-            name: booking.participant.name,
-            email: booking.participant.email,
-            phone: booking.participant.phone,
-            organization: booking.participant.organization
-          },
-          items: [{
-            description: trainingEvent.title,
-            quantity: 1,
-            unitPrice: trainingEvent.price,
-            total: trainingEvent.price,
-            type: 'training',
-            relatedId: trainingEvent._id
-          }],
-          subtotal: trainingEvent.price,
-          total: trainingEvent.price,
-          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-          relatedTrainingEvent: trainingEvent._id,
-          createdBy: trainingEvent.createdBy
-        });
-
-        await invoice.save();
-
-        // Link invoice to booking
-        booking.payment.invoiceId = invoice._id;
-        await booking.save();
+        await generateInvoiceForBooking(booking, trainingEvent);
       } catch (invoiceError) {
         console.error('Error creating invoice during certificate generation:', invoiceError);
         // Don't fail the certificate generation if invoice creation fails
@@ -927,41 +962,8 @@ const generateMissingInvoices = async (req, res) => {
     for (const booking of bookingsWithoutInvoices) {
       try {
         if (booking.trainingEvent.price > 0) {
-          // Generate invoice number manually to ensure it's set
-          const invoiceCount = await Invoice.countDocuments();
-          const year = new Date().getFullYear();
-          const invoiceNumber = `INV-${year}-${String(invoiceCount + 1).padStart(4, '0')}`;
-
-          const invoice = new Invoice({
-            invoiceNumber,
-            client: {
-              name: booking.participant.name,
-              email: booking.participant.email,
-              phone: booking.participant.phone,
-              organization: booking.participant.organization
-            },
-            items: [{
-              description: booking.trainingEvent.title,
-              quantity: 1,
-              unitPrice: booking.trainingEvent.price,
-              total: booking.trainingEvent.price,
-              type: 'training',
-              relatedId: booking.trainingEvent._id
-            }],
-            subtotal: booking.trainingEvent.price,
-            total: booking.trainingEvent.price,
-            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
-            relatedTrainingEvent: booking.trainingEvent._id,
-            createdBy: booking.trainingEvent.createdBy
-          });
-
-          await invoice.save();
-
-          // Link invoice to booking
-          booking.payment.invoiceId = invoice._id;
-          await booking.save();
-
-          results.push({ success: true, participant: booking.participant.name, invoiceNumber });
+          await generateInvoiceForBooking(booking, booking.trainingEvent);
+          results.push({ success: true, participant: booking.participant.name, invoiceNumber: booking.payment.invoiceId });
         } else {
           results.push({ success: false, participant: booking.participant.name, error: 'Training event is free' });
         }
@@ -1118,6 +1120,7 @@ module.exports = {
   sendBookingConfirmationEmail,
   generateMissingCertificates,
   generateMissingInvoices,
+  generateInvoiceForBooking,
   sendBookingLinkEmail,
   sendFeedbackRequestEmail,
   upload
