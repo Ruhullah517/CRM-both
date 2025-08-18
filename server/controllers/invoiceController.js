@@ -653,27 +653,49 @@ const getInvoiceStats = async (req, res) => {
       if (endDate) match.created_at.$lte = new Date(endDate);
     }
 
-    const stats = await Invoice.aggregate([
-      { $match: match },
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 },
-          totalAmount: { $sum: '$total' }
-        }
-      }
-    ]);
+    // First, update overdue invoices automatically
+    const today = new Date();
+    await Invoice.updateMany(
+      { 
+        status: { $in: ['sent', 'draft'] },
+        dueDate: { $lt: today }
+      },
+      { status: 'overdue' }
+    );
 
-    const totalInvoices = await Invoice.countDocuments(match);
-    const totalAmount = await Invoice.aggregate([
-      { $match: match },
-      { $group: { _id: null, total: { $sum: '$total' } } }
-    ]);
+    // Get all invoices to calculate stats
+    const invoices = await Invoice.find(match);
+    
+    // Calculate stats by status
+    const totalPaid = invoices
+      .filter(invoice => invoice.status === 'paid')
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+    
+    const totalPending = invoices
+      .filter(invoice => invoice.status === 'sent' || invoice.status === 'draft')
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+    
+    const totalOverdue = invoices
+      .filter(invoice => invoice.status === 'overdue')
+      .reduce((sum, invoice) => sum + invoice.total, 0);
+    
+    const totalInvoices = invoices.length;
+    const totalAmount = invoices.reduce((sum, invoice) => sum + invoice.total, 0);
+
+    console.log('Invoice stats calculated:', {
+      totalPaid: totalPaid.toFixed(2),
+      totalPending: totalPending.toFixed(2),
+      totalOverdue: totalOverdue.toFixed(2),
+      totalInvoices,
+      totalAmount: totalAmount.toFixed(2)
+    });
 
     res.json({
-      stats,
+      totalPaid: totalPaid.toFixed(2),
+      totalPending: totalPending.toFixed(2),
+      totalOverdue: totalOverdue.toFixed(2),
       totalInvoices,
-      totalAmount: totalAmount[0]?.total || 0
+      totalAmount: totalAmount.toFixed(2)
     });
   } catch (error) {
     console.error(error);

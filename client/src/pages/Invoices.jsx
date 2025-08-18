@@ -20,6 +20,7 @@ const Invoices = () => {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [stats, setStats] = useState({});
+  const [markingAsPaid, setMarkingAsPaid] = useState(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -59,7 +60,9 @@ const Invoices = () => {
 
   const fetchStats = async () => {
     try {
+      console.log('Fetching invoice stats...');
       const response = await api.get('/invoices/stats');
+      console.log('Stats response:', response.data);
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -69,7 +72,10 @@ const Invoices = () => {
   const createInvoice = async (e) => {
     e.preventDefault();
     try {
+      console.log('Creating new invoice...');
       await api.post('/invoices', formData);
+      console.log('Invoice created successfully');
+      
       setShowCreateModal(false);
       setFormData({
         client: { name: '', email: '', phone: '', organization: '', address: '' },
@@ -83,20 +89,35 @@ const Invoices = () => {
         notes: '',
         terms: ''
       });
-      fetchInvoices();
-      fetchStats();
+      
+      // Refresh both invoices and stats
+      await fetchInvoices();
+      await fetchStats();
+      
+      console.log('Data refreshed after creating invoice');
     } catch (error) {
       console.error('Error creating invoice:', error);
+      alert('Error creating invoice. Please try again.');
     }
   };
 
   const markAsPaid = async (invoiceId) => {
     try {
+      setMarkingAsPaid(invoiceId);
+      console.log('Marking invoice as paid:', invoiceId);
       await api.put(`/invoices/${invoiceId}/mark-paid`);
-      fetchInvoices();
-      fetchStats();
+      console.log('Invoice marked as paid successfully');
+      
+      // Refresh both invoices and stats
+      await fetchInvoices();
+      await fetchStats();
+      
+      console.log('Data refreshed after marking as paid');
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
+      alert('Error marking invoice as paid. Please try again.');
+    } finally {
+      setMarkingAsPaid(null);
     }
   };
 
@@ -372,10 +393,24 @@ const Invoices = () => {
                       {invoice.status !== 'paid' && (
                         <button
                           onClick={() => markAsPaid(invoice._id)}
-                          className="text-purple-600 hover:text-purple-900 flex items-center"
+                          disabled={markingAsPaid === invoice._id}
+                          className={`flex items-center ${
+                            markingAsPaid === invoice._id 
+                              ? 'text-gray-400 cursor-not-allowed' 
+                              : 'text-purple-600 hover:text-purple-900'
+                          }`}
                         >
-                          <CheckCircleIcon className="h-4 w-4 mr-1" />
-                          Mark Paid
+                          {markingAsPaid === invoice._id ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600 mr-1"></div>
+                              Updating...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircleIcon className="h-4 w-4 mr-1" />
+                              Mark Paid
+                            </>
+                          )}
                         </button>
                       )}
                     </div>
