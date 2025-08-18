@@ -632,115 +632,117 @@ const TrainingEvents = () => {
 
   return (
     <div className="max-w-7xl mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Training Events</h1>
-                 <div className="flex gap-2">
-           <button
-             onClick={exportTrainingEvents}
-             className="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-purple-700"
-           >
-             <ArrowDownTrayIcon className="w-5 h-5" />
-             Export Events
-           </button>
-           <button
-             onClick={() => setShowForm(true)}
-             className="bg-[#2EAB2C] text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-green-700"
-           >
-             <PlusIcon className="w-5 h-5" />
-             Create Event
-           </button>
-         </div>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold">Training Events</h1>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            onClick={exportTrainingEvents}
+            className="bg-purple-600 text-white px-3 py-2 sm:px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-purple-700 text-sm sm:text-base"
+          >
+            <ArrowDownTrayIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">Export Events</span>
+            <span className="sm:hidden">Export</span>
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-[#2EAB2C] text-white px-3 py-2 sm:px-4 rounded-lg flex items-center justify-center gap-2 hover:bg-green-700 text-sm sm:text-base"
+          >
+            <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="hidden sm:inline">Create Event</span>
+            <span className="sm:hidden">Create</span>
+          </button>
+        </div>
       </div>
 
       {/* Events Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {events.map((event) => (
-          <div key={event._id} className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-            <div className="flex justify-between items-start mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{event.title}</h3>
+          <div key={event._id} className="bg-white rounded-lg shadow-md p-4 sm:p-6 border border-gray-200">
+            <div className="flex justify-between items-start mb-3 sm:mb-4">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">{event.title}</h3>
               <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(event.status)}`}>
                 {event.status}
               </span>
             </div>
             
-            <p className="text-gray-600 text-sm mb-4 line-clamp-2">{event.description}</p>
+            <p className="text-gray-600 text-sm mb-3 sm:mb-4 line-clamp-2">{event.description}</p>
             
-                         <div className="space-y-2 mb-4">
-               <div className="flex items-center gap-2 text-sm text-gray-600">
-                 <CalendarIcon className="w-4 h-4" />
-                 <span>{formatDate(event.startDate)} - {formatDate(event.endDate)}</span>
-               </div>
-               
-               {/* Quick Rating Display - Placeholder for now */}
-               {/* <div className="flex items-center gap-2 text-sm text-gray-600">
-                 <StarIcon className="w-4 h-4 text-yellow-400" />
-                 <span>4.2 (12 reviews)</span>
-               </div> */}
+            <div className="space-y-2 mb-3 sm:mb-4">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                <CalendarIcon className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>{formatDate(event.startDate)} - {formatDate(event.endDate)}</span>
+              </div>
               
               {event.location && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <div className="w-4 h-4">📍</div>
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                  <div className="w-3 h-3 sm:w-4 sm:h-4">📍</div>
                   <span>{event.location}</span>
                 </div>
               )}
               
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <UserGroupIcon className="w-4 h-4" />
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                <UserGroupIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span>Max: {event.maxParticipants} participants</span>
               </div>
               
               {event.price > 0 && (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <CurrencyPoundIcon className="w-4 h-4" />
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
+                  <CurrencyPoundIcon className="w-3 h-3 sm:w-4 sm:h-4" />
                   <span>{event.price} {event.currency}</span>
                 </div>
               )}
             </div>
 
-                         <div className="flex gap-2 flex-wrap">
-               <button
-                 onClick={() => setSelectedEvent(event)}
-                 className="flex-1 bg-blue-100 text-blue-700 px-3 py-2 rounded text-sm font-medium hover:bg-blue-200"
-               >
-                 <EyeIcon className="w-4 h-4 inline mr-1" />
-                 View
-               </button>
-               <button
-                 onClick={() => handleViewBookings(event._id)}
-                 className="flex-1 bg-green-100 text-green-700 px-3 py-2 rounded text-sm font-medium hover:bg-green-200"
-               >
-                 <ClipboardDocumentListIcon className="w-4 h-4 inline mr-1" />
-                 Bookings
-               </button>
-               <button
-                 onClick={() => openEmailModal(event)}
-                 className="flex-1 bg-indigo-100 text-indigo-700 px-3 py-2 rounded text-sm font-medium hover:bg-indigo-200"
-               >
-                 <EnvelopeIcon className="w-4 h-4 inline mr-1" />
-                 Send Link
-               </button>
-               <button
-                 onClick={() => openBulkImportModal(event)}
-                 className="flex-1 bg-cyan-100 text-cyan-700 px-3 py-2 rounded text-sm font-medium hover:bg-cyan-200"
-               >
-                 <DocumentArrowUpIcon className="w-4 h-4 inline mr-1" />
-                 Import
-               </button>
-               <button
-                 onClick={() => setEditingEvent(event)}
-                 className="flex-1 bg-yellow-100 text-yellow-700 px-3 py-2 rounded text-sm font-medium hover:bg-yellow-200"
-               >
-                 <PencilSquareIcon className="w-4 h-4 inline mr-1" />
-                 Edit
-               </button>
-               <button
-                 onClick={() => handleDeleteEvent(event._id)}
-                 className="flex-1 bg-red-100 text-red-700 px-3 py-2 rounded text-sm font-medium hover:bg-red-200"
-               >
-                 <TrashIcon className="w-4 h-4 inline mr-1" />
-                 Delete
-               </button>
-             </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 sm:gap-2">
+              <button
+                onClick={() => setSelectedEvent(event)}
+                className="bg-blue-100 text-blue-700 px-2 py-1.5 sm:px-3 sm:py-2 rounded text-xs sm:text-sm font-medium hover:bg-blue-200 flex items-center justify-center"
+              >
+                <EyeIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <span className="hidden sm:inline">View</span>
+                <span className="sm:hidden">V</span>
+              </button>
+              <button
+                onClick={() => handleViewBookings(event._id)}
+                className="bg-green-100 text-green-700 px-2 py-1.5 sm:px-3 sm:py-2 rounded text-xs sm:text-sm font-medium hover:bg-green-200 flex items-center justify-center"
+              >
+                <ClipboardDocumentListIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <span className="hidden sm:inline">Bookings</span>
+                <span className="sm:hidden">B</span>
+              </button>
+              <button
+                onClick={() => openEmailModal(event)}
+                className="bg-indigo-100 text-indigo-700 px-2 py-1.5 sm:px-3 sm:py-2 rounded text-xs sm:text-sm font-medium hover:bg-indigo-200 flex items-center justify-center"
+              >
+                <EnvelopeIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <span className="hidden sm:inline">Send Link</span>
+                <span className="sm:hidden">S</span>
+              </button>
+              <button
+                onClick={() => openBulkImportModal(event)}
+                className="bg-cyan-100 text-cyan-700 px-2 py-1.5 sm:px-3 sm:py-2 rounded text-xs sm:text-sm font-medium hover:bg-cyan-200 flex items-center justify-center"
+              >
+                <DocumentArrowUpIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <span className="hidden sm:inline">Import</span>
+                <span className="sm:hidden">I</span>
+              </button>
+              <button
+                onClick={() => setEditingEvent(event)}
+                className="bg-yellow-100 text-yellow-700 px-2 py-1.5 sm:px-3 sm:py-2 rounded text-xs sm:text-sm font-medium hover:bg-yellow-200 flex items-center justify-center"
+              >
+                <PencilSquareIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <span className="hidden sm:inline">Edit</span>
+                <span className="sm:hidden">E</span>
+              </button>
+              <button
+                onClick={() => handleDeleteEvent(event._id)}
+                className="bg-red-100 text-red-700 px-2 py-1.5 sm:px-3 sm:py-2 rounded text-xs sm:text-sm font-medium hover:bg-red-200 flex items-center justify-center"
+              >
+                <TrashIcon className="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+                <span className="hidden sm:inline">Delete</span>
+                <span className="sm:hidden">D</span>
+              </button>
+            </div>
           </div>
         ))}
       </div>

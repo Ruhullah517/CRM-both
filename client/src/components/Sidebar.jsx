@@ -43,7 +43,7 @@ export default function Sidebar() {
   const { role } = useAuth();
 
   return (
-    <aside className="h-screen w-20 md:w-56 bg-black text-white flex flex-col py-6 px-2 md:px-4 transition-all duration-200 overflow-y-auto">
+    <aside className="h-screen w-20 md:w-56 bg-black text-white flex flex-col py-6 px-2 md:px-4 transition-all duration-200 overflow-y-auto flex-shrink-0">
       <div className="relative w-full flex justify-center items-center mb-8">
         <img
           src={img3}

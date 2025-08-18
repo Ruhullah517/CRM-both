@@ -253,79 +253,79 @@ const Invoices = () => {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6 min-h-full">
       <div className="mb-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <DocumentTextIcon className="h-8 w-8 mr-3 text-blue-500" />
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 flex items-center">
+              <DocumentTextIcon className="h-6 w-6 md:h-8 md:w-8 mr-2 md:mr-3 text-blue-500" />
               Invoices
             </h1>
             <p className="text-gray-600 mt-2">
               Manage invoices and track payments
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               onClick={exportPaymentHistory}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center"
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 md:px-4 rounded-md flex items-center justify-center"
             >
-              <ArrowDownTrayIcon className="h-5 w-5 mr-2" />
-              Export Payments
+              <ArrowDownTrayIcon className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+              <span className="text-sm md:text-base">Export Payments</span>
             </button>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md flex items-center"
+              className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 md:px-4 rounded-md flex items-center justify-center"
             >
-              <PlusIcon className="h-5 w-5 mr-2" />
-              Create Invoice
+              <PlusIcon className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+              <span className="text-sm md:text-base">Create Invoice</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white p-3 md:p-4 rounded-lg shadow">
           <div className="flex items-center">
-            <CurrencyPoundIcon className="h-8 w-8 text-green-500 mr-3" />
+            <CurrencyPoundIcon className="h-6 w-6 md:h-8 md:w-8 text-green-500 mr-2 md:mr-3" />
             <div>
-              <p className="text-sm text-gray-600">Total Paid</p>
-              <p className="text-xl font-bold text-gray-900">£{stats.totalPaid || 0}</p>
+              <p className="text-xs md:text-sm text-gray-600">Total Paid</p>
+              <p className="text-lg md:text-xl font-bold text-gray-900">£{stats.totalPaid || 0}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-white p-3 md:p-4 rounded-lg shadow">
           <div className="flex items-center">
-            <ClockIcon className="h-8 w-8 text-yellow-500 mr-3" />
+            <ClockIcon className="h-6 w-6 md:h-8 md:w-8 text-yellow-500 mr-2 md:mr-3" />
             <div>
-              <p className="text-sm text-gray-600">Pending</p>
-              <p className="text-xl font-bold text-gray-900">£{stats.totalPending || 0}</p>
+              <p className="text-xs md:text-sm text-gray-600">Pending</p>
+              <p className="text-lg md:text-xl font-bold text-gray-900">£{stats.totalPending || 0}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-white p-3 md:p-4 rounded-lg shadow">
           <div className="flex items-center">
-            <ExclamationTriangleIcon className="h-8 w-8 text-red-500 mr-3" />
+            <ExclamationTriangleIcon className="h-6 w-6 md:h-8 md:w-8 text-red-500 mr-2 md:mr-3" />
             <div>
-              <p className="text-sm text-gray-600">Overdue</p>
-              <p className="text-xl font-bold text-gray-900">£{stats.totalOverdue || 0}</p>
+              <p className="text-xs md:text-sm text-gray-600">Overdue</p>
+              <p className="text-lg md:text-xl font-bold text-gray-900">£{stats.totalOverdue || 0}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-white p-3 md:p-4 rounded-lg shadow">
           <div className="flex items-center">
-            <DocumentTextIcon className="h-8 w-8 text-blue-500 mr-3" />
+            <DocumentTextIcon className="h-6 w-6 md:h-8 md:w-8 text-blue-500 mr-2 md:mr-3" />
             <div>
-              <p className="text-sm text-gray-600">Total Invoices</p>
-              <p className="text-xl font-bold text-gray-900">{stats.totalInvoices || 0}</p>
+              <p className="text-xs md:text-sm text-gray-600">Total Invoices</p>
+              <p className="text-lg md:text-xl font-bold text-gray-900">{stats.totalInvoices || 0}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Invoices Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      {/* Desktop Table View */}
+      <div className="hidden lg:block bg-white shadow rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
@@ -431,15 +431,88 @@ const Invoices = () => {
         </div>
       </div>
 
+      {/* Mobile Card View */}
+      <div className="lg:hidden space-y-4">
+        {invoices.map((invoice) => (
+          <div key={invoice._id} className="bg-white shadow rounded-lg p-4">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-gray-900 mb-1">
+                  {invoice.invoiceNumber}
+                </h3>
+                <p className="text-xs text-gray-500 mb-2">
+                  {invoice.client.name}
+                </p>
+                <div className="flex items-center">
+                  {getStatusIcon(invoice.status)}
+                  <span className="ml-2 text-xs text-gray-900">
+                    {getStatusText(invoice.status)}
+                  </span>
+                </div>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => {
+                    setSelectedInvoice(invoice);
+                    setShowDetailsModal(true);
+                  }}
+                  className="text-blue-600 hover:text-blue-900 p-1"
+                >
+                  <EyeIcon className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => downloadInvoice(invoice._id)}
+                  className="text-green-600 hover:text-green-900 p-1"
+                >
+                  <DocumentArrowDownIcon className="h-4 w-4" />
+                </button>
+                {invoice.status !== 'paid' && (
+                  <button
+                    onClick={() => markAsPaid(invoice._id)}
+                    disabled={markingAsPaid === invoice._id}
+                    className={`p-1 ${
+                      markingAsPaid === invoice._id 
+                        ? 'text-gray-400 cursor-not-allowed' 
+                        : 'text-purple-600 hover:text-purple-900'
+                    }`}
+                  >
+                    {markingAsPaid === invoice._id ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                    ) : (
+                      <CheckCircleIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Client Email:</span>
+                <span className="text-gray-900">{invoice.client.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Amount:</span>
+                <span className="text-gray-900 font-medium">£{invoice.total.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Due Date:</span>
+                <span className="text-gray-900">{format(new Date(invoice.dueDate), 'MMM dd, yyyy')}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Create Invoice Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+          <div className="relative top-4 md:top-20 mx-auto p-3 md:p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Invoice</h3>
               <form onSubmit={createInvoice} className="space-y-6">
                 {/* Client Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Client Name *</label>
                     <input
@@ -492,7 +565,7 @@ const Invoices = () => {
                     </button>
                   </div>
                   {formData.items.map((item, index) => (
-                    <div key={index} className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+                    <div key={index} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-4">
                       <div className="md:col-span-2">
                         <label className="block text-sm font-medium text-gray-700">Description</label>
                         <input
@@ -548,7 +621,7 @@ const Invoices = () => {
                 </div>
 
                 {/* Totals */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Tax Rate (%)</label>
                     <input
@@ -585,7 +658,7 @@ const Invoices = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Due Date *</label>
                     <input
@@ -644,12 +717,12 @@ const Invoices = () => {
       {/* Invoice Details Modal */}
       {showDetailsModal && selectedInvoice && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+          <div className="relative top-4 md:top-20 mx-auto p-3 md:p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
             <div className="mt-3">
               <h3 className="text-lg font-medium text-gray-900 mb-4">Invoice Details</h3>
               <div className="space-y-6">
                 {/* Invoice Header */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                   <div>
                     <h4 className="text-md font-medium text-gray-900 mb-2">Invoice Information</h4>
                     <div className="space-y-2">
@@ -701,7 +774,7 @@ const Invoices = () => {
                 </div>
 
                 {/* Totals */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Subtotal</label>
                     <p className="text-lg font-bold text-gray-900">£{selectedInvoice.subtotal.toFixed(2)}</p>
