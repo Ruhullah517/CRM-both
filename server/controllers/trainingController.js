@@ -251,11 +251,14 @@ const createBooking = async (req, res) => {
 
     // Create invoice if training is paid
     if (trainingEvent.price > 0) {
+      console.log('Creating invoice for training with price:', trainingEvent.price);
       try {
         // Generate unique invoice number with timestamp to avoid duplicates
         const timestamp = Date.now();
         const year = new Date().getFullYear();
         const invoiceNumber = `INV-${year}-${timestamp}`;
+
+        console.log('Generated invoice number:', invoiceNumber);
 
         const invoice = new Invoice({
           invoiceNumber,
@@ -280,13 +283,17 @@ const createBooking = async (req, res) => {
           createdBy: req.user?.id || trainingEvent.createdBy
         });
 
+        console.log('Invoice object created, saving...');
         await invoice.save();
+        console.log('Invoice saved successfully:', invoice._id);
 
         // Link invoice to booking
         booking.payment.invoiceId = invoice._id;
         await booking.save();
+        console.log('Invoice linked to booking successfully');
 
         // Send invoice via email immediately after registration
+        console.log('Sending invoice email to:', participant.email);
         try {
           await sendInvoiceEmail(invoice);
           console.log('Invoice email sent successfully for registration:', invoice.invoiceNumber);
@@ -298,15 +305,12 @@ const createBooking = async (req, res) => {
         console.error('Error creating invoice:', invoiceError);
         // Don't fail the booking if invoice creation fails
       }
+    } else {
+      console.log('Training is free, no invoice needed');
     }
 
-    // Send booking confirmation email
-    try {
-      await sendBookingConfirmationEmail(booking, trainingEvent);
-    } catch (emailError) {
-      console.error('Error sending booking confirmation email:', emailError);
-      // Don't fail the booking if email fails
-    }
+    // Note: Confirmation email will be sent when status changes from 'registered' to 'confirmed'
+    console.log('Booking created successfully. Confirmation email will be sent when status is changed to confirmed.');
 
     res.status(201).json(booking);
   } catch (error) {
@@ -336,6 +340,17 @@ const updateBookingStatus = async (req, res) => {
       updateData,
       { new: true }
     ).populate('trainingEvent');
+
+    // Send confirmation email when status changes from 'registered' to 'confirmed'
+    if (status && status === 'confirmed' && booking.status === 'registered') {
+      try {
+        await sendBookingConfirmationEmail(updatedBooking, updatedBooking.trainingEvent);
+        console.log('Confirmation email sent for booking:', updatedBooking._id);
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+        // Don't fail the update if email fails
+      }
+    }
 
     // Auto-generate certificate when marked as completed
     if (completion && completion.completed && !booking.completion.certificateGenerated) {
@@ -438,6 +453,8 @@ const bulkImportParticipants = async (req, res) => {
           }
         }
         
+        // Note: Confirmation emails will be sent when status is changed to 'confirmed'
+        
         results.push({ success: true, participant: participant.name });
       } catch (error) {
         results.push({ success: false, participant: participant.name, error: error.message });
@@ -467,12 +484,12 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
     const mailOptions = {
       from: "ruhullah517@gmail.com",
       to: booking.participant.email,
-      subject: `Booking Confirmation - ${trainingEvent.title}`,
+      subject: `Training Registration Confirmed - ${trainingEvent.title}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #007bff;">Booking Confirmation</h2>
+          <h2 style="color: #28a745;">Training Registration Confirmed</h2>
           <p>Dear ${booking.participant.name},</p>
-          <p>Thank you for registering for our training event!</p>
+          <p>Great news! Your training registration has been confirmed.</p>
           <h3 style="color: #212529;">Event Details</h3>
           <p><strong>Event:</strong> ${trainingEvent.title}</p>
           <p><strong>Date:</strong> ${new Date(trainingEvent.startDate).toLocaleDateString()} - ${new Date(trainingEvent.endDate).toLocaleDateString()}</p>
@@ -481,7 +498,7 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
           ${trainingEvent.virtualMeetingLink ? `<p><strong>Virtual Meeting Link:</strong> <a href="${trainingEvent.virtualMeetingLink}">${trainingEvent.virtualMeetingLink}</a></p>` : ''}
           <p><strong>Booking Reference:</strong> ${booking._id}</p>
           ${trainingEvent.price > 0 ? `<p><strong>Amount:</strong> £${trainingEvent.price} ${trainingEvent.currency}</p>` : '<p><strong>Amount:</strong> Free</p>'}
-          ${trainingEvent.price > 0 ? '<p><strong>Invoice:</strong> An invoice has been sent to your email address for payment.</p>' : ''}
+          ${trainingEvent.price > 0 ? '<p><strong>Payment:</strong> Please ensure your invoice has been paid to secure your spot.</p>' : ''}
           <p>We will send you a reminder closer to the event date. If you have any questions, please don't hesitate to contact us.</p>
           <br>
           <p>Best regards,<br>CRM Training Team</p>
