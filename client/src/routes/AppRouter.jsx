@@ -26,7 +26,7 @@ import PublicTrainingBooking from '../pages/PublicTrainingBooking';
 import Certificates from '../pages/Certificates';
 import Invoices from '../pages/Invoices';
 import Calendar from '../pages/Calendar';
-import Trainers from '../pages/Trainers';
+
 
 import PublicFeedback from '../pages/PublicFeedback';
 
@@ -55,7 +55,7 @@ export default function AppRouter() {
                           <Route path="/adobe/callback" element={<AdobeCallback />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/training" element={<TrainingEvents />} />
-              <Route path="/trainers" element={<Trainers />} />
+
               <Route path="/certificates" element={<Certificates />} />
               <Route path="/invoices" element={<Invoices />} />
               <Route path="/calendar" element={<Calendar />} />

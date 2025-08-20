@@ -37,12 +37,9 @@ const upload = multer({ storage });
 const getAllTrainingEvents = async (req, res) => {
   try {
     const events = await TrainingEvent.find()
-      .populate({
-        path: 'trainer',
-        populate: { path: 'user', select: 'name email avatar' }
-      })
-      .populate('createdBy', 'name')
-      .sort({ startDate: 1 });
+  .populate('trainer', 'name email avatar')
+  .populate('createdBy', 'name')
+  .sort({ startDate: 1 });
     res.json(events);
   } catch (error) {
     console.error(error);
@@ -54,11 +51,8 @@ const getAllTrainingEvents = async (req, res) => {
 const getTrainingEventById = async (req, res) => {
   try {
     const event = await TrainingEvent.findById(req.params.id)
-      .populate({
-        path: 'trainer',
-        populate: { path: 'user', select: 'name email avatar' }
-      })
-      .populate('createdBy', 'name');
+  .populate('trainer', 'name email avatar')
+  .populate('createdBy', 'name');
 
     if (!event) {
       return res.status(404).json({ msg: 'Training event not found' });
