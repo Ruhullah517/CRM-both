@@ -498,7 +498,7 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
       attachments: [
         {
           filename: 'logo.png',
-          path: path.join(__dirname, '..', 'client', 'public', 'img1.png'),
+          path: path.join(__dirname, '..', 'client', 'public', 'img1.jpg'),
           cid: 'company-logo'
         }
       ]
