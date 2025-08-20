@@ -3,6 +3,7 @@ const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
 const FreelancerFormToken = require('../models/FreelancerFormToken');
 const Contact = require('../models/Contact');
+const { getEmailContainer } = require('../utils/emailTemplates');
 
 // List all freelancers
 const getAllFreelancers = async (req, res) => {
@@ -219,27 +220,43 @@ const sendFreelancerFormLink = async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: 'ruhullah517@gmail.com',
+      from: 'Black Foster Carers Alliance <ruhullah517@gmail.com>',
       to: email,
       subject: 'Complete Your Freelancer Form – BFCA',
-      html: `<p>Thank you for your interest in working with the <strong>Black Foster Carers Alliance (BFCA)</strong>.</p>
-  
-  <p>To move forward, please complete our freelancer registration form using the link below:</p>
-  
-  <p>
-    👉 <a href="${link}">${link}</a>
-      Complete the Freelancer Form
-    </a>
-  </p>
+      html: getEmailContainer(`
+        <div style="text-align: center; margin-bottom: 30px;">
+          <div style="background: #cce5ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h2 style="color: #004085; margin: 0 0 10px 0; font-size: 24px;">👋 Welcome to Black Foster Carers Alliance</h2>
+            <p style="color: #004085; margin: 0; font-size: 16px;">Thank you for your interest in working with us!</p>
+          </div>
+        </div>
 
-  <p>Once submitted, a member of our team will be in touch with the next steps.</p>
+        <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+          <h3 style="color: #333; margin: 0 0 15px 0; font-size: 18px;">📝 Complete Your Registration</h3>
+          <p style="color: #666; margin: 0 0 15px 0;">To move forward with your application, please complete our freelancer registration form using the link below:</p>
+          
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${link}" style="background: #2EAB2C; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+              📋 Complete Freelancer Form
+            </a>
+          </div>
+        </div>
 
-  <p>If you have any questions in the meantime, feel free to get in touch.</p>
+        <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+          <h4 style="color: #856404; margin: 0 0 10px 0;">ℹ️ What Happens Next?</h4>
+          <ul style="color: #856404; margin: 0; padding-left: 20px;">
+            <li>Complete the registration form with your details</li>
+            <li>Upload required documents (DBS certificate, CV)</li>
+            <li>Submit your application</li>
+            <li>Our team will review and contact you with next steps</li>
+          </ul>
+        </div>
 
-  <p>Warm regards,<br/>
-  <strong>Black Foster Carers Alliance Team (BFCA)</strong></p>
-  <p>Please complete your freelancer form by clicking the link below:</p>
-             <a href="${link}">${link}</a>`,
+        <div style="text-align: center; margin-top: 30px;">
+          <p style="color: #666; margin: 0 0 15px 0;">If you have any questions, please don't hesitate to contact us.</p>
+          <p style="color: #333; font-weight: bold; margin: 0;">Best regards,<br>Black Foster Carers Alliance Team</p>
+        </div>
+      `),
     });
 
     res.json({ message: 'Form link sent successfully' });

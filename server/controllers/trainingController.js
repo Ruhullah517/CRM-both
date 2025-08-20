@@ -14,7 +14,9 @@ const {
   getEmailContainer, 
   getBookingConfirmationContent, 
   getInvoiceEmailContent, 
-  getFeedbackRequestContent 
+  getFeedbackRequestContent,
+  getCertificateEmailContent,
+  getBookingInvitationContent
 } = require('../utils/emailTemplates');
 
 // Configure multer for file uploads
@@ -595,27 +597,12 @@ const sendCertificateEmail = async (certificate) => {
       }
     }
 
-    // Email content
+    // Email content with branded template
     const mailOptions = {
-      from: 'ruhullah517@gmail.com',
+      from: 'Black Foster Carers Alliance <ruhullah517@gmail.com>',
       to: certificate.participant.email,
       subject: `Certificate of Completion - ${certificate.courseTitle}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #007bff;">Certificate of Completion</h2>
-          <p>Dear ${certificate.participant.name},</p>
-          <p>Congratulations! You have successfully completed the training course:</p>
-          <h3 style="color: #212529;">${certificate.courseTitle}</h3>
-          <p><strong>Completion Date:</strong> ${certificate.completionDate.toLocaleDateString()}</p>
-          <p><strong>Duration:</strong> ${certificate.duration}</p>
-          <p><strong>Certificate Number:</strong> ${certificate.certificateNumber}</p>
-          <p>Your certificate is attached to this email. You can also download it from your training dashboard.</p>
-          ${invoiceInfo}
-          <p>Thank you for participating in our training program!</p>
-          <br>
-          <p>Best regards,<br>CRM Training Team</p>
-        </div>
-      `,
+      html: getEmailContainer(getCertificateEmailContent(certificate, invoiceInfo)),
       attachments: [
         {
           filename: `certificate-${certificate.certificateNumber}.pdf`,
@@ -1129,31 +1116,10 @@ const sendBookingLinkEmail = async (req, res) => {
     console.log('Generated booking URL:', bookingUrl);
     
     const mailOptions = {
-      from: "ruhullah517@gmail.com",
+      from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
       to: email,
       subject: `Training Event Invitation - ${trainingEvent.title}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2EAB2C;">Training Event Invitation</h2>
-          <p>${message ? message.replace(/\n/g, '<br>') : ''}</p>
-          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin-top: 0;">Event Details:</h3>
-            <p><strong>Title:</strong> ${trainingEvent.title}</p>
-            <p><strong>Date:</strong> ${new Date(trainingEvent.startDate).toLocaleDateString()} - ${new Date(trainingEvent.endDate).toLocaleDateString()}</p>
-            <p><strong>Location:</strong> ${trainingEvent.location || 'TBD'}</p>
-            <p><strong>Price:</strong> £${trainingEvent.price} ${trainingEvent.currency}</p>
-          </div>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${bookingUrl}" style="background-color: #2EAB2C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Book Now
-            </a>
-          </div>
-          <p style="color: #666; font-size: 14px;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${bookingUrl}">${bookingUrl}</a>
-          </p>
-        </div>
-      `
+      html: getEmailContainer(getBookingInvitationContent(trainingEvent, bookingUrl, message))
     };
 
     console.log('Sending email to:', email);

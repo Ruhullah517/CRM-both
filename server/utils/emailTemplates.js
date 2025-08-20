@@ -3,8 +3,11 @@
 const getEmailHeader = () => {
   return `
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-      <div style="background: white; border-radius: 50%; width: 80px; height: 80px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-        <span style="font-size: 24px; font-weight: bold; color: #333;">BFCA</span>
+      <div style="margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
+        <img src="https://crm-backend-0v14.onrender.com/uploads/logo.png" alt="Black Foster Carers Alliance Logo" style="max-height: 80px; max-width: 200px; height: auto; width: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+        <div style="background: white; border-radius: 50%; width: 80px; height: 80px; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+          <span style="font-size: 24px; font-weight: bold; color: #333;">BFCA</span>
+        </div>
       </div>
       <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">BLACK FOSTER CARERS</h1>
       <h2 style="color: white; margin: 5px 0 0; font-size: 32px; font-weight: bold;">ALLIANCE</h2>
@@ -199,11 +202,136 @@ const getFeedbackRequestContent = (booking) => {
   `;
 };
 
+const getCertificateEmailContent = (certificate, invoiceInfo = '') => {
+  return `
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h2 style="color: #155724; margin: 0 0 10px 0; font-size: 24px;">🎓 Certificate of Completion</h2>
+        <p style="color: #155724; margin: 0; font-size: 16px;">Congratulations! You have successfully completed your training.</p>
+      </div>
+    </div>
+
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+      <h3 style="color: #333; margin: 0 0 15px 0; font-size: 18px;">📜 Certificate Details</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div>
+          <p style="margin: 5px 0; color: #666;"><strong>Course Title:</strong></p>
+          <p style="margin: 5px 0; color: #333; font-weight: bold;">${certificate.courseTitle}</p>
+        </div>
+        <div>
+          <p style="margin: 5px 0; color: #666;"><strong>Certificate Number:</strong></p>
+          <p style="margin: 5px 0; color: #333; font-family: monospace;">${certificate.certificateNumber}</p>
+        </div>
+        <div>
+          <p style="margin: 5px 0; color: #666;"><strong>Completion Date:</strong></p>
+          <p style="margin: 5px 0; color: #333;">${certificate.completionDate.toLocaleDateString()}</p>
+        </div>
+        <div>
+          <p style="margin: 5px 0; color: #666;"><strong>Duration:</strong></p>
+          <p style="margin: 5px 0; color: #333;">${certificate.duration}</p>
+        </div>
+      </div>
+    </div>
+
+    ${invoiceInfo ? `
+      <div style="background: #e2e3e5; border: 1px solid #d6d8db; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+        <h4 style="color: #383d41; margin: 0 0 10px 0;">💰 Payment Information</h4>
+        ${invoiceInfo}
+      </div>
+    ` : ''}
+
+    <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+      <h4 style="color: #0c5460; margin: 0 0 10px 0;">📎 Certificate Attachment</h4>
+      <p style="color: #0c5460; margin: 0;">Your certificate is attached to this email. You can also download it from your training dashboard.</p>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+      <p style="color: #666; margin: 0 0 15px 0;">Thank you for participating in our training program!</p>
+      <p style="color: #333; font-weight: bold; margin: 0;">Best regards,<br>Black Foster Carers Alliance Training Team</p>
+    </div>
+  `;
+};
+
+const getBookingInvitationContent = (trainingEvent, bookingUrl, message = '') => {
+  return `
+    <div style="text-align: center; margin-bottom: 30px;">
+      <div style="background: #cce5ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h2 style="color: #004085; margin: 0 0 10px 0; font-size: 24px;">📧 Training Event Invitation</h2>
+        <p style="color: #004085; margin: 0; font-size: 16px;">You're invited to join our upcoming training session!</p>
+      </div>
+    </div>
+
+    ${message ? `
+      <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+        <h4 style="color: #333; margin: 0 0 10px 0;">💬 Personal Message</h4>
+        <p style="color: #666; margin: 0; white-space: pre-line;">${message}</p>
+      </div>
+    ` : ''}
+
+    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+      <h3 style="color: #333; margin: 0 0 15px 0; font-size: 18px;">📅 Event Details</h3>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div>
+          <p style="margin: 5px 0; color: #666;"><strong>Title:</strong></p>
+          <p style="margin: 5px 0; color: #333; font-weight: bold;">${trainingEvent.title}</p>
+        </div>
+        <div>
+          <p style="margin: 5px 0; color: #666;"><strong>Date:</strong></p>
+          <p style="margin: 5px 0; color: #333;">${new Date(trainingEvent.startDate).toLocaleDateString()} - ${new Date(trainingEvent.endDate).toLocaleDateString()}</p>
+        </div>
+        <div>
+          <p style="margin: 5px 0; color: #666;"><strong>Time:</strong></p>
+          <p style="margin: 5px 0; color: #333;">${new Date(trainingEvent.startDate).toLocaleTimeString()} - ${new Date(trainingEvent.endDate).toLocaleTimeString()}</p>
+        </div>
+        <div>
+          <p style="margin: 5px 0; color: #666;"><strong>Location:</strong></p>
+          <p style="margin: 5px 0; color: #333;">${trainingEvent.location || 'To be confirmed'}</p>
+        </div>
+        <div>
+          <p style="margin: 5px 0; color: #666;"><strong>Price:</strong></p>
+          <p style="margin: 5px 0; color: #333; font-weight: bold;">${trainingEvent.price > 0 ? `£${trainingEvent.price} ${trainingEvent.currency}` : 'Free'}</p>
+        </div>
+        <div>
+          <p style="margin: 5px 0; color: #666;"><strong>Max Participants:</strong></p>
+          <p style="margin: 5px 0; color: #333;">${trainingEvent.maxParticipants}</p>
+        </div>
+      </div>
+      ${trainingEvent.description ? `
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
+          <p style="margin: 5px 0; color: #666;"><strong>Description:</strong></p>
+          <p style="margin: 5px 0; color: #333;">${trainingEvent.description}</p>
+        </div>
+      ` : ''}
+    </div>
+
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${bookingUrl}" style="background: #2EAB2C; color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        📝 Book Now
+      </a>
+    </div>
+
+    <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+      <h4 style="color: #856404; margin: 0 0 10px 0;">🔗 Alternative Booking Method</h4>
+      <p style="color: #856404; margin: 0 0 10px 0;">If the button doesn't work, copy and paste this link into your browser:</p>
+      <p style="color: #856404; margin: 0; word-break: break-all;">
+        <a href="${bookingUrl}" style="color: #007bff; text-decoration: none;">${bookingUrl}</a>
+      </p>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px;">
+      <p style="color: #666; margin: 0 0 15px 0;">We look forward to seeing you at the training!</p>
+      <p style="color: #333; font-weight: bold; margin: 0;">Best regards,<br>Black Foster Carers Alliance Training Team</p>
+    </div>
+  `;
+};
+
 module.exports = {
   getEmailHeader,
   getEmailFooter,
   getEmailContainer,
   getBookingConfirmationContent,
   getInvoiceEmailContent,
-  getFeedbackRequestContent
+  getFeedbackRequestContent,
+  getCertificateEmailContent,
+  getBookingInvitationContent
 };
