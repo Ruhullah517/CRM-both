@@ -256,6 +256,7 @@ const TrainingEvents = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [users, setUsers] = useState([]);
+  const [trainers, setTrainers] = useState([]);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importPreview, setImportPreview] = useState([]);
@@ -279,6 +280,7 @@ const TrainingEvents = () => {
   useEffect(() => {
     fetchEvents();
     fetchUsers();
+    fetchTrainers();
   }, []);
 
   useEffect(() => {
@@ -304,6 +306,15 @@ const TrainingEvents = () => {
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchTrainers = async () => {
+    try {
+      const response = await api.get('/trainers');
+      setTrainers(response.data);
+    } catch (error) {
+      console.error('Error fetching trainers:', error);
     }
   };
 
@@ -752,6 +763,7 @@ const TrainingEvents = () => {
         <TrainingEventForm
           event={editingEvent}
           users={users}
+          trainers={trainers}
           onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent}
           onCancel={() => {
             setShowForm(false);
@@ -1102,7 +1114,7 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
   );
 };
 
-const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
+const TrainingEventForm = ({ event, users, trainers, onSubmit, onCancel }) => {
   const [form, setForm] = useState({
     title: event?.title || '',
     description: event?.description || '',
@@ -1161,8 +1173,10 @@ const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">Select Trainer</option>
-                  {users.map(user => (
-                    <option key={user._id} value={user._id}>{user.name}</option>
+                  {trainers.map(trainer => (
+                    <option key={trainer._id} value={trainer._id}>
+                      {trainer.user.name} - {trainer.specialization.join(', ')}
+                    </option>
                   ))}
                 </select>
               </div>

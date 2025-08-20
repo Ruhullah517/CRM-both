@@ -84,7 +84,7 @@ const exportTrainingBookings = async (req, res) => {
 
     const parser = new Parser();
     const csv = parser.parse(csvData);
-
+    
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', 'attachment; filename=training-bookings.csv');
     res.send(csv);

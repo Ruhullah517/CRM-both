@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const TrainingEventSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: String,
-  trainer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  trainer: { type: mongoose.Schema.Types.ObjectId, ref: 'Trainer' },
   location: String,
   virtualMeetingLink: String,
   startDate: { type: Date, required: true },

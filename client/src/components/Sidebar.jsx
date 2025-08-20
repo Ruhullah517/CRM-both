@@ -15,7 +15,8 @@ import {
   QuestionMarkCircleIcon,
   Cog6ToothIcon,
   AcademicCapIcon as TrainingIcon,
-  CalendarIcon
+  CalendarIcon,
+  UserIcon
 } from '@heroicons/react/24/outline';
 import img3 from '../../public/img3.png';
 const navItems = [
@@ -27,6 +28,7 @@ const navItems = [
           { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon },
         { name: 'Contacts', path: '/contacts', roles: ['admin', 'staff'], icon: IdentificationIcon },
         { name: 'Training Events', path: '/training', roles: ['admin', 'staff'], icon: TrainingIcon },
+        { name: 'Trainers', path: '/trainers', roles: ['admin', 'staff'], icon: UserIcon },
         { name: 'Certificates', path: '/certificates', roles: ['admin', 'staff'], icon: AcademicCapIcon },
         { name: 'Invoices', path: '/invoices', roles: ['admin', 'staff'], icon: DocumentTextIcon },
         { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon },

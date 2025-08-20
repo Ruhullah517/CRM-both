@@ -10,6 +10,12 @@ const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
 const nodemailer = require('nodemailer');
+const { 
+  getEmailContainer, 
+  getBookingConfirmationContent, 
+  getInvoiceEmailContent, 
+  getFeedbackRequestContent 
+} = require('../utils/emailTemplates');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -31,7 +37,10 @@ const upload = multer({ storage });
 const getAllTrainingEvents = async (req, res) => {
   try {
     const events = await TrainingEvent.find()
-      .populate('trainer', 'name email')
+      .populate({
+        path: 'trainer',
+        populate: { path: 'user', select: 'name email avatar' }
+      })
       .populate('createdBy', 'name')
       .sort({ startDate: 1 });
     res.json(events);
@@ -45,7 +54,10 @@ const getAllTrainingEvents = async (req, res) => {
 const getTrainingEventById = async (req, res) => {
   try {
     const event = await TrainingEvent.findById(req.params.id)
-      .populate('trainer', 'name email')
+      .populate({
+        path: 'trainer',
+        populate: { path: 'user', select: 'name email avatar' }
+      })
       .populate('createdBy', 'name');
 
     if (!event) {
@@ -481,30 +493,12 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
       }
     });
 
-    // Email content
+    // Email content with branded template
     const mailOptions = {
-      from: "ruhullah517@gmail.com",
+      from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
       to: booking.participant.email,
       subject: `Training Registration Confirmed - ${trainingEvent.title}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #28a745;">Training Registration Confirmed</h2>
-          <p>Dear ${booking.participant.name},</p>
-          <p>Great news! Your training registration has been confirmed.</p>
-          <h3 style="color: #212529;">Event Details</h3>
-          <p><strong>Event:</strong> ${trainingEvent.title}</p>
-          <p><strong>Date:</strong> ${new Date(trainingEvent.startDate).toLocaleDateString()} - ${new Date(trainingEvent.endDate).toLocaleDateString()}</p>
-          <p><strong>Time:</strong> ${new Date(trainingEvent.startDate).toLocaleTimeString()} - ${new Date(trainingEvent.endDate).toLocaleTimeString()}</p>
-          <p><strong>Location:</strong> ${trainingEvent.location || 'To be confirmed'}</p>
-          ${trainingEvent.virtualMeetingLink ? `<p><strong>Virtual Meeting Link:</strong> <a href="${trainingEvent.virtualMeetingLink}">${trainingEvent.virtualMeetingLink}</a></p>` : ''}
-          <p><strong>Booking Reference:</strong> ${booking._id}</p>
-          ${trainingEvent.price > 0 ? `<p><strong>Amount:</strong> £${trainingEvent.price} ${trainingEvent.currency}</p>` : '<p><strong>Amount:</strong> Free</p>'}
-          ${trainingEvent.price > 0 ? '<p><strong>Payment:</strong> Please ensure your invoice has been paid to secure your spot.</p>' : ''}
-          <p>We will send you a reminder closer to the event date. If you have any questions, please don't hesitate to contact us.</p>
-          <br>
-          <p>Best regards,<br>CRM Training Team</p>
-        </div>
-      `
+      html: getEmailContainer(getBookingConfirmationContent(booking, trainingEvent))
     };
 
     await transporter.sendMail(mailOptions);
@@ -539,27 +533,12 @@ const sendInvoiceEmail = async (invoice) => {
       pdfPath = path.join(__dirname, '..', pdfUrl.replace('/uploads/', 'uploads/'));
     }
 
-    // Email content
+    // Email content with branded template
     const mailOptions = {
-      from: 'ruhullah517@gmail.com',
+      from: 'Black Foster Carers Alliance <ruhullah517@gmail.com>',
       to: invoice.client.email,
       subject: `Invoice for Training Registration - ${invoice.invoiceNumber}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #dc3545;">Training Registration Invoice</h2>
-          <p>Dear ${invoice.client.name},</p>
-          <p>Thank you for registering for our training event. Please find attached the invoice for your training registration.</p>
-          <h3 style="color: #212529;">Invoice Details:</h3>
-          <p><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</p>
-          <p><strong>Issue Date:</strong> ${(invoice.issuedDate || invoice.created_at || new Date()).toLocaleDateString()}</p>
-          <p><strong>Due Date:</strong> ${invoice.dueDate.toLocaleDateString()}</p>
-          <p><strong>Total Amount:</strong> £${invoice.total}</p>
-          <p>Please review the attached invoice and process the payment by the due date to confirm your registration.</p>
-          <p>Your training registration is confirmed once payment is received. If you have any questions about this invoice, please don't hesitate to contact us.</p>
-          <br>
-          <p>Best regards,<br>CRM Training Team</p>
-        </div>
-      `,
+      html: getEmailContainer(getInvoiceEmailContent(invoice)),
       attachments: [
         {
           filename: `invoice-${invoice.invoiceNumber}.pdf`,
@@ -955,11 +934,20 @@ const getBookingsByEvent = async (req, res) => {
 const getPublicBookingLink = async (req, res) => {
   try {
     const { bookingLink } = req.params;
+    
+    console.log('Looking for training event with booking link:', bookingLink);
 
     const trainingEvent = await TrainingEvent.findOne({
       bookingLink,
-      status: 'published'
+      status: { $in: ['draft', 'published'] }
     }).populate('trainer', 'name');
+
+    console.log('Found training event:', trainingEvent ? {
+      id: trainingEvent._id,
+      title: trainingEvent.title,
+      status: trainingEvent.status,
+      bookingLink: trainingEvent.bookingLink
+    } : 'Not found');
 
     if (!trainingEvent) {
       return res.status(404).json({ msg: 'Training event not found or not available' });
@@ -971,12 +959,14 @@ const getPublicBookingLink = async (req, res) => {
       status: { $nin: ['cancelled'] }
     });
 
+    console.log('Available spots:', trainingEvent.maxParticipants - bookingCount);
+
     res.json({
       event: trainingEvent,
       availableSpots: trainingEvent.maxParticipants - bookingCount
     });
   } catch (error) {
-    console.error(error);
+    console.error('Error in getPublicBookingLink:', error);
     res.status(500).send('Server error');
   }
 };
@@ -1136,8 +1126,13 @@ const sendBookingLinkEmail = async (req, res) => {
       }
     });
 
-    const bookingUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/training/${trainingEvent.bookingLink}`;
-    console.log('Booking URL:', bookingUrl);
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const bookingUrl = `${frontendUrl}/training/${trainingEvent.bookingLink}`;
+    console.log('Environment variables check:');
+    console.log('- FRONTEND_URL:', process.env.FRONTEND_URL);
+    console.log('- NODE_ENV:', process.env.NODE_ENV);
+    console.log('- Using frontend URL:', frontendUrl);
+    console.log('Generated booking URL:', bookingUrl);
     
     const mailOptions = {
       from: "ruhullah517@gmail.com",
@@ -1215,37 +1210,10 @@ const sendFeedbackRequestEmail = async (bookingId) => {
     const feedbackUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/feedback/${bookingId}`;
     
     const mailOptions = {
-      from: "ruhullah517@gmail.com",
+      from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
       to: booking.participant.email,
       subject: `Feedback Request - ${booking.trainingEvent.title}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #2EAB2C;">Training Feedback Request</h2>
-          <p>Dear ${booking.participant.name},</p>
-          <p>Thank you for completing our training event: <strong>${booking.trainingEvent.title}</strong></p>
-          <p>We would greatly appreciate your feedback to help us improve our training programs.</p>
-          
-          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="margin-top: 0;">Training Details:</h3>
-            <p><strong>Event:</strong> ${booking.trainingEvent.title}</p>
-            <p><strong>Date:</strong> ${new Date(booking.trainingEvent.startDate).toLocaleDateString()} - ${new Date(booking.trainingEvent.endDate).toLocaleDateString()}</p>
-          </div>
-          
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${feedbackUrl}" style="background-color: #2EAB2C; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
-              Provide Feedback
-            </a>
-          </div>
-          
-          <p style="color: #666; font-size: 14px;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${feedbackUrl}">${feedbackUrl}</a>
-          </p>
-          
-          <p>Your feedback is valuable to us and will help us enhance our training programs.</p>
-          <p>Best regards,<br>Training Team</p>
-        </div>
-      `
+      html: getEmailContainer(getFeedbackRequestContent(booking))
     };
 
     await transporter.sendMail(mailOptions);
