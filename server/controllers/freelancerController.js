@@ -260,8 +260,8 @@ const sendFreelancerFormLink = async (req, res) => {
       `),
       attachments: [
         {
-          filename: 'logo.png',
-          path: path.join(__dirname, '..', 'client', 'public', 'img3.png'),
+          filename: 'logo.jpg',
+          path: path.join(__dirname, '..', 'client', 'public', 'img1.jpg'),
           cid: 'company-logo'
         }
       ]
