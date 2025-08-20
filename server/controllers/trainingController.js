@@ -498,7 +498,7 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
       attachments: [
                   {
             filename: 'logo.jpg',
-            path: path.join(__dirname, '..', 'client', 'public', 'img1.jpg'),
+            path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
             cid: 'company-logo'
           }
       ]
@@ -545,7 +545,7 @@ const sendInvoiceEmail = async (invoice) => {
       attachments: [
         {
           filename: 'logo.jpg',
-          path: path.join(__dirname, '..', 'client', 'public', 'img1.jpg'),
+          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
           cid: 'company-logo'
         },
         {
@@ -618,7 +618,7 @@ const sendCertificateEmail = async (certificate) => {
       attachments: [
         {
           filename: 'logo.jpg',
-          path: path.join(__dirname, '..', 'client', 'public', 'img1.jpg'),
+          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
           cid: 'company-logo'
         },
         {
@@ -1140,7 +1140,7 @@ const sendBookingLinkEmail = async (req, res) => {
       attachments: [
         {
           filename: 'logo.jpg',
-          path: path.join(__dirname, '..', 'client', 'public', 'img1.jpg'),
+          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
           cid: 'company-logo'
         }
       ]
@@ -1201,7 +1201,7 @@ const sendFeedbackRequestEmail = async (bookingId) => {
       attachments: [
         {
           filename: 'logo.jpg',
-          path: path.join(__dirname, '..', 'client', 'public', 'img1.jpg'),
+          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
           cid: 'company-logo'
         }
       ]
