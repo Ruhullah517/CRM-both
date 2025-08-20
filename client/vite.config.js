@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(),tailwindcss(),],
   server: {
     proxy: {
-      '/uploads': 'http://localhost:3001',
+      '/uploads': 'https://crm-backend-0v14.onrender.com',
     },
   },
 })

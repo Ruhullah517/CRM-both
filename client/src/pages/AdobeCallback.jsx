@@ -14,7 +14,7 @@ export default function AdobeCallback() {
       axios
         .post('https://crm-backend-0v14.onrender.com/api/adobe/exchange-token', {
           code,
-          redirectUri: 'http://localhost:5173/adobe/callback',
+          redirectUri: 'https://crm-both.vercel.app/adobe/callback',
         })
         .then((res) => {
           console.log('Adobe token saved:', res.data);

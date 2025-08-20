@@ -1124,7 +1124,7 @@ const sendBookingLinkEmail = async (req, res) => {
       }
     });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://crm-both.vercel.app';
     const bookingUrl = `${frontendUrl}/training/${trainingEvent.bookingLink}`;
     console.log('Environment variables check:');
     console.log('- FRONTEND_URL:', process.env.FRONTEND_URL);
@@ -1191,7 +1191,7 @@ const sendFeedbackRequestEmail = async (bookingId) => {
       }
     });
 
-    const feedbackUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/feedback/${bookingId}`;
+    const feedbackUrl = `${process.env.FRONTEND_URL || 'https://crm-both.vercel.app'}/feedback/${bookingId}`;
     
     const mailOptions = {
       from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
