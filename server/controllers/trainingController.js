@@ -494,7 +494,14 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
       from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
       to: booking.participant.email,
       subject: `Training Registration Confirmed - ${trainingEvent.title}`,
-      html: getEmailContainer(getBookingConfirmationContent(booking, trainingEvent))
+      html: getEmailContainer(getBookingConfirmationContent(booking, trainingEvent)),
+      attachments: [
+        {
+          filename: 'logo.png',
+          path: path.join(__dirname, '..', 'client', 'public', 'img1.png'),
+          cid: 'company-logo'
+        }
+      ]
     };
 
     await transporter.sendMail(mailOptions);
@@ -536,6 +543,11 @@ const sendInvoiceEmail = async (invoice) => {
       subject: `Invoice for Training Registration - ${invoice.invoiceNumber}`,
       html: getEmailContainer(getInvoiceEmailContent(invoice)),
       attachments: [
+        {
+          filename: 'logo.png',
+          path: path.join(__dirname, '..', 'client', 'public', 'img3.png'),
+          cid: 'company-logo'
+        },
         {
           filename: `invoice-${invoice.invoiceNumber}.pdf`,
           path: pdfPath
@@ -604,6 +616,11 @@ const sendCertificateEmail = async (certificate) => {
       subject: `Certificate of Completion - ${certificate.courseTitle}`,
       html: getEmailContainer(getCertificateEmailContent(certificate, invoiceInfo)),
       attachments: [
+        {
+          filename: 'logo.png',
+          path: path.join(__dirname, '..', 'client', 'public', 'img3.png'),
+          cid: 'company-logo'
+        },
         {
           filename: `certificate-${certificate.certificateNumber}.pdf`,
           path: pdfPath
@@ -1119,7 +1136,14 @@ const sendBookingLinkEmail = async (req, res) => {
       from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
       to: email,
       subject: `Training Event Invitation - ${trainingEvent.title}`,
-      html: getEmailContainer(getBookingInvitationContent(trainingEvent, bookingUrl, message))
+      html: getEmailContainer(getBookingInvitationContent(trainingEvent, bookingUrl, message)),
+      attachments: [
+        {
+          filename: 'logo.png',
+          path: path.join(__dirname, '..', 'client', 'public', 'img3.png'),
+          cid: 'company-logo'
+        }
+      ]
     };
 
     console.log('Sending email to:', email);
@@ -1173,7 +1197,14 @@ const sendFeedbackRequestEmail = async (bookingId) => {
       from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
       to: booking.participant.email,
       subject: `Feedback Request - ${booking.trainingEvent.title}`,
-      html: getEmailContainer(getFeedbackRequestContent(booking))
+      html: getEmailContainer(getFeedbackRequestContent(booking)),
+      attachments: [
+        {
+          filename: 'logo.png',
+          path: path.join(__dirname, '..', 'client', 'public', 'img3.png'),
+          cid: 'company-logo'
+        }
+      ]
     };
 
     await transporter.sendMail(mailOptions);

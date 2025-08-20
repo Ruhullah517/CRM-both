@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const FreelancerFormToken = require('../models/FreelancerFormToken');
 const Contact = require('../models/Contact');
 const { getEmailContainer } = require('../utils/emailTemplates');
+const path = require('path');
 
 // List all freelancers
 const getAllFreelancers = async (req, res) => {
@@ -257,6 +258,13 @@ const sendFreelancerFormLink = async (req, res) => {
           <p style="color: #333; font-weight: bold; margin: 0;">Best regards,<br>Black Foster Carers Alliance Team</p>
         </div>
       `),
+      attachments: [
+        {
+          filename: 'logo.png',
+          path: path.join(__dirname, '..', 'client', 'public', 'img3.png'),
+          cid: 'company-logo'
+        }
+      ]
     });
 
     res.json({ message: 'Form link sent successfully' });
