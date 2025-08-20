@@ -4,7 +4,7 @@ const getEmailHeader = () => {
   return `
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
       <div style="margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 8px; padding: 12px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; min-width: 80px; min-height: 60px;">
+        <div style="background: white; border-radius: 8px; padding: 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; min-width: 80px; min-height: 60px;">
           <!-- Logo will be embedded as attachment and referenced here -->
           <img src="cid:company-logo" 
                alt="Black Foster Carers Alliance Logo" 
