@@ -180,7 +180,7 @@ const getFeedbackRequestContent = (booking) => {
       <p style="color: #666; margin: 0 0 15px 0;">We value your feedback! Please take a moment to share your experience and help us improve our training programs.</p>
       
       <div style="text-align: center; margin: 20px 0;">
-        <a href="${process.env.FRONTEND_URL || 'https://your-domain.com'}/feedback/${booking._id}" 
+        <a href="${process.env.FRONTEND_URL || 'https://crm-both.vercel.app'}/feedback/${booking._id}" 
            style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
           📊 Provide Feedback
         </a>
