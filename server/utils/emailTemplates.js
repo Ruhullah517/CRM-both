@@ -4,10 +4,7 @@ const getEmailHeader = () => {
   return `
     <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
       <div style="margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-        <img src="https://crm-backend-0v14.onrender.com/uploads/logo.png" alt="Black Foster Carers Alliance Logo" style="max-height: 80px; max-width: 200px; height: auto; width: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-        <div style="background: white; border-radius: 50%; width: 80px; height: 80px; display: none; align-items: center; justify-content: center; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-          <span style="font-size: 24px; font-weight: bold; color: #333;">BFCA</span>
-        </div>
+        <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAMAAABF0y+mAAAAJFBMVEVHcEw/sT1BskBDs0FCs0BFtENCs0E/sj5Es0JDs0JDs0FEs0LqUXonAAAAC3RSTlMAEkCvfdzGLOqaW6gs3tUAAADmSURBVCiRdZLLlsQgCEQBeQj8//8OmO7TSXRYZGHlIpQF8CgkdkY4FbJk5jiKpJlT9EhGYR525iQlSjGiTceRQgCsMqe4vZrmDIC6dVX/dwMl/afVYHeVGoz81X0hTrUb+EQ9FU1uYsY6N661Rw6geTHDq8ZF1hkt8iMOwy74irHuRNlGAdPka1rexfJGAWc6om5iA1afQm1/Mmt3qnltSi7v9/RGY6YSoMXD1oWO1V1OD13nZXuxOXXEW63Gjj33MUO1RBtGrIcMNTR5D8hH7VjOwUF2Usnb+ArQEa+467+hbv1hwh/cFAommDgDeAAAAABJRU5ErkJggg==" alt="Black Foster Carers Alliance Logo" style="max-height: 80px; max-width: 200px; height: auto; width: auto; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);" />
       </div>
       <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">BLACK FOSTER CARERS</h1>
       <h2 style="color: white; margin: 5px 0 0; font-size: 32px; font-weight: bold;">ALLIANCE</h2>
@@ -21,8 +18,7 @@ const getEmailFooter = () => {
     <div style="background: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; margin-top: 20px;">
       <div style="border-top: 2px solid #dee2e6; padding-top: 20px;">
         <p style="color: #6c757d; margin: 5px 0; font-size: 14px;">
-          <strong>Black Foster Carers CIC</strong><br>
-          6 St Michael Court, West Bromwich B70 BET, United Kingdom
+          <strong>Black Foster Carers Alliance</strong><br>
         </p>
         <p style="color: #6c757d; margin: 5px 0; font-size: 12px;">
           Email: rachel@blackfostercarersalliance.co.uk<br>
