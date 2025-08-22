@@ -197,9 +197,9 @@ const generateInvoicePDFFile = async (invoice) => {
 
       // ===== HEADER SECTION =====
       // Company Logo and Name (Left Side)
-      doc.fontSize(20).font('Helvetica-Bold').fillColor('#000');
+      doc.fontSize(18).font('Helvetica-Bold').fillColor('#000');
       doc.text('BLACK FOSTER CARERS', 40, 40);
-      doc.fontSize(28).font('Helvetica-Bold').fillColor('#000');
+      doc.fontSize(24).font('Helvetica-Bold').fillColor('#000');
       doc.text('ALLIANCE', 40, 65);
       
       doc.fontSize(10).font('Helvetica').fillColor('#666');
@@ -209,17 +209,17 @@ const generateInvoicePDFFile = async (invoice) => {
       doc.text('Website: www.blackfostercarersalliance.co.uk', 40, 140);
 
       // Invoice title and details (right side)
-      doc.fontSize(32).font('Helvetica-Bold').fillColor('#000');
+      doc.fontSize(26).font('Helvetica-Bold').fillColor('#000');
       doc.text('INVOICE', 400, 40);
       
       doc.fontSize(10).font('Helvetica').fillColor('#666');
       doc.text('Invoice#', 400, 80);
-      doc.fontSize(12).font('Helvetica-Bold').fillColor('#000');
-      doc.text(invoice.invoiceNumber, 450, 80);
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#000');
+      doc.text(invoice.invoiceNumber, 450, 80, { width: 130 });
       
       doc.fontSize(10).font('Helvetica').fillColor('#666');
       doc.text('Balance Due', 400, 100);
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#000');
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#000');
       doc.text(`£${invoice.total.toFixed(2)}`, 450, 100);
       
       doc.fontSize(10).font('Helvetica').fillColor('#666');
@@ -305,9 +305,9 @@ const generateInvoicePDFFile = async (invoice) => {
       
       // Balance Due box
       doc.rect(totalsBoxX, totalsY + 90, totalsBoxWidth, 30).fill('#e9ecef');
-      doc.fontSize(12).font('Helvetica-Bold').fillColor('#000');
+      doc.fontSize(11).font('Helvetica-Bold').fillColor('#000');
       doc.text('Balance Due', totalsBoxX + 10, totalsY + 105);
-      doc.fontSize(14).font('Helvetica-Bold').fillColor('#000');
+      doc.fontSize(12).font('Helvetica-Bold').fillColor('#000');
       doc.text(`£${invoice.total.toFixed(2)}`, totalsBoxX + 120, totalsY + 105);
 
       // ===== FOOTER SECTION =====
@@ -429,7 +429,7 @@ const generateInvoicePDF = async (req, res) => {
     doc.text('Phone: +44 123 456 7890', 40, 115);
 
     // Invoice title and details (right side)
-    doc.fontSize(28).font('Helvetica-Bold').fillColor('#333');
+    doc.fontSize(24).font('Helvetica-Bold').fillColor('#333');
     doc.text('INVOICE', 350, 40);
     
     doc.fontSize(10).font('Helvetica').fillColor('#666');
