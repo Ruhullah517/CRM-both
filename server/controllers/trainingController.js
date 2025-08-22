@@ -1164,12 +1164,15 @@ const sendBookingLinkEmail = async (req, res) => {
     // });
 
     const transporter = nodemailer.createTransport({
-      host: "smtp.hostinger.com",  // Hostinger SMTP server
-      port: 465,                   // SSL port (try this first)
-      secure: true,                // Use SSL
+      host: "smtp.office365.com", // Microsoft 365 SMTP
+      port: 587,                  // TLS
+      secure: false,
       auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
-        pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
+        user: "hello@blackfostercarersalliance.co.uk",
+        pass: "IYght8061" // Or App Password if MFA is enabled
+      },
+      tls: {
+        ciphers: "SSLv3"
       }
     });
 
