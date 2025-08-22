@@ -87,7 +87,7 @@ async function sendBulkEmail(req, res) {
       
       // Prepare email options
       const mailOptions = {
-        from: 'ruhullah517@gmail.com',
+        from: 'hello@blackfostercarersalliance.co.uk',
         to: email,
         subject,
         html: body,

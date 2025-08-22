@@ -213,15 +213,20 @@ const sendFreelancerFormLink = async (req, res) => {
 
     // Configure your transporter as per your SMTP settings
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      port: 587,                   // TLS port
+      secure: false,               // Use TLS
       auth: {
-        user: 'ruhullah517@gmail.com',
-        pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
+        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
+        pass: "IYght8061" // your Microsoft email password or app password
+      },
+      tls: {
+        ciphers: "SSLv3"
       }
     });
 
     await transporter.sendMail({
-      from: 'Black Foster Carers Alliance <ruhullah517@gmail.com>',
+      from: 'Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>',
       to: email,
       subject: 'Complete Your Freelancer Form – BFCA',
       html: getEmailContainer(`

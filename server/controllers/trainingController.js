@@ -10,10 +10,10 @@ const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
 const nodemailer = require('nodemailer');
-const { 
-  getEmailContainer, 
-  getBookingConfirmationContent, 
-  getInvoiceEmailContent, 
+const {
+  getEmailContainer,
+  getBookingConfirmationContent,
+  getInvoiceEmailContent,
   getFeedbackRequestContent,
   getCertificateEmailContent,
   getBookingInvitationContent
@@ -39,9 +39,9 @@ const upload = multer({ storage });
 const getAllTrainingEvents = async (req, res) => {
   try {
     const events = await TrainingEvent.find()
-  .populate('trainer', 'name email avatar')
-  .populate('createdBy', 'name')
-  .sort({ startDate: 1 });
+      .populate('trainer', 'name email avatar')
+      .populate('createdBy', 'name')
+      .sort({ startDate: 1 });
     res.json(events);
   } catch (error) {
     console.error(error);
@@ -53,8 +53,8 @@ const getAllTrainingEvents = async (req, res) => {
 const getTrainingEventById = async (req, res) => {
   try {
     const event = await TrainingEvent.findById(req.params.id)
-  .populate('trainer', 'name email avatar')
-  .populate('createdBy', 'name');
+      .populate('trainer', 'name email avatar')
+      .populate('createdBy', 'name');
 
     if (!event) {
       return res.status(404).json({ msg: 'Training event not found' });
@@ -184,19 +184,19 @@ const forceDeleteTrainingEvent = async (req, res) => {
 
     // Delete all related bookings first
     await TrainingBooking.deleteMany({ trainingEvent: req.params.id });
-    
+
     // Delete all related certificates
     await Certificate.deleteMany({ trainingEvent: req.params.id });
-    
+
     // Delete all related invoices
     await Invoice.deleteMany({ 'items.relatedId': req.params.id });
-    
+
     // Delete all related feedback
     await Feedback.deleteMany({ trainingEvent: req.params.id });
 
     // Finally delete the training event
     await TrainingEvent.findByIdAndDelete(req.params.id);
-    
+
     res.json({ msg: 'Training event and all related data deleted successfully' });
   } catch (error) {
     console.error(error);
@@ -364,7 +364,7 @@ const updateBookingStatus = async (req, res) => {
     // Auto-generate certificate when marked as completed
     if (completion && completion.completed && !booking.completion.certificateGenerated) {
       await generateCertificate(updatedBooking);
-      
+
       // Send feedback request email when training is completed
       try {
         await sendFeedbackRequestEmail(updatedBooking._id);
@@ -438,7 +438,7 @@ const bulkImportParticipants = async (req, res) => {
         });
 
         await booking.save();
-        
+
         // Generate certificate if the participant completed the training
         if (convertToBoolean(participant.completed) && !booking.completion.certificateGenerated) {
           try {
@@ -461,9 +461,9 @@ const bulkImportParticipants = async (req, res) => {
             // Don't fail the import if invoice generation fails
           }
         }
-        
+
         // Note: Confirmation emails will be sent when status is changed to 'confirmed'
-        
+
         results.push({ success: true, participant: participant.name });
       } catch (error) {
         results.push({ success: false, participant: participant.name, error: error.message });
@@ -496,11 +496,11 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
       subject: `Training Registration Confirmed - ${trainingEvent.title}`,
       html: getEmailContainer(getBookingConfirmationContent(booking, trainingEvent)),
       attachments: [
-                  {
-            filename: 'logo.jpg',
-            path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
-            cid: 'company-logo'
-          }
+        {
+          filename: 'logo.jpg',
+          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
+          cid: 'company-logo'
+        }
       ]
     };
 
@@ -516,7 +516,7 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
 const sendInvoiceEmail = async (invoice) => {
   try {
     console.log('Starting to send invoice email for invoice:', invoice.invoiceNumber);
-    
+
     // Create transporter
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -574,7 +574,7 @@ const sendInvoiceEmail = async (invoice) => {
 const sendCertificateEmail = async (certificate) => {
   try {
     console.log('Starting to send certificate email for certificate:', certificate.certificateNumber);
-    
+
     // Create transporter (you'll need to configure this with your email service)
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -589,7 +589,7 @@ const sendCertificateEmail = async (certificate) => {
     // Note: Invoices are now sent at registration time, not with certificates
     const booking = await TrainingBooking.findById(certificate.trainingBooking);
     let invoiceInfo = '';
-    
+
     if (booking && booking.payment.invoiceId) {
       try {
         const invoice = await Invoice.findById(booking.payment.invoiceId);
@@ -807,12 +807,12 @@ const generateInvoiceForBooking = async (booking, trainingEvent) => {
   try {
     console.log('Starting invoice generation for booking:', booking._id);
     console.log('Training event:', trainingEvent.title, 'Price:', trainingEvent.price);
-    
+
     // Generate unique invoice number with timestamp to avoid duplicates
     const timestamp = Date.now();
     const year = new Date().getFullYear();
     const invoiceNumber = `INV-${year}-${timestamp}`;
-    
+
     console.log('Generated invoice number:', invoiceNumber);
 
     const invoice = new Invoice({
@@ -932,7 +932,7 @@ const getBookingsByEvent = async (req, res) => {
 const getPublicBookingLink = async (req, res) => {
   try {
     const { bookingLink } = req.params;
-    
+
     console.log('Looking for training event with booking link:', bookingLink);
 
     const trainingEvent = await TrainingEvent.findOne({
@@ -1011,7 +1011,7 @@ const getAllCertificates = async (req, res) => {
 const generateMissingCertificates = async (req, res) => {
   try {
     const { trainingEventId } = req.params;
-    
+
     // Find all completed bookings without certificates
     const completedBookings = await TrainingBooking.find({
       trainingEvent: trainingEventId,
@@ -1029,9 +1029,9 @@ const generateMissingCertificates = async (req, res) => {
       }
     }
 
-    res.json({ 
+    res.json({
       message: `Generated ${results.filter(r => r.success).length} certificates`,
-      results 
+      results
     });
   } catch (error) {
     console.error(error);
@@ -1062,7 +1062,7 @@ const resendCertificateEmail = async (req, res) => {
 const generateMissingInvoices = async (req, res) => {
   try {
     const { trainingEventId } = req.params;
-    
+
     // Find all bookings without invoices for paid training events
     const bookingsWithoutInvoices = await TrainingBooking.find({
       trainingEvent: trainingEventId,
@@ -1076,9 +1076,9 @@ const generateMissingInvoices = async (req, res) => {
           const invoice = await generateInvoiceForBooking(booking, booking.trainingEvent);
           // Send invoice via email
           await sendInvoiceEmail(invoice);
-          results.push({ 
-            success: true, 
-            participant: booking.participant.name, 
+          results.push({
+            success: true,
+            participant: booking.participant.name,
             invoiceNumber: invoice.invoiceNumber,
             emailSent: true
           });
@@ -1090,9 +1090,9 @@ const generateMissingInvoices = async (req, res) => {
       }
     }
 
-    res.json({ 
+    res.json({
       message: `Generated and sent ${results.filter(r => r.success).length} invoices`,
-      results 
+      results
     });
   } catch (error) {
     console.error(error);
@@ -1105,7 +1105,7 @@ const sendBookingLinkEmail = async (req, res) => {
   try {
     console.log('Sending booking link email...');
     const { eventId, email, message } = req.body;
-    
+
     console.log('Request body:', { eventId, email, message: message ? 'provided' : 'not provided' });
 
     const trainingEvent = await TrainingEvent.findById(eventId);
@@ -1131,7 +1131,7 @@ const sendBookingLinkEmail = async (req, res) => {
     console.log('- NODE_ENV:', process.env.NODE_ENV);
     console.log('- Using frontend URL:', frontendUrl);
     console.log('Generated booking URL:', bookingUrl);
-    
+
     const mailOptions = {
       from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
       to: email,
@@ -1178,23 +1178,36 @@ const sendFeedbackRequestEmail = async (bookingId) => {
   try {
     const booking = await TrainingBooking.findById(bookingId)
       .populate('trainingEvent', 'title startDate endDate');
-    
+
     if (!booking) {
       throw new Error('Booking not found');
     }
 
+    // const transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: 'ruhullah517@gmail.com',
+    //     pass: 'vrcf pvht mrxd rnmq',
+    //   }
+    // });
+
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      port: 587,                   // TLS port
+      secure: false,               // Use TLS
       auth: {
-        user: 'ruhullah517@gmail.com',
-        pass: 'vrcf pvht mrxd rnmq',
+        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
+        pass: "IYght8061" // your Microsoft email password or app password
+      },
+      tls: {
+        ciphers: "SSLv3"
       }
     });
 
     const feedbackUrl = `${process.env.FRONTEND_URL || 'https://crm-both.vercel.app'}/feedback/${bookingId}`;
-    
+
     const mailOptions = {
-      from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
+      from: "Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>",
       to: booking.participant.email,
       subject: `Feedback Request - ${booking.trainingEvent.title}`,
       html: getEmailContainer(getFeedbackRequestContent(booking)),
