@@ -481,17 +481,30 @@ const bulkImportParticipants = async (req, res) => {
 const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
   try {
     // Create transporter (you'll need to configure this with your email service)
+    // const transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: 'ruhullah517@gmail.com',
+    //     pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
+    //   }
+    // });
+
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      port: 587,                   // TLS port
+      secure: false,               // Use TLS
       auth: {
-        user: 'ruhullah517@gmail.com',
-        pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
+        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
+        pass: "IYght8061" // your Microsoft email password or app password
+      },
+      tls: {
+        ciphers: "SSLv3"
       }
     });
 
     // Email content with branded template
     const mailOptions = {
-      from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
+      from: "Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>",
       to: booking.participant.email,
       subject: `Training Registration Confirmed - ${trainingEvent.title}`,
       html: getEmailContainer(getBookingConfirmationContent(booking, trainingEvent)),
@@ -518,11 +531,24 @@ const sendInvoiceEmail = async (invoice) => {
     console.log('Starting to send invoice email for invoice:', invoice.invoiceNumber);
 
     // Create transporter
+    // const transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: 'ruhullah517@gmail.com',
+    //     pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
+    //   }
+    // });
+
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      port: 587,                   // TLS port
+      secure: false,               // Use TLS
       auth: {
-        user: 'ruhullah517@gmail.com',
-        pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
+        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
+        pass: "IYght8061" // your Microsoft email password or app password
+      },
+      tls: {
+        ciphers: "SSLv3"
       }
     });
 
@@ -538,7 +564,7 @@ const sendInvoiceEmail = async (invoice) => {
 
     // Email content with branded template
     const mailOptions = {
-      from: 'Black Foster Carers Alliance <ruhullah517@gmail.com>',
+      from: 'Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>',
       to: invoice.client.email,
       subject: `Invoice for Training Registration - ${invoice.invoiceNumber}`,
       html: getEmailContainer(getInvoiceEmailContent(invoice)),
@@ -576,11 +602,24 @@ const sendCertificateEmail = async (certificate) => {
     console.log('Starting to send certificate email for certificate:', certificate.certificateNumber);
 
     // Create transporter (you'll need to configure this with your email service)
+    // const transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: 'ruhullah517@gmail.com',
+    //     pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
+    //   }
+    // });
+
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      port: 587,                   // TLS port
+      secure: false,               // Use TLS
       auth: {
-        user: 'ruhullah517@gmail.com',
-        pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
+        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
+        pass: "IYght8061" // your Microsoft email password or app password
+      },
+      tls: {
+        ciphers: "SSLv3"
       }
     });
 
@@ -611,7 +650,7 @@ const sendCertificateEmail = async (certificate) => {
 
     // Email content with branded template
     const mailOptions = {
-      from: 'Black Foster Carers Alliance <ruhullah517@gmail.com>',
+      from: 'Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>',
       to: certificate.participant.email,
       subject: `Certificate of Completion - ${certificate.courseTitle}`,
       html: getEmailContainer(getCertificateEmailContent(certificate, invoiceInfo)),
@@ -1116,11 +1155,24 @@ const sendBookingLinkEmail = async (req, res) => {
 
     console.log('Found training event:', trainingEvent.title);
 
+    // const transporter = nodemailer.createTransport({
+    //   service: 'gmail',
+    //   auth: {
+    //     user: 'ruhullah517@gmail.com',
+    //     pass: 'vrcf pvht mrxd rnmq',
+    //   }
+    // });
+
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      port: 587,                   // TLS port
+      secure: false,               // Use TLS
       auth: {
-        user: 'ruhullah517@gmail.com',
-        pass: 'vrcf pvht mrxd rnmq',
+        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
+        pass: "IYght8061" // your Microsoft email password or app password
+      },
+      tls: {
+        ciphers: "SSLv3"
       }
     });
 
@@ -1133,7 +1185,7 @@ const sendBookingLinkEmail = async (req, res) => {
     console.log('Generated booking URL:', bookingUrl);
 
     const mailOptions = {
-      from: "Black Foster Carers Alliance <ruhullah517@gmail.com>",
+      from: "Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>",
       to: email,
       subject: `Training Event Invitation - ${trainingEvent.title}`,
       html: getEmailContainer(getBookingInvitationContent(trainingEvent, bookingUrl, message)),
