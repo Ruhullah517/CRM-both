@@ -490,12 +490,12 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
     // });
 
     const transporter = nodemailer.createTransport({
-      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      host: "smtp.hostinger.com",  // Hostinger SMTP server
       port: 587,                   // TLS port
       secure: false,               // Use TLS
       auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
-        pass: "IYght8061" // your Microsoft email password or app password
+        user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
+        pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
       },
       tls: {
         ciphers: "SSLv3"
@@ -540,12 +540,12 @@ const sendInvoiceEmail = async (invoice) => {
     // });
 
     const transporter = nodemailer.createTransport({
-      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      host: "smtp.hostinger.com",  // Hostinger SMTP server
       port: 587,                   // TLS port
       secure: false,               // Use TLS
       auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
-        pass: "IYght8061" // your Microsoft email password or app password
+        user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
+        pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
       },
       tls: {
         ciphers: "SSLv3"
@@ -611,12 +611,12 @@ const sendCertificateEmail = async (certificate) => {
     // });
 
     const transporter = nodemailer.createTransport({
-      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      host: "smtp.hostinger.com",  // Hostinger SMTP server
       port: 587,                   // TLS port
       secure: false,               // Use TLS
       auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
-        pass: "IYght8061" // your Microsoft email password or app password
+        user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
+        pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
       },
       tls: {
         ciphers: "SSLv3"
@@ -1164,12 +1164,12 @@ const sendBookingLinkEmail = async (req, res) => {
     // });
 
     const transporter = nodemailer.createTransport({
-      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      host: "smtp.hostinger.com",  // Hostinger SMTP server
       port: 587,                   // TLS port
       secure: false,               // Use TLS
       auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
-        pass: "IYght8061" // your Microsoft email password or app password
+        user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
+        pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
       },
       tls: {
         ciphers: "SSLv3"
@@ -1244,12 +1244,12 @@ const sendFeedbackRequestEmail = async (bookingId) => {
     // });
 
     const transporter = nodemailer.createTransport({
-      host: "smtp.office365.com",  // Microsoft 365 SMTP server
+      host: "smtp.hostinger.com",  // Hostinger SMTP server
       port: 587,                   // TLS port
       secure: false,               // Use TLS
       auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
-        pass: "IYght8061" // your Microsoft email password or app password
+        user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
+        pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
       },
       tls: {
         ciphers: "SSLv3"
