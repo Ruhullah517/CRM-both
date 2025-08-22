@@ -39,12 +39,24 @@ function addLogoToEmail(body, logoFile, templateId) {
 
 
 // Configure your transporter as per your SMTP settings
+// const transporter = nodemailer.createTransport({
+//   service: 'gmail',
+//   auth: {
+//     user: 'ruhullah517@gmail.com',
+//     pass: 'vrcf pvht mrxd rnmq',
+//   }
+// });
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: "smtp.office365.com",  // Microsoft 365 SMTP server
+  port: 587,                   // TLS port
+  secure: false,               // Use TLS
   auth: {
-    user: 'ruhullah517@gmail.com',
-    pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
-  }
+    user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
+    pass: "IYght8061" // your Microsoft email password or app password
+  },
+  tls: {
+    ciphers: "SSLv3"
+  }
 });
 
 // POST /api/emails/bulk
