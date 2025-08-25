@@ -489,17 +489,27 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
     //   }
     // });
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.hostinger.com",  // Hostinger SMTP server
-      port: 587,                   // TLS port
-      secure: false,               // Use TLS
+    // const transporter = nodemailer.createTransport({
+    //   host: "smtp.hostinger.com",  // Hostinger SMTP server
+    //   port: 587,                   // TLS port
+    //   secure: false,               // Use TLS
+    //   auth: {
+    //     user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
+    //     pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
+    //   },
+    //   tls: {
+    //     ciphers: "SSLv3"
+    //   }
+    // });
+
+    var transporter = nodemailer.createTransport({
+      host: "smtp.hostinger.com",
+      secure: false,
+      port: 587,
       auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
-        pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
+        user: "hello@blackfostercarersalliance.co.uk",
+        pass: "IYght8061",
       },
-      tls: {
-        ciphers: "SSLv3"
-      }
     });
 
     // Email content with branded template
@@ -539,17 +549,27 @@ const sendInvoiceEmail = async (invoice) => {
     //   }
     // });
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.hostinger.com",  // Hostinger SMTP server
-      port: 587,                   // TLS port
-      secure: false,               // Use TLS
+    // const transporter = nodemailer.createTransport({
+    //   host: "smtp.hostinger.com",  // Hostinger SMTP server
+    //   port: 587,                   // TLS port
+    //   secure: false,               // Use TLS
+    //   auth: {
+    //     user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
+    //     pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
+    //   },
+    //   tls: {
+    //     ciphers: "SSLv3"
+    //   }
+    // });
+
+    var transporter = nodemailer.createTransport({
+      host: "smtp.hostinger.com",
+      secure: false,
+      port: 587,
       auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
-        pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
+        user: "hello@blackfostercarersalliance.co.uk",
+        pass: "IYght8061",
       },
-      tls: {
-        ciphers: "SSLv3"
-      }
     });
 
     // Generate invoice PDF if not already generated
@@ -610,17 +630,26 @@ const sendCertificateEmail = async (certificate) => {
     //   }
     // });
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.hostinger.com",  // Hostinger SMTP server
-      port: 587,                   // TLS port
-      secure: false,               // Use TLS
+    // const transporter = nodemailer.createTransport({
+    //   host: "smtp.hostinger.com",  // Hostinger SMTP server
+    //   port: 587,                   // TLS port
+    //   secure: false,               // Use TLS
+    //   auth: {
+    //     user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
+    //     pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
+    //   },
+    //   tls: {
+    //     ciphers: "SSLv3"
+    //   }
+    // });
+    var transporter = nodemailer.createTransport({
+      host: "smtp.hostinger.com",
+      secure: false,
+      port: 587,
       auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
-        pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
+        user: "hello@blackfostercarersalliance.co.uk",
+        pass: "IYght8061",
       },
-      tls: {
-        ciphers: "SSLv3"
-      }
     });
 
     const pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
@@ -1163,17 +1192,27 @@ const sendBookingLinkEmail = async (req, res) => {
     //   }
     // });
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.office365.com", // Microsoft 365 SMTP
-      port: 587,                  // TLS
+    // const transporter = nodemailer.createTransport({
+    //   host: "smtp.office365.com", // Microsoft 365 SMTP
+    //   port: 587,                  // TLS
+    //   secure: false,
+    //   auth: {
+    //     user: "hello@blackfostercarersalliance.co.uk",
+    //     pass: "IYght8061" // Or App Password if MFA is enabled
+    //   },
+    //   tls: {
+    //     ciphers: "SSLv3"
+    //   }
+    // });
+
+    var transporter = nodemailer.createTransport({
+      host: "smtp.hostinger.com",
       secure: false,
+      port: 587,
       auth: {
         user: "hello@blackfostercarersalliance.co.uk",
-        pass: "IYght8061" // Or App Password if MFA is enabled
+        pass: "IYght8061",
       },
-      tls: {
-        ciphers: "SSLv3"
-      }
     });
 
     const frontendUrl = process.env.FRONTEND_URL || 'https://crm-both.vercel.app';
@@ -1243,17 +1282,27 @@ const sendFeedbackRequestEmail = async (bookingId) => {
     //   }
     // });
 
-    const transporter = nodemailer.createTransport({
-      host: "smtp.hostinger.com",  // Hostinger SMTP server
-      port: 587,                   // TLS port
-      secure: false,               // Use TLS
+    // const transporter = nodemailer.createTransport({
+    //   host: "smtp.hostinger.com",  // Hostinger SMTP server
+    //   port: 587,                   // TLS port
+    //   secure: false,               // Use TLS
+    //   auth: {
+    //     user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
+    //     pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
+    //   },
+    //   tls: {
+    //     ciphers: "SSLv3"
+    //   }
+    // });
+
+    var transporter = nodemailer.createTransport({
+      host: "smtp.hostinger.com",
+      secure: false,
+      port: 587,
       auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
-        pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
+        user: "hello@blackfostercarersalliance.co.uk",
+        pass: "IYght8061",
       },
-      tls: {
-        ciphers: "SSLv3"
-      }
     });
 
     const feedbackUrl = `${process.env.FRONTEND_URL || 'https://crm-both.vercel.app'}/feedback/${bookingId}`;
