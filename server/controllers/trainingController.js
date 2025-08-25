@@ -9,7 +9,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
-const nodemailer = require('nodemailer');
+const { sendMail, getFromAddress } = require('../utils/mailer');
 const {
   getEmailContainer,
   getBookingConfirmationContent,
@@ -502,19 +502,9 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
     //   }
     // });
 
-    var transporter = nodemailer.createTransport({
-      host: "smtp.hostinger.com",
-      secure: false,
-      port: 587,
-      auth: {
-        user: "hello@blackfostercarersalliance.co.uk",
-        pass: "IYght8061",
-      },
-    });
-
     // Email content with branded template
     const mailOptions = {
-      from: "Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>",
+      from: getFromAddress(),
       to: booking.participant.email,
       subject: `Training Registration Confirmed - ${trainingEvent.title}`,
       html: getEmailContainer(getBookingConfirmationContent(booking, trainingEvent)),
@@ -527,7 +517,7 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
       ]
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMail(mailOptions);
     return true;
   } catch (error) {
     console.error('Error sending booking confirmation email:', error);
@@ -562,16 +552,6 @@ const sendInvoiceEmail = async (invoice) => {
     //   }
     // });
 
-    var transporter = nodemailer.createTransport({
-      host: "smtp.hostinger.com",
-      secure: false,
-      port: 587,
-      auth: {
-        user: "hello@blackfostercarersalliance.co.uk",
-        pass: "IYght8061",
-      },
-    });
-
     // Generate invoice PDF if not already generated
     let pdfPath;
     if (invoice.invoiceUrl) {
@@ -584,7 +564,7 @@ const sendInvoiceEmail = async (invoice) => {
 
     // Email content with branded template
     const mailOptions = {
-      from: 'Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>',
+      from: getFromAddress(),
       to: invoice.client.email,
       subject: `Invoice for Training Registration - ${invoice.invoiceNumber}`,
       html: getEmailContainer(getInvoiceEmailContent(invoice)),
@@ -601,7 +581,7 @@ const sendInvoiceEmail = async (invoice) => {
       ]
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMail(mailOptions);
     console.log('Invoice email sent successfully to:', invoice.client.email);
 
     // Update invoice status
@@ -642,16 +622,6 @@ const sendCertificateEmail = async (certificate) => {
     //     ciphers: "SSLv3"
     //   }
     // });
-    var transporter = nodemailer.createTransport({
-      host: "smtp.hostinger.com",
-      secure: false,
-      port: 587,
-      auth: {
-        user: "hello@blackfostercarersalliance.co.uk",
-        pass: "IYght8061",
-      },
-    });
-
     const pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
 
     // Note: Invoices are now sent at registration time, not with certificates
@@ -679,7 +649,7 @@ const sendCertificateEmail = async (certificate) => {
 
     // Email content with branded template
     const mailOptions = {
-      from: 'Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>',
+      from: getFromAddress(),
       to: certificate.participant.email,
       subject: `Certificate of Completion - ${certificate.courseTitle}`,
       html: getEmailContainer(getCertificateEmailContent(certificate, invoiceInfo)),
@@ -696,7 +666,7 @@ const sendCertificateEmail = async (certificate) => {
       ]
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMail(mailOptions);
     console.log('Certificate email sent successfully to:', certificate.participant.email);
 
     // Update certificate status
@@ -1205,16 +1175,6 @@ const sendBookingLinkEmail = async (req, res) => {
     //   }
     // });
 
-    var transporter = nodemailer.createTransport({
-      host: "smtp.hostinger.com",
-      secure: false,
-      port: 587,
-      auth: {
-        user: "hello@blackfostercarersalliance.co.uk",
-        pass: "IYght8061",
-      },
-    });
-
     const frontendUrl = process.env.FRONTEND_URL || 'https://crm-both.vercel.app';
     const bookingUrl = `${frontendUrl}/training/${trainingEvent.bookingLink}`;
     console.log('Environment variables check:');
@@ -1224,7 +1184,7 @@ const sendBookingLinkEmail = async (req, res) => {
     console.log('Generated booking URL:', bookingUrl);
 
     const mailOptions = {
-      from: "Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>",
+      from: getFromAddress(),
       to: email,
       subject: `Training Event Invitation - ${trainingEvent.title}`,
       html: getEmailContainer(getBookingInvitationContent(trainingEvent, bookingUrl, message)),
@@ -1238,7 +1198,7 @@ const sendBookingLinkEmail = async (req, res) => {
     };
 
     console.log('Sending email to:', email);
-    await transporter.sendMail(mailOptions);
+    await sendMail(mailOptions);
     console.log('Email sent successfully');
 
     res.json({ msg: 'Booking link sent successfully' });
@@ -1295,20 +1255,10 @@ const sendFeedbackRequestEmail = async (bookingId) => {
     //   }
     // });
 
-    var transporter = nodemailer.createTransport({
-      host: "smtp.hostinger.com",
-      secure: false,
-      port: 587,
-      auth: {
-        user: "hello@blackfostercarersalliance.co.uk",
-        pass: "IYght8061",
-      },
-    });
-
     const feedbackUrl = `${process.env.FRONTEND_URL || 'https://crm-both.vercel.app'}/feedback/${bookingId}`;
 
     const mailOptions = {
-      from: "Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>",
+      from: getFromAddress(),
       to: booking.participant.email,
       subject: `Feedback Request - ${booking.trainingEvent.title}`,
       html: getEmailContainer(getFeedbackRequestContent(booking)),
@@ -1321,7 +1271,7 @@ const sendFeedbackRequestEmail = async (bookingId) => {
       ]
     };
 
-    await transporter.sendMail(mailOptions);
+    await sendMail(mailOptions);
     return true;
   } catch (error) {
     console.error('Error sending feedback request email:', error);

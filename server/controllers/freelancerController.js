@@ -1,6 +1,7 @@
 const Freelancer = require('../models/Freelancer');
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
+const { sendMail, getFromAddress } = require('../utils/mailer');
 const FreelancerFormToken = require('../models/FreelancerFormToken');
 const Contact = require('../models/Contact');
 const { getEmailContainer } = require('../utils/emailTemplates');
@@ -211,22 +212,8 @@ const sendFreelancerFormLink = async (req, res) => {
     const link = `https://crm-both.vercel.app/freelancer-form/${token}`;
     await FreelancerFormToken.create({ email, token });
 
-    // Configure your transporter as per your SMTP settings
-    const transporter = nodemailer.createTransport({
-      host: "smtp.office365.com",  // Microsoft 365 SMTP server
-      port: 587,                   // TLS port
-      secure: false,               // Use TLS
-      auth: {
-        user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
-        pass: "IYght8061" // your Microsoft email password or app password
-      },
-      tls: {
-        ciphers: "SSLv3"
-      }
-    });
-
-    await transporter.sendMail({
-      from: 'Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>',
+    await sendMail({
+      from: getFromAddress(),
       to: email,
       subject: 'Complete Your Freelancer Form – BFCA',
       html: getEmailContainer(`

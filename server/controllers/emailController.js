@@ -2,6 +2,7 @@ const EmailTemplate = require('../models/EmailTemplate');
 const Email = require('../models/Email');
 const Contact = require('../models/Contact');
 const nodemailer = require('nodemailer');
+const { sendMail, getFromAddress } = require('../utils/mailer');
 
 // Helper to fill template placeholders
 function fillTemplate(str, data) {
@@ -39,25 +40,7 @@ function addLogoToEmail(body, logoFile, templateId) {
 
 
 // Configure your transporter as per your SMTP settings
-// const transporter = nodemailer.createTransport({
-//   service: 'gmail',
-//   auth: {
-//     user: 'ruhullah517@gmail.com',
-//     pass: 'vrcf pvht mrxd rnmq',
-//   }
-// });
-const transporter = nodemailer.createTransport({
-  host: "smtp.office365.com",  // Microsoft 365 SMTP server
-  port: 587,                   // TLS port
-  secure: false,               // Use TLS
-  auth: {
-    user: "hello@blackfostercarersalliance.co.uk", // your Microsoft email
-    pass: "IYght8061" // your Microsoft email password or app password
-  },
-  tls: {
-    ciphers: "SSLv3"
-  }
-});
+// Centralized transporter via utils/mailer
 
 // POST /api/emails/bulk
 async function sendBulkEmail(req, res) {
@@ -87,7 +70,7 @@ async function sendBulkEmail(req, res) {
       
       // Prepare email options
       const mailOptions = {
-        from: 'hello@blackfostercarersalliance.co.uk',
+        from: getFromAddress(),
         to: email,
         subject,
         html: body,
@@ -98,7 +81,7 @@ async function sendBulkEmail(req, res) {
       // Send email
       let status = 'sent', error = null;
       try {
-        await transporter.sendMail(mailOptions);
+        await sendMail(mailOptions);
       } catch (err) {
         status = 'failed';
         error = err.message;
