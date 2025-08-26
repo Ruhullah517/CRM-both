@@ -7,11 +7,11 @@ const nodemailer = require('nodemailer');
 let cachedTransporter = null;
 
 function createTransporter() {
-	const host = process.env.SMTP_HOST || 'smtp.hostinger.com';
-	const port = parseInt(process.env.SMTP_PORT || '587', 10);
-	const secure = String(process.env.SMTP_SECURE || 'false').toLowerCase() === 'true';
-	const user = process.env.SMTP_USER || 'hello@blackfostercarersalliance.co.uk';
-	const pass = process.env.SMTP_PASS || 'IYght8061';
+	const host = 'smtp.hostinger.com';
+	const port = '587';
+	const secure = 'false';
+	const user = 'hello@blackfostercarersalliance.co.uk';
+	const pass = 'IYght8061';
 
 	const transporter = nodemailer.createTransport({
 		host,
