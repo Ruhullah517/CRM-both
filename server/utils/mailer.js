@@ -8,8 +8,8 @@ let cachedTransporter = null;
 
 function createTransporter() {
 	const host = 'smtp.hostinger.com';
-	const port = '587';
-	const secure = 'false';
+	const port = 456;
+	const secure = true;
 	const user = 'hello@blackfostercarersalliance.co.uk';
 	const pass = 'IYght8061';
 
