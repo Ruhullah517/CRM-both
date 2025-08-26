@@ -11,7 +11,7 @@ function createTransporter() {
     const port = 587; // ✅ Correct SSL port
     const secure = false; // SSL
     const user = 'hello@blackfostercarersalliance.co.uk';
-    const pass = 'RKhqe299'; // ✅ Your email password
+    const pass = 'Tinytoe08'; // ✅ Your email password
 
     const transporter = nodemailer.createTransport({
         host,
