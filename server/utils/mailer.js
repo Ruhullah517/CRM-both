@@ -7,43 +7,46 @@ const nodemailer = require('nodemailer');
 let cachedTransporter = null;
 
 function createTransporter() {
-	const host = 'smtp.hostinger.com';
-	const port = 456;
-	const secure = true;
-	const user = 'hello@blackfostercarersalliance.co.uk';
-	const pass = 'IYght8061';
+    const host = 'smtp.hostinger.com';
+    const port = 465; // ✅ Correct SSL port
+    const secure = true; // SSL
+    const user = 'hello@blackfostercarersalliance.co.uk';
+    const pass = 'IYght8061'; // ✅ Your email password
 
-	const transporter = nodemailer.createTransport({
-		host,
-		port,
-		secure,
-		auth: { user, pass },
-	});
+    const transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure, // true for port 465, false for 587
+        auth: { user, pass },
+        tls: {
+            rejectUnauthorized: false // prevents certificate issues
+        }
+    });
 
-	return transporter;
+    return transporter;
 }
 
 function getTransporter() {
-	if (!cachedTransporter) {
-		cachedTransporter = createTransporter();
-	}
-	return cachedTransporter;
+    if (!cachedTransporter) {
+        cachedTransporter = createTransporter();
+    }
+    return cachedTransporter;
 }
 
 function getFromAddress() {
-	return process.env.SMTP_FROM || 'Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>';
+    return process.env.SMTP_FROM || 'Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>';
 }
 
 async function sendMail(options) {
-	const transporter = getTransporter();
-	const fromAddress = options.from || getFromAddress();
-	return transporter.sendMail({ ...options, from: fromAddress });
+    const transporter = getTransporter();
+    const fromAddress = options.from || getFromAddress();
+    return transporter.sendMail({ ...options, from: fromAddress });
 }
 
 module.exports = {
-	getTransporter,
-	sendMail,
-	getFromAddress,
+    getTransporter,
+    sendMail,
+    getFromAddress,
 };
 
 
