@@ -7,7 +7,7 @@ const nodemailer = require('nodemailer');
 let cachedTransporter = null;
 
 function createTransporter() {
-    const host = 'smtp.hostinger.com';
+    const host = 'smtp.office365.com';
     const port = 587; // ✅ Correct SSL port
     const secure = false; // SSL
     const user = 'hello@blackfostercarersalliance.co.uk';
