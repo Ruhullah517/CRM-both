@@ -7,15 +7,20 @@ const nodemailer = require('nodemailer');
 let cachedTransporter = null;
 
 function createTransporter() {
-    const service = 'Outlook365';
+    const host = 'smtp.office365.com';
     const port = 587; // ✅ Correct SSL port
     const secure = false; // SSL
     const user = 'hello@blackfostercarersalliance.co.uk';
     const pass = 'Tinytoe08'; // ✅ Your email password
 
     const transporter = nodemailer.createTransport({
-        service,
+        host,
+        port,
+        secure, // true for port 465, false for 587
         auth: { user, pass },
+        tls: {
+            ciphers: "SSLv3",
+        },
 
     });
 
