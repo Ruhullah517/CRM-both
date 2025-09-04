@@ -7,20 +7,22 @@ const nodemailer = require('nodemailer');
 let cachedTransporter = null;
 
 function createTransporter() {
-    const host = 'smtp.google.com';
-    const port = 465; // ✅ Correct SSL port
-    const secure = true; // SSL
+    const host = 'smtp.gmail.com'; // ✅ Correct host
+    const port = 465; // SSL
+    const secure = true; // true for port 465
     const user = 'blackfostercarersalliance@gmail.com';
-    const pass = 'vvho ubhi akem wzsq'; // ✅ Your email password
+    const pass = 'vvho ubhi akem wzsq'; // Gmail App Password
 
     const transporter = nodemailer.createTransport({
         host,
         port,
-        secure, // true for port 465, false for 587
+        secure,
         auth: { user, pass },
     });
+
     return transporter;
 }
+
 
 function getTransporter() {
     if (!cachedTransporter) {
