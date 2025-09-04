@@ -359,6 +359,42 @@ const updateBookingStatus = async (req, res) => {
         console.error('Error sending confirmation email:', emailError);
         // Don't fail the update if email fails
       }
+
+      // On registration completion (confirmed), ensure invoice exists and is emailed
+      try {
+        const trainingEvent = updatedBooking.trainingEvent || (await TrainingEvent.findById(updatedBooking.trainingEvent));
+        if (trainingEvent && trainingEvent.price > 0) {
+          let invoiceId = updatedBooking.payment?.invoiceId;
+          let invoiceDoc = invoiceId ? await Invoice.findById(invoiceId) : null;
+
+          // Generate invoice if missing
+          if (!invoiceDoc) {
+            if (typeof generateInvoiceForBooking === 'function') {
+              invoiceDoc = await generateInvoiceForBooking(updatedBooking, trainingEvent);
+              updatedBooking.payment = {
+                ...(updatedBooking.payment || {}),
+                invoiceId: invoiceDoc?._id
+              };
+              await updatedBooking.save();
+            }
+          }
+
+          // Send invoice email if not sent before
+          if (invoiceDoc) {
+            const alreadySent = invoiceDoc.status && invoiceDoc.status !== 'draft';
+            if (!alreadySent) {
+              try {
+                await sendInvoiceEmail(invoiceDoc);
+                console.log('Invoice email sent on confirmation for booking:', updatedBooking._id);
+              } catch (invoiceEmailErr) {
+                console.error('Error sending invoice email on confirmation:', invoiceEmailErr);
+              }
+            }
+          }
+        }
+      } catch (confirmationInvoiceErr) {
+        console.error('Confirmation invoice check failed:', confirmationInvoiceErr);
+      }
     }
 
     // Auto-generate certificate when marked as completed
@@ -374,9 +410,43 @@ const updateBookingStatus = async (req, res) => {
       }
     }
 
-    // Note: Invoices are now generated and sent at registration time, not completion time
+    // On completion, ensure invoice exists and has been emailed to booking maker
     if (completion && completion.completed) {
-      console.log('Training marked as completed - invoice was already sent at registration');
+      try {
+        const trainingEvent = updatedBooking.trainingEvent || (await TrainingEvent.findById(updatedBooking.trainingEvent));
+        if (trainingEvent && trainingEvent.price > 0) {
+          let invoiceId = updatedBooking.payment?.invoiceId;
+          let invoiceDoc = invoiceId ? await Invoice.findById(invoiceId) : null;
+
+          // Generate invoice if missing
+          if (!invoiceDoc) {
+            if (typeof generateInvoiceForBooking === 'function') {
+              invoiceDoc = await generateInvoiceForBooking(updatedBooking, trainingEvent);
+              // persist link to booking
+              updatedBooking.payment = {
+                ...(updatedBooking.payment || {}),
+                invoiceId: invoiceDoc?._id
+              };
+              await updatedBooking.save();
+            }
+          }
+
+          // Send invoice email if not sent before
+          if (invoiceDoc) {
+            const alreadySent = invoiceDoc.status && invoiceDoc.status !== 'draft';
+            if (!alreadySent) {
+              try {
+                await sendInvoiceEmail(invoiceDoc);
+                console.log('Invoice email sent on completion for booking:', updatedBooking._id);
+              } catch (invoiceEmailErr) {
+                console.error('Error sending invoice email on completion:', invoiceEmailErr);
+              }
+            }
+          }
+        }
+      } catch (completionInvoiceErr) {
+        console.error('Completion invoice check failed:', completionInvoiceErr);
+      }
     }
 
     res.json(updatedBooking);

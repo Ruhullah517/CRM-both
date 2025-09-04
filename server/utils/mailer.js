@@ -32,7 +32,7 @@ function getTransporter() {
 }
 
 function getFromAddress() {
-    return process.env.SMTP_FROM || 'Black Foster Carers Alliance <hello@blackfostercarersalliance.co.uk>';
+    return process.env.SMTP_FROM || 'Black Foster Carers Alliance <blackfostercarersalliance@gmail.com>';
 }
 
 async function sendMail(options) {
