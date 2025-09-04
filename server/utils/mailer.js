@@ -18,9 +18,6 @@ function createTransporter() {
         port,
         secure, // true for port 465, false for 587
         auth: { user, pass },
-        tls: {
-            ciphers: "SSLv3",
-        },
     });
     return transporter;
 }
