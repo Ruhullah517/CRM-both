@@ -7,11 +7,11 @@ const nodemailer = require('nodemailer');
 let cachedTransporter = null;
 
 function createTransporter() {
-    const host = 'smtp.office365.com';
-    const port = 587; // ✅ Correct SSL port
-    const secure = false; // SSL
-    const user = 'hello@blackfostercarersalliance.co.uk';
-    const pass = 'Tinytoe08'; // ✅ Your email password
+    const host = 'smtp.google.com';
+    const port = 465; // ✅ Correct SSL port
+    const secure = true; // SSL
+    const user = 'blackfostercarersalliance@gmail.com';
+    const pass = 'vvho ubhi akem wzsq'; // ✅ Your email password
 
     const transporter = nodemailer.createTransport({
         host,
@@ -21,9 +21,7 @@ function createTransporter() {
         tls: {
             ciphers: "SSLv3",
         },
-
     });
-
     return transporter;
 }
 
