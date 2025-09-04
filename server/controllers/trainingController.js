@@ -331,7 +331,7 @@ const createBooking = async (req, res) => {
 // Update booking status (attendance, completion)
 const updateBookingStatus = async (req, res) => {
   try {
-    const { status, attendance, completion } = req.body;
+    const { status, attendance, completion, payment } = req.body;
 
     const booking = await TrainingBooking.findById(req.params.id);
     if (!booking) {
@@ -343,6 +343,7 @@ const updateBookingStatus = async (req, res) => {
     if (status) updateData.status = status;
     if (attendance) updateData.attendance = { ...booking.attendance, ...attendance };
     if (completion) updateData.completion = { ...booking.completion, ...completion };
+    if (payment) updateData.payment = { ...booking.payment, ...payment };
 
     const updatedBooking = await TrainingBooking.findByIdAndUpdate(
       req.params.id,
