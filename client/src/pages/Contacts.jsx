@@ -211,7 +211,7 @@ const ContactForm = ({ contact, onBack, onSave, loading }) => {
 
   function handleSubmit(e) {
     e.preventDefault();
-    onSave({ ...contact, ...form });
+    onSave({ ...(contact || {}), ...form });
   }
 
   return (
@@ -482,8 +482,7 @@ const Contacts = () => {
   }
 
   if (view === "detail" && selected) return <ContactDetail contact={selected} onBack={() => setView("list")} onEdit={() => setView("form")} />;
-  if (view === "form" && selected) return <ContactForm contact={selected} onBack={() => setView("list")} onSave={handleSaveContact} loading={false} />;
-  if (view === "add") return <ContactForm onBack={() => setView("list")} onSave={handleSaveContact} loading={false} />;
+  if (view === "form") return <ContactForm contact={selected} onBack={() => setView("list")} onSave={handleSaveContact} loading={saving} />;
   return (
     <>
       {error && <div className="mb-4 text-red-600">{error}</div>}

@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [react(),tailwindcss(),],
   server: {
     proxy: {
-      '/uploads': 'https://crm-backend-0v14.onrender.com',
+      '/uploads': 'http://backendcrm.blackfostercarersalliance.co.uk',
     },
   },
 })

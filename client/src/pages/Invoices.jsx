@@ -8,7 +8,8 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   CurrencyPoundIcon,
-  ArrowDownTrayIcon
+  ArrowDownTrayIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import api from '../services/api';
@@ -21,6 +22,7 @@ const Invoices = () => {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [stats, setStats] = useState({});
   const [markingAsPaid, setMarkingAsPaid] = useState(null);
+  const [sendingEmail, setSendingEmail] = useState(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -166,6 +168,25 @@ const Invoices = () => {
       document.body.removeChild(a);
     } catch (error) {
       console.error('Error downloading invoice:', error);
+    }
+  };
+
+  const sendInvoiceEmail = async (invoiceId) => {
+    try {
+      setSendingEmail(invoiceId);
+      console.log('Sending invoice email for:', invoiceId);
+      await api.post(`/training/invoices/${invoiceId}/resend-email`);
+      console.log('Invoice email sent successfully');
+      
+      // Refresh invoices to update status
+      await fetchInvoices();
+      
+      alert('Invoice email sent successfully!');
+    } catch (error) {
+      console.error('Error sending invoice email:', error);
+      alert('Error sending invoice email. Please try again.');
+    } finally {
+      setSendingEmail(null);
     }
   };
 
@@ -399,6 +420,29 @@ const Invoices = () => {
                         <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
                         Download
                       </button>
+                      {invoice.client.email && (
+                        <button
+                          onClick={() => sendInvoiceEmail(invoice._id)}
+                          disabled={sendingEmail === invoice._id}
+                          className={`flex items-center ${
+                            sendingEmail === invoice._id 
+                              ? 'text-gray-400 cursor-not-allowed' 
+                              : 'text-orange-600 hover:text-orange-900'
+                          }`}
+                        >
+                          {sendingEmail === invoice._id ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-1"></div>
+                              Sending...
+                            </>
+                          ) : (
+                            <>
+                              <EnvelopeIcon className="h-4 w-4 mr-1" />
+                              Send Email
+                            </>
+                          )}
+                        </button>
+                      )}
                       {invoice.status !== 'paid' && (
                         <button
                           onClick={() => markAsPaid(invoice._id)}
@@ -466,6 +510,23 @@ const Invoices = () => {
                 >
                   <DocumentArrowDownIcon className="h-4 w-4" />
                 </button>
+                {invoice.client.email && (
+                  <button
+                    onClick={() => sendInvoiceEmail(invoice._id)}
+                    disabled={sendingEmail === invoice._id}
+                    className={`p-1 ${
+                      sendingEmail === invoice._id 
+                        ? 'text-gray-400 cursor-not-allowed' 
+                        : 'text-orange-600 hover:text-orange-900'
+                    }`}
+                  >
+                    {sendingEmail === invoice._id ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                    ) : (
+                      <EnvelopeIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                )}
                 {invoice.status !== 'paid' && (
                   <button
                     onClick={() => markAsPaid(invoice._id)}
@@ -797,6 +858,32 @@ const Invoices = () => {
                 )}
 
                 <div className="flex justify-end space-x-3">
+                  {selectedInvoice.client.email && (
+                    <button
+                      onClick={() => {
+                        sendInvoiceEmail(selectedInvoice._id);
+                        setShowDetailsModal(false);
+                      }}
+                      disabled={sendingEmail === selectedInvoice._id}
+                      className={`px-4 py-2 text-sm font-medium rounded-md flex items-center ${
+                        sendingEmail === selectedInvoice._id 
+                          ? 'text-gray-400 bg-gray-100 cursor-not-allowed' 
+                          : 'text-white bg-orange-500 hover:bg-orange-600'
+                      }`}
+                    >
+                      {sendingEmail === selectedInvoice._id ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-2"></div>
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <EnvelopeIcon className="h-4 w-4 mr-2" />
+                          Send Email
+                        </>
+                      )}
+                    </button>
+                  )}
                   <button
                     onClick={() => setShowDetailsModal(false)}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"

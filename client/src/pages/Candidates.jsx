@@ -159,7 +159,7 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => (
       {(candidate.documents || []).map((d, i) =>
         <li key={i} className="flex items-center gap-2">
           <a
-            href={`https://crm-backend-0v14.onrender.com${d.url}`}
+            href={`http://backendcrm.blackfostercarersalliance.co.uk${d.url}`}
             className="text-blue-700 hover:underline"
             target="_blank"
             rel="noopener noreferrer"
@@ -196,7 +196,7 @@ const CandidateForm = ({ candidate, onBack, onSave, mentors }) => {
     formData.append("name", newDocumentName);
 
     // Adjust the URL to your backend endpoint
-    const res = await fetch("https://crm-backend-0v14.onrender.com/api/candidates/upload-document", {
+    const res = await fetch("http://backendcrm.blackfostercarersalliance.co.uk/api/candidates/upload-document", {
       method: "POST",
       body: formData,
     });
@@ -297,7 +297,7 @@ const CandidateForm = ({ candidate, onBack, onSave, mentors }) => {
             {documents.map((d, i) => (
               <li key={i} className="flex items-center gap-2">
                 <a
-                  href={`https://crm-backend-0v14.onrender.com${d.url}`}
+                  href={`http://backendcrm.blackfostercarersalliance.co.uk${d.url}`}
                   className="text-blue-700 hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"

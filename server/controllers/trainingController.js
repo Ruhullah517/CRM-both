@@ -627,6 +627,15 @@ const sendInvoiceEmail = async (invoice) => {
     let pdfPath;
     if (invoice.invoiceUrl) {
       pdfPath = path.join(__dirname, '..', invoice.invoiceUrl.replace('/uploads/', 'uploads/'));
+      // Check if file exists, if not regenerate it
+      if (!fs.existsSync(pdfPath)) {
+        console.log('Invoice PDF not found, regenerating...');
+        const pdfUrl = await generateInvoicePDFFile(invoice);
+        invoice.invoiceUrl = pdfUrl;
+        await invoice.save();
+        pdfPath = path.join(__dirname, '..', pdfUrl.replace('/uploads/', 'uploads/'));
+        console.log('Invoice PDF regenerated at:', pdfPath);
+      }
     } else {
       // Generate PDF if not exists
       const pdfUrl = await generateInvoicePDFFile(invoice);
@@ -693,7 +702,19 @@ const sendCertificateEmail = async (certificate) => {
     //     ciphers: "SSLv3"
     //   }
     // });
-    const pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
+    
+    // Check if certificate PDF exists, if not regenerate it
+    let pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
+    
+    if (!fs.existsSync(pdfPath)) {
+      console.log('Certificate PDF not found, regenerating...');
+      // Regenerate the certificate PDF
+      const newPdfUrl = await generateCertificatePDF(certificate);
+      certificate.certificateUrl = newPdfUrl;
+      await certificate.save();
+      pdfPath = path.join(__dirname, '..', newPdfUrl.replace('/uploads/', 'uploads/'));
+      console.log('Certificate PDF regenerated at:', pdfPath);
+    }
 
     // Note: Invoices are now sent at registration time, not with certificates
     const booking = await TrainingBooking.findById(certificate.trainingBooking);
@@ -1088,10 +1109,16 @@ const downloadCertificate = async (req, res) => {
       return res.status(404).json({ msg: 'Certificate not found' });
     }
 
-    const pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
+    let pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
 
     if (!fs.existsSync(pdfPath)) {
-      return res.status(404).json({ msg: 'Certificate file not found' });
+      console.log('Certificate PDF not found, regenerating...');
+      // Regenerate the certificate PDF
+      const newPdfUrl = await generateCertificatePDF(certificate);
+      certificate.certificateUrl = newPdfUrl;
+      await certificate.save();
+      pdfPath = path.join(__dirname, '..', newPdfUrl.replace('/uploads/', 'uploads/'));
+      console.log('Certificate PDF regenerated at:', pdfPath);
     }
 
     res.download(pdfPath, `certificate-${certificate.certificateNumber}.pdf`);
