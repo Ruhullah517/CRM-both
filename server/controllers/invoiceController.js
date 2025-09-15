@@ -205,7 +205,7 @@ const generateInvoicePDFFile = async (invoice) => {
       doc.fontSize(10).font('Helvetica').fillColor('#666');
       doc.text('Black Foster Carers CIC', 40, 95);
       doc.text('6 St Michael Court, West Bromwich B70 BET, United Kingdom', 40, 110);
-      doc.text('Email: rachel@blackfostercarersalliance.co.uk', 40, 125);
+      doc.text('Email: hello@blackfostercarersalliance.co.uk', 40, 125);
       doc.text('Website: www.blackfostercarersalliance.co.uk', 40, 140);
 
       // Invoice title and details (right side)

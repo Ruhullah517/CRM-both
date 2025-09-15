@@ -420,7 +420,7 @@ const Invoices = () => {
                         <DocumentArrowDownIcon className="h-4 w-4 mr-1" />
                         Download
                       </button>
-                      {invoice.client.email && (
+                      {invoice.client.email && invoice.status !== 'paid' && (
                         <button
                           onClick={() => sendInvoiceEmail(invoice._id)}
                           disabled={sendingEmail === invoice._id}
@@ -510,7 +510,7 @@ const Invoices = () => {
                 >
                   <DocumentArrowDownIcon className="h-4 w-4" />
                 </button>
-                {invoice.client.email && (
+                {invoice.client.email && invoice.status !== 'paid' && (
                   <button
                     onClick={() => sendInvoiceEmail(invoice._id)}
                     disabled={sendingEmail === invoice._id}
@@ -858,7 +858,7 @@ const Invoices = () => {
                 )}
 
                 <div className="flex justify-end space-x-3">
-                  {selectedInvoice.client.email && (
+                  {selectedInvoice.client.email && selectedInvoice.status !== 'paid' && (
                     <button
                       onClick={() => {
                         sendInvoiceEmail(selectedInvoice._id);

@@ -905,8 +905,8 @@ const generateCertificatePDF = async (certificate) => {
         .lineWidth(1)
         .stroke('#6c757d');
 
-      // Add company logo/name area
-      doc.fontSize(16)
+      // Add company logo/name area (reduced size to prevent overflow)
+      doc.fontSize(10)
         .font('Helvetica-Bold')
         .fill('#007bff')
         .text('CRM Training System', 50, 520, {
