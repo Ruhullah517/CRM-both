@@ -12,7 +12,7 @@ export default function AdobeCallback() {
     if (code) {
       // Send the code to your backend to exchange for access_token
       axios
-        .post('http://backendcrm.blackfostercarersalliance.co.uk/api/adobe/exchange-token', {
+        .post('https://backendcrm.blackfostercarersalliance.co.uk/api/adobe/exchange-token', {
           code,
           redirectUri: 'https://crm-both.vercel.app/adobe/callback',
         })

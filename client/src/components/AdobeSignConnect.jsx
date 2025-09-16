@@ -2,7 +2,7 @@ import React from 'react';
 
 const AdobeSignConnect = () => {
     const CLIENT_ID = 'ats-2d31a55f-feaf-4b56-ba7b-2b3a89f4d86f';
-    const REDIRECT_URI = 'http://backendcrm.blackfostercarersalliance.co.uk/adobe/callback'; // your frontend URL
+    const REDIRECT_URI = 'https://backendcrm.blackfostercarersalliance.co.uk/adobe/callback'; // your backend callback URL
     const STATE = 'your-unique-state-value'; // you can also generate dynamically
 
     const handleConnect = () => {

@@ -39,7 +39,7 @@ export default function AppRouter() {
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/candidates" element={<Candidates />} />
-            <Route path="/cases" element={<Cases />} />
+            <Route path="/referrals" element={<Cases />} />
             <Route path="/contracts" element={<Contracts />} />
             <Route path="/freelancers" element={<Freelancers />} />
             <Route path="/contacts" element={<Contacts />} />

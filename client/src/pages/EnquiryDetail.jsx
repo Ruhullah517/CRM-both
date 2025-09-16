@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getEnquiryById, approveEnquiry, rejectEnquiry, assignEnquiry, deleteEnquiry } from '../services/enquiries';
 import { getAssessmentByEnquiryId, createAssessment } from '../services/assessments';
+import { createFullAssessment, allocateMentoring, addCaseNote } from '../services/recruitment';
 import { getApplicationByEnquiryId, uploadApplication } from '../services/applications';
 import { getUsers } from '../services/users';
 import { useAuth } from '../contexts/AuthContext';
@@ -61,6 +62,21 @@ export default function EnquiryDetail() {
   const [applicationLoading, setApplicationLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+
+  // Full Assessment state (minimal)
+  const [faRecommendation, setFaRecommendation] = useState('Proceed');
+  const [faChecksDone, setFaChecksDone] = useState('');
+  const [faNotes, setFaNotes] = useState('');
+  const [faSubmitting, setFaSubmitting] = useState(false);
+
+  // Mentoring allocation
+  const [mentorId, setMentorId] = useState('');
+  const [meetingSchedule, setMeetingSchedule] = useState('');
+  const [allocSubmitting, setAllocSubmitting] = useState(false);
+
+  // Case note
+  const [caseNote, setCaseNote] = useState('');
+  const [noteSubmitting, setNoteSubmitting] = useState(false);
 
 
   useEffect(() => {
@@ -181,6 +197,49 @@ export default function EnquiryDetail() {
     } finally {
       setUploading(false);
     }
+  }
+
+  async function handleCreateFullAssessment(e) {
+    e.preventDefault();
+    setFaSubmitting(true);
+    try {
+      await createFullAssessment({
+        enquiryId: id,
+        recommendation: faRecommendation,
+        checksDone: faChecksDone ? faChecksDone.split(',').map(s => s.trim()).filter(Boolean) : [],
+        notes: faNotes,
+      });
+      alert('Full assessment saved.');
+    } catch (err) {
+      alert('Failed to save full assessment');
+    }
+    setFaSubmitting(false);
+  }
+
+  async function handleAllocateMentor(e) {
+    e.preventDefault();
+    setAllocSubmitting(true);
+    try {
+      await allocateMentoring({ enquiryId: id, mentorId, meetingSchedule });
+      alert('Mentor allocated.');
+    } catch (err) {
+      alert('Failed to allocate mentor');
+    }
+    setAllocSubmitting(false);
+  }
+
+  async function handleAddCaseNote(e) {
+    e.preventDefault();
+    if (!caseNote.trim()) return;
+    setNoteSubmitting(true);
+    try {
+      await addCaseNote({ enquiryId: id, content: caseNote });
+      setCaseNote('');
+      alert('Case note added.');
+    } catch (err) {
+      alert('Failed to add case note');
+    }
+    setNoteSubmitting(false);
   }
   async function handleDelete(id) {
     if (!window.confirm('Are you sure you want to delete this enquiry?')) return;
@@ -324,7 +383,7 @@ export default function EnquiryDetail() {
                 <p className="mt-2">
                   <b>File:</b>{" "}
                   <a
-                    href={`http://backendcrm.blackfostercarersalliance.co.uk/${application.application_form_path}`}
+                    href={`https://backendcrm.blackfostercarersalliance.co.uk/${application.application_form_path}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#2EAB2C] hover:underline break-all"
@@ -387,6 +446,52 @@ export default function EnquiryDetail() {
           </div>
         )}
 
+      </DetailSection>
+
+      {/* Full Assessment (minimal) */}
+      <DetailSection title="Full Assessment" isOpen={openSection === 'fullAssessment'} onToggle={() => toggleSection('fullAssessment')}>
+        <form onSubmit={handleCreateFullAssessment} className="space-y-3">
+          <div>
+            <label className="block font-semibold mb-1">Recommendation</label>
+            <select className="w-full border rounded px-2 py-1" value={faRecommendation} onChange={e => setFaRecommendation(e.target.value)}>
+              <option>Proceed</option>
+              <option>Do not proceed</option>
+              <option>Hold</option>
+            </select>
+          </div>
+          <div>
+            <label className="block font-semibold mb-1">Checks Done (comma separated)</label>
+            <input className="w-full border rounded px-2 py-1" placeholder="DBS, References, Home Safety" value={faChecksDone} onChange={e => setFaChecksDone(e.target.value)} />
+          </div>
+          <div>
+            <label className="block font-semibold mb-1">Notes</label>
+            <textarea className="w-full border rounded px-2 py-1" value={faNotes} onChange={e => setFaNotes(e.target.value)} />
+          </div>
+          <button type="submit" disabled={faSubmitting} className="bg-blue-600 text-white px-3 py-2 rounded">{faSubmitting ? 'Saving...' : 'Save Full Assessment'}</button>
+        </form>
+      </DetailSection>
+
+      {/* Mentoring Allocation */}
+      <DetailSection title="Mentoring Allocation" isOpen={openSection === 'mentoring'} onToggle={() => toggleSection('mentoring')}>
+        <form onSubmit={handleAllocateMentor} className="space-y-3">
+          <div>
+            <label className="block font-semibold mb-1">Mentor ID</label>
+            <input className="w-full border rounded px-2 py-1" placeholder="Mentor ID" value={mentorId} onChange={e => setMentorId(e.target.value)} />
+          </div>
+          <div>
+            <label className="block font-semibold mb-1">Meeting Schedule</label>
+            <input className="w-full border rounded px-2 py-1" placeholder="e.g. Weekly" value={meetingSchedule} onChange={e => setMeetingSchedule(e.target.value)} />
+          </div>
+          <button type="submit" disabled={allocSubmitting} className="bg-purple-600 text-white px-3 py-2 rounded">{allocSubmitting ? 'Allocating...' : 'Allocate Mentor'}</button>
+        </form>
+      </DetailSection>
+
+      {/* Case Notes */}
+      <DetailSection title="Case Notes" isOpen={openSection === 'caseNotes'} onToggle={() => toggleSection('caseNotes')}>
+        <form onSubmit={handleAddCaseNote} className="space-y-3">
+          <textarea className="w-full border rounded px-2 py-1" placeholder="Add case note" value={caseNote} onChange={e => setCaseNote(e.target.value)} />
+          <button type="submit" disabled={noteSubmitting} className="bg-gray-800 text-white px-3 py-2 rounded">{noteSubmitting ? 'Adding...' : 'Add Note'}</button>
+        </form>
       </DetailSection>
 
       {/* Form F Assessment Tracker Section */}

@@ -21,8 +21,8 @@ import img3 from '../../public/img3.png';
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', roles: ['admin', 'staff', 'caseworker', 'freelancer'], icon: HomeIcon },
   // { name: 'Recruitment Pipeline', path: '/pipeline', roles: ['admin', 'staff'], icon: Squares2X2Icon },
-  { name: 'Candidates', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon },
-  { name: 'Cases', path: '/cases', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon },
+  { name: 'Foster Carers', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon },
+  { name: 'referrals', path: '/referrals', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon },
   { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon },
           { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon },
         { name: 'Contacts', path: '/contacts', roles: ['admin', 'staff'], icon: IdentificationIcon },

@@ -34,8 +34,8 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
   return (
     <div className="max-w-5xl mx-auto p-4">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
-        <input placeholder="Search candidates..." value={search} onChange={e => setSearch(e.target.value)} className="px-3 py-2 border rounded w-full sm:w-64" />
-        <button onClick={onAdd} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 transition">Add Candidate</button>
+        <input placeholder="Search foster carers..." value={search} onChange={e => setSearch(e.target.value)} className="px-3 py-2 border rounded w-full sm:w-64" />
+        <button onClick={onAdd} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800 transition">Add Foster Carer</button>
       </div>
       {/* Table for sm and up */}
       <div className="overflow-x-auto rounded shadow bg-white hidden sm:block">
@@ -159,7 +159,7 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => (
       {(candidate.documents || []).map((d, i) =>
         <li key={i} className="flex items-center gap-2">
           <a
-            href={`http://backendcrm.blackfostercarersalliance.co.uk${d.url}`}
+            href={`https://backendcrm.blackfostercarersalliance.co.uk${d.url}`}
             className="text-blue-700 hover:underline"
             target="_blank"
             rel="noopener noreferrer"
@@ -196,7 +196,7 @@ const CandidateForm = ({ candidate, onBack, onSave, mentors }) => {
     formData.append("name", newDocumentName);
 
     // Adjust the URL to your backend endpoint
-    const res = await fetch("http://backendcrm.blackfostercarersalliance.co.uk/api/candidates/upload-document", {
+    const res = await fetch("https://backendcrm.blackfostercarersalliance.co.uk/api/candidates/upload-document", {
       method: "POST",
       body: formData,
     });
@@ -233,7 +233,7 @@ const CandidateForm = ({ candidate, onBack, onSave, mentors }) => {
   return (
     <div className="max-w-xl mx-auto p-4 bg-white rounded shadow mt-6">
       <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
-      <h2 className="text-xl font-bold mb-4">{candidate ? "Edit" : "Add"} Candidate</h2>
+      <h2 className="text-xl font-bold mb-4">{candidate ? "Edit" : "Add"} Foster Carer</h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
         <input placeholder="Name" value={name} onChange={e => setName(e.target.value)} className="w-full px-4 py-2 border rounded" />
         <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-4 py-2 border rounded" />
@@ -297,7 +297,7 @@ const CandidateForm = ({ candidate, onBack, onSave, mentors }) => {
             {documents.map((d, i) => (
               <li key={i} className="flex items-center gap-2">
                 <a
-                  href={`http://backendcrm.blackfostercarersalliance.co.uk${d.url}`}
+                  href={`https://backendcrm.blackfostercarersalliance.co.uk${d.url}`}
                   className="text-blue-700 hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"

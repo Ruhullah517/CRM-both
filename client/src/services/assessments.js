@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'https://crm-backend-0v14.onrender.com/api/assessments';
+const API_URL = 'https://backendcrm.blackfostercarersalliance.co.uk/api/assessments';
 
 export const getAssessmentByEnquiryId = async (enquiryId) => {
   const response = await axios.get(`${API_URL}/${enquiryId}`);

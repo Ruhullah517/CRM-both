@@ -20,7 +20,7 @@ const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
         .toLowerCase()
         .includes(search.toLowerCase())
   );
-  const backendBaseUrl = "http://backendcrm.blackfostercarersalliance.co.uk";
+  const backendBaseUrl = "https://backendcrm.blackfostercarersalliance.co.uk";
   // statusColors should be defined in the file already
 
   return (
@@ -394,7 +394,7 @@ const Contracts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
-  const backendBaseUrl = "http://backendcrm.blackfostercarersalliance.co.uk";
+  const backendBaseUrl = "https://backendcrm.blackfostercarersalliance.co.uk";
 
   useEffect(() => {
     fetchContracts();

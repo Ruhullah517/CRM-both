@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getEnquiries, approveEnquiry, rejectEnquiry, assignEnquiry } from '../services/enquiries';
+import { createInitialAssessment, createFullAssessment, allocateMentoring } from '../services/recruitment';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
 
@@ -12,6 +13,12 @@ export default function Enquiries() {
   const [rejectReason, setRejectReason] = useState('');
   const [assigningId, setAssigningId] = useState(null);
   const [staffId, setStaffId] = useState('');
+  const [iaOpenId, setIaOpenId] = useState(null);
+  const [iaResult, setIaResult] = useState('Pass');
+  const [faOpenId, setFaOpenId] = useState(null);
+  const [faRecommendation, setFaRecommendation] = useState('Proceed');
+  const [mentorOpenId, setMentorOpenId] = useState(null);
+  const [mentorId, setMentorId] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -85,6 +92,9 @@ export default function Enquiries() {
                   <td className="border px-4 py-2">{enq.assigned_to_name || '-'}</td>
                   <td className="border px-4 py-2 space-x-2">
                     <button className="bg-black text-white px-2 py-1 rounded" onClick={() => navigate(`/enquiries/${enq._id}`)}>View</button>
+                    <button className="bg-green-600 text-white px-2 py-1 rounded" onClick={() => setIaOpenId(enq._id)}>Initial Assessment</button>
+                    <button className="bg-blue-600 text-white px-2 py-1 rounded" onClick={() => setFaOpenId(enq._id)}>Full Assessment</button>
+                    <button className="bg-purple-600 text-white px-2 py-1 rounded" onClick={() => setMentorOpenId(enq._id)}>Allocate Mentor</button>
                     {/* <button className="bg-green-500 text-white px-2 py-1 rounded" onClick={() => handleApprove(enq._id)} disabled={enq.status === 'Approved'}>Approve</button>
                     <button className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => setRejectingId(enq._id)} disabled={enq.status === 'Rejected'}>Reject</button>
                     <button className="bg-yellow-500 text-white px-2 py-1 rounded" onClick={() => setAssigningId(enq._id)}>Assign</button> */}
@@ -112,6 +122,35 @@ export default function Enquiries() {
                         />
                         <button className="bg-yellow-700 text-white px-2 py-1 rounded ml-1" onClick={() => handleAssign(enq._id)}>Confirm</button>
                         <button className="ml-1" onClick={() => setAssigningId(null)}>Cancel</button>
+                      </span>
+                    )}
+                    {iaOpenId === enq._id && (
+                      <span className="ml-2">
+                        <select className="border px-2 py-1 rounded" value={iaResult} onChange={e => setIaResult(e.target.value)}>
+                          <option>Pass</option>
+                          <option>Fail</option>
+                          <option>Needs More Info</option>
+                        </select>
+                        <button className="bg-green-700 text-white px-2 py-1 rounded ml-1" onClick={async () => { await createInitialAssessment({ enquiryId: enq._id, result: iaResult }); setIaOpenId(null); fetchEnquiries(); }}>Save</button>
+                        <button className="ml-1" onClick={() => setIaOpenId(null)}>Cancel</button>
+                      </span>
+                    )}
+                    {faOpenId === enq._id && (
+                      <span className="ml-2">
+                        <select className="border px-2 py-1 rounded" value={faRecommendation} onChange={e => setFaRecommendation(e.target.value)}>
+                          <option>Proceed</option>
+                          <option>Do not proceed</option>
+                          <option>Hold</option>
+                        </select>
+                        <button className="bg-blue-700 text-white px-2 py-1 rounded ml-1" onClick={async () => { await createFullAssessment({ enquiryId: enq._id, recommendation: faRecommendation }); setFaOpenId(null); fetchEnquiries(); }}>Save</button>
+                        <button className="ml-1" onClick={() => setFaOpenId(null)}>Cancel</button>
+                      </span>
+                    )}
+                    {mentorOpenId === enq._id && (
+                      <span className="ml-2">
+                        <input type="text" placeholder="Mentor ID" className="border px-2 py-1 rounded" value={mentorId} onChange={e => setMentorId(e.target.value)} />
+                        <button className="bg-purple-700 text-white px-2 py-1 rounded ml-1" onClick={async () => { await allocateMentoring({ enquiryId: enq._id, mentorId }); setMentorId(''); setMentorOpenId(null); fetchEnquiries(); }}>Save</button>
+                        <button className="ml-1" onClick={() => setMentorOpenId(null)}>Cancel</button>
                       </span>
                     )}
                   </td>
