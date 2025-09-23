@@ -816,6 +816,20 @@ const generateCertificatePDF = async (certificate) => {
         .lineWidth(1)
         .stroke('#dee2e6');
 
+      // Add BFCA logo
+      try {
+        const logoPath1 = path.join(__dirname, '../uploads/logo.png');
+        const logoPath2 = path.join(__dirname, '../../client/public/logo.PNG');
+        
+        if (fs.existsSync(logoPath1)) {
+          doc.image(logoPath1, 50, 50, { width: 80, height: 80 });
+        } else if (fs.existsSync(logoPath2)) {
+          doc.image(logoPath2, 50, 50, { width: 80, height: 80 });
+        }
+      } catch (error) {
+        console.log('Logo not found for certificate, using text only');
+      }
+
       // Add certificate title
       doc.fontSize(36)
         .font('Helvetica-Bold')
@@ -909,7 +923,7 @@ const generateCertificatePDF = async (certificate) => {
       doc.fontSize(10)
         .font('Helvetica-Bold')
         .fill('#007bff')
-        .text('CRM Training System', 50, 520, {
+        .text('Black Foster Carers Alliance', 50, 520, {
           align: 'center',
           width: 150
         });

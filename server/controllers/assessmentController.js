@@ -38,7 +38,75 @@ const getAssessmentByEnquiryId = async (req, res) => {
   }
 };
 
+// Upload assessment attachments
+const uploadAttachments = async (req, res) => {
+  try {
+    const multer = require('multer');
+    const path = require('path');
+    const fs = require('fs');
+
+    // Configure multer for file uploads
+    const storage = multer.diskStorage({
+      destination: function (req, file, cb) {
+        const uploadPath = 'uploads/assessments';
+        if (!fs.existsSync(uploadPath)) {
+          fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        cb(null, uploadPath);
+      },
+      filename: function (req, file, cb) {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+      }
+    });
+
+    const upload = multer({ 
+      storage: storage,
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+      fileFilter: (req, file, cb) => {
+        const allowedTypes = /pdf|doc|docx|jpg|jpeg|png|txt/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+        
+        if (mimetype && extname) {
+          return cb(null, true);
+        } else {
+          cb(new Error('Only PDF, DOC, DOCX, JPG, PNG, TXT files are allowed'));
+        }
+      }
+    });
+
+    upload.array('attachments', 10)(req, res, (err) => {
+      if (err) {
+        return res.status(400).json({ error: err.message });
+      }
+
+      if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'No files uploaded' });
+      }
+
+      const urls = req.files.map(file => ({
+        filename: file.originalname,
+        path: file.path,
+        url: `/uploads/assessments/${file.filename}`,
+        size: file.size,
+        mimetype: file.mimetype
+      }));
+
+      res.json({
+        success: true,
+        urls: urls,
+        message: `${req.files.length} file(s) uploaded successfully`
+      });
+    });
+  } catch (error) {
+    console.error('Error uploading attachments:', error);
+    res.status(500).json({ error: 'Server error during file upload' });
+  }
+};
+
 module.exports = {
   createAssessment,
   getAssessmentByEnquiryId,
+  uploadAttachments,
 }; 

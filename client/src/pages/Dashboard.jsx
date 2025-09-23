@@ -245,6 +245,39 @@ export default function Dashboard() {
               {contracts.length === 0 && <li className="text-gray-400">No contracts found.</li>}
             </ul>
           </div>
+          {/* Foster Carer Stage Tracking */}
+          <div className="bg-white rounded shadow p-6">
+            <h2 className="text-lg font-bold mb-4">Foster Carer Pipeline</h2>
+            <div className="space-y-3">
+              {enquiries.slice(0, 5).map((enquiry) => (
+                <div key={enquiry._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-gray-900">
+                      {enquiry.firstName} {enquiry.lastName}
+                    </span>
+                    <span className="text-sm text-gray-600">{enquiry.email}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      enquiry.pipelineStage === 'enquiry' ? 'bg-blue-100 text-blue-800' :
+                      enquiry.pipelineStage === 'initial-assessment' ? 'bg-yellow-100 text-yellow-800' :
+                      enquiry.pipelineStage === 'application' ? 'bg-purple-100 text-purple-800' :
+                      enquiry.pipelineStage === 'form-f-assessment' ? 'bg-green-100 text-green-800' :
+                      enquiry.pipelineStage === 'mentoring' ? 'bg-indigo-100 text-indigo-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {enquiry.pipelineStage || 'Enquiry'}
+                    </span>
+                    <div className="text-xs text-gray-500">
+                      {new Date(enquiry.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {enquiries.length === 0 && <div className="text-gray-400 text-center py-4">No enquiries found.</div>}
+            </div>
+          </div>
+
           {/* Recent Freelancers */}
           <div className="bg-white rounded shadow p-6">
             <h2 className="text-lg font-bold mb-4">Recent Freelancers</h2>

@@ -10,6 +10,10 @@ import DashboardLayout from '../layouts/DashboardLayout';
 import ResetPassword from '../pages/ResetPassword';
 import Profile from '../pages/Profile';
 import RecruitmentPipeline from '../pages/RecruitmentPipeline';
+import PublicMentorForm from '../pages/PublicMentorForm';
+import PublicFreelancerForm from '../pages/PublicFreelancerForm';
+import Recruitment from '../pages/Recruitment';
+import MyCases from '../pages/MyCases';
 import EmailTemplates from '../pages/EmailTemplates';
 import ContractTemplates from '../pages/ContractTemplates';
 import Mentors from '../pages/Mentors';
@@ -42,10 +46,13 @@ export default function AppRouter() {
       <Routes>
         <Route path="/" element={<Login />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/mentor-application" element={<PublicMentorForm />} />
+        <Route path="/freelancer-application" element={<PublicFreelancerForm />} />
         <Route element={<PrivateRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route element={<PrivateRoute roles={["admin", "manager", "staff"]} />}>
+              <Route path="/recruitment" element={<Recruitment />} />
               <Route path="/candidates" element={<Candidates />} />
               <Route path="/pipeline" element={<RecruitmentPipeline />} />
               <Route path="/email-templates" element={<EmailTemplates />} />
@@ -78,6 +85,18 @@ export default function AppRouter() {
             {/* Admin-only routes */}
             <Route element={<PrivateRoute roles={["admin"]} />}>
               <Route path="/users" element={<Users />} />
+            </Route>
+            
+            {/* Freelancer-specific routes */}
+            <Route element={<PrivateRoute roles={["freelancer"]} />}>
+              <Route path="/my-profile" element={<Profile />} />
+              <Route path="/my-cases" element={<MyCases />} />
+            </Route>
+            
+            {/* Mentor-specific routes */}
+            <Route element={<PrivateRoute roles={["mentor"]} />}>
+              <Route path="/my-profile" element={<Profile />} />
+              <Route path="/my-cases" element={<MyCases />} />
             </Route>
             <Route path="/enquiries" element={<Enquiries />} />
             <Route path="/enquiries/:id" element={<EnquiryDetail />} />

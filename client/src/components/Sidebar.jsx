@@ -18,11 +18,12 @@ import {
   CalendarIcon,
   ShieldCheckIcon,
   XMarkIcon,
+  BriefcaseIcon,
 } from '@heroicons/react/24/outline';
 import img3 from '../../public/img3.png';
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', roles: ['admin', 'staff', 'caseworker', 'freelancer'], icon: HomeIcon },
-  // { name: 'Recruitment Pipeline', path: '/pipeline', roles: ['admin', 'staff'], icon: Squares2X2Icon },
+  { name: 'Recruitment', path: '/recruitment', roles: ['admin', 'staff'], icon: UserGroupIcon },
   { name: 'Foster Carers', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon },
   { name: 'referrals', path: '/referrals', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon },
   { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon },
@@ -43,6 +44,15 @@ const navItems = [
   { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon },
   { name: 'Enquiries', path: '/enquiries', roles: ['admin', 'staff'], icon: QuestionMarkCircleIcon },
   { name: 'User Management', path: '/users', roles: ['admin'], icon: UserGroupIcon },
+  
+  // Freelancer-specific items
+  { name: 'My Cases', path: '/my-cases', roles: ['freelancer'], icon: BriefcaseIcon },
+  { name: 'My Profile', path: '/my-profile', roles: ['freelancer'], icon: UserCircleIcon },
+  
+  // Mentor-specific items  
+  { name: 'My Cases', path: '/my-cases', roles: ['mentor'], icon: BriefcaseIcon },
+  { name: 'My Profile', path: '/my-profile', roles: ['mentor'], icon: UserCircleIcon },
+  
   // { name: 'Settings', path: '/settings', roles: ['admin', 'staff'], icon: Cog6ToothIcon },
 ];
 

@@ -12,6 +12,7 @@ const InitialAssessment = () => {
   const [formData, setFormData] = useState({
     result: '',
     notes: '',
+    attachments: [],
     eligibilityChecks: {
       age: false,
       over21: false,
@@ -60,8 +61,34 @@ const InitialAssessment = () => {
     setLoading(true);
 
     try {
+      // Handle file uploads if any
+      let attachmentUrls = [];
+      if (formData.attachments.length > 0) {
+        const formDataToSend = new FormData();
+        formData.attachments.forEach((file, index) => {
+          formDataToSend.append(`attachments`, file);
+        });
+        formDataToSend.append('enquiryId', id);
+        formDataToSend.append('type', 'initial-assessment');
+
+        // Upload files
+        const uploadResponse = await fetch('https://crm-backend-0v14.onrender.com/api/assessments/upload-attachments', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: formDataToSend
+        });
+
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          attachmentUrls = uploadResult.urls || [];
+        }
+      }
+
       const assessmentData = {
         ...formData,
+        attachments: attachmentUrls,
         assessorId: JSON.parse(localStorage.getItem('user')).id,
         assessmentDate: new Date()
       };
@@ -122,6 +149,21 @@ const InitialAssessment = () => {
         ...prev[section],
         [field]: value
       }
+    }));
+  };
+
+  const handleFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    setFormData(prev => ({
+      ...prev,
+      attachments: [...prev.attachments, ...files]
+    }));
+  };
+
+  const removeFile = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter((_, i) => i !== index)
     }));
   };
 
@@ -289,6 +331,66 @@ const InitialAssessment = () => {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter detailed assessment notes..."
             />
+          </div>
+
+          {/* File Attachments */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Attachments</label>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+              <div className="text-center">
+                <svg className="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                  <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <div className="mt-4">
+                  <label htmlFor="file-upload" className="cursor-pointer">
+                    <span className="mt-2 block text-sm font-medium text-gray-900">
+                      Upload files
+                    </span>
+                    <input
+                      id="file-upload"
+                      name="file-upload"
+                      type="file"
+                      multiple
+                      className="sr-only"
+                      onChange={handleFileUpload}
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                    />
+                  </label>
+                  <p className="mt-1 text-xs text-gray-500">
+                    PDF, DOC, DOCX, JPG, PNG, TXT up to 10MB each
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* File List */}
+            {formData.attachments.length > 0 && (
+              <div className="mt-4">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Uploaded Files:</h4>
+                <ul className="space-y-2">
+                  {formData.attachments.map((file, index) => (
+                    <li key={index} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-md">
+                      <div className="flex items-center">
+                        <svg className="h-5 w-5 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-sm text-gray-900">{file.name}</span>
+                        <span className="text-xs text-gray-500 ml-2">
+                          ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeFile(index)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}

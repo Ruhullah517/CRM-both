@@ -137,6 +137,47 @@ const markInvoiceAsPaid = async (req, res) => {
   }
 };
 
+// Amend paid invoice (change status back to pending)
+const amendPaidInvoice = async (req, res) => {
+  try {
+    const invoice = await Invoice.findById(req.params.id);
+    if (!invoice) {
+      return res.status(404).json({ msg: 'Invoice not found' });
+    }
+
+    if (invoice.status !== 'paid') {
+      return res.status(400).json({ msg: 'Only paid invoices can be amended' });
+    }
+
+    // Change status back to pending and clear payment details
+    invoice.status = 'pending';
+    invoice.paidDate = null;
+    invoice.paymentMethod = null;
+    invoice.updated_at = new Date();
+
+    await invoice.save();
+
+    // Update related training booking payment status back to pending
+    if (invoice.relatedTrainingEvent) {
+      await TrainingBooking.updateMany(
+        { 
+          trainingEvent: invoice.relatedTrainingEvent,
+          'payment.invoiceId': invoice._id
+        },
+        { 
+          'payment.status': 'pending',
+          'payment.paidAt': null
+        }
+      );
+    }
+
+    res.json(invoice);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 // Delete invoice
 const deleteInvoice = async (req, res) => {
   try {
@@ -198,16 +239,31 @@ const generateInvoicePDFFile = async (invoice) => {
 
       // ===== HEADER SECTION =====
       // Company Logo and Name (Left Side)
+      try {
+        // Add logo if it exists - try both locations
+        const logoPath1 = path.join(__dirname, '../uploads/logo.png');
+        const logoPath2 = path.join(__dirname, '../../client/public/logo.PNG');
+        
+        if (fs.existsSync(logoPath1)) {
+          doc.image(logoPath1, 40, 40, { width: 60, height: 60 });
+        } else if (fs.existsSync(logoPath2)) {
+          doc.image(logoPath2, 40, 40, { width: 60, height: 60 });
+        }
+      } catch (error) {
+        console.log('Logo not found, using text only');
+      }
+      
       doc.fontSize(18).font('Helvetica-Bold').fillColor('#000');
-      doc.text('BLACK FOSTER CARERS', 40, 40);
+      doc.text('BLACK FOSTER CARERS', 40, 110);
       doc.fontSize(24).font('Helvetica-Bold').fillColor('#000');
-      doc.text('ALLIANCE', 40, 65);
+      doc.text('ALLIANCE', 40, 135);
       
       doc.fontSize(10).font('Helvetica').fillColor('#666');
-      doc.text('Black Foster Carers CIC', 40, 95);
-      doc.text('6 St Michael Court, West Bromwich B70 BET, United Kingdom', 40, 110);
-      doc.text('Email: hello@blackfostercarersalliance.co.uk', 40, 125);
-      doc.text('Website: www.blackfostercarersalliance.co.uk', 40, 140);
+      doc.text('Black Foster Carers CIC', 40, 165);
+      doc.text('6 St Michael Court, West Bromwich B70 BET, United Kingdom', 40, 180);
+      doc.text('Email: Enquiries@blackfostercarersalliance.co.uk', 40, 195);
+      doc.text('Phone: 0800 001 6230', 40, 210);
+      doc.text('Website: www.blackfostercarersalliance.co.uk', 40, 225);
 
       // Invoice title and details (right side)
       doc.fontSize(26).font('Helvetica-Bold').fillColor('#000');
@@ -239,19 +295,19 @@ const generateInvoicePDFFile = async (invoice) => {
       doc.text(new Date(invoice.dueDate).toLocaleDateString('en-GB'), 470, 155);
 
       // Draw header separator line
-      drawLine(140);
+      drawLine(250);
 
       // ===== BILL TO SECTION =====
       doc.fontSize(12).font('Helvetica-Bold').fillColor('#000');
-      doc.text('BFCA', 40, 180);
+      doc.text('BFCA', 40, 290);
       
       // ===== INVOICE SUMMARY =====
       doc.fontSize(12).font('Helvetica-Bold').fillColor('#000');
-      doc.text('Invoice Summary:', 400, 180);
+      doc.text('Invoice Summary:', 400, 290);
 
       // ===== ITEMS TABLE =====
       // Table header with dark grey background
-      const tableY = 220;
+      const tableY = 330;
       doc.rect(40, tableY, 510, 25).fill('#666');
       
       doc.fontSize(11).font('Helvetica-Bold').fillColor('#fff');
@@ -357,8 +413,8 @@ const generateInvoicePDFFile = async (invoice) => {
       drawLine(bottomY);
       
       doc.fontSize(9).font('Helvetica').fillColor('#999');
-      doc.text('Crafted with ease using', { align: 'center' });
-      doc.text('Visit zoho.com/invoice to create truly professional invoices', { align: 'center' });
+      doc.text('Black Foster Carers Alliance - Enquiries@blackfostercarersalliance.co.uk - 0800 001 6230', { align: 'center' });
+      doc.text('www.blackfostercarersalliance.co.uk', { align: 'center' });
 
       // Handle stream events
       stream.on('finish', () => {
@@ -924,6 +980,7 @@ module.exports = {
   createInvoice,
   updateInvoice,
   markInvoiceAsPaid,
+  amendPaidInvoice,
   deleteInvoice,
   generateInvoicePDF,
   generateInvoicePDFFile,

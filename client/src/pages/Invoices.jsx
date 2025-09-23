@@ -9,7 +9,8 @@ import {
   ExclamationTriangleIcon,
   CurrencyPoundIcon,
   ArrowDownTrayIcon,
-  EnvelopeIcon
+  EnvelopeIcon,
+  PencilIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import api from '../services/api';
@@ -118,6 +119,31 @@ const Invoices = () => {
     } catch (error) {
       console.error('Error marking invoice as paid:', error);
       alert('Error marking invoice as paid. Please try again.');
+    } finally {
+      setMarkingAsPaid(null);
+    }
+  };
+
+  const amendPaidInvoice = async (invoiceId) => {
+    if (!window.confirm('Are you sure you want to amend this paid invoice? This will change its status back to pending.')) {
+      return;
+    }
+
+    try {
+      setMarkingAsPaid(invoiceId);
+      console.log('Amending paid invoice:', invoiceId);
+      await api.put(`/invoices/${invoiceId}/amend-paid`);
+      console.log('Invoice amended successfully');
+      
+      // Refresh both invoices and stats
+      await fetchInvoices();
+      await fetchStats();
+      
+      console.log('Data refreshed after amending invoice');
+      alert('Invoice has been amended and status changed to pending.');
+    } catch (error) {
+      console.error('Error amending invoice:', error);
+      alert('Error amending invoice. Please try again.');
     } finally {
       setMarkingAsPaid(null);
     }
@@ -466,6 +492,29 @@ const Invoices = () => {
                           )}
                         </button>
                       )}
+                      {invoice.status === 'paid' && (
+                        <button
+                          onClick={() => amendPaidInvoice(invoice._id)}
+                          disabled={markingAsPaid === invoice._id}
+                          className={`flex items-center ${
+                            markingAsPaid === invoice._id 
+                              ? 'text-gray-400 cursor-not-allowed' 
+                              : 'text-orange-600 hover:text-orange-900'
+                          }`}
+                        >
+                          {markingAsPaid === invoice._id ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600 mr-1"></div>
+                              Amending...
+                            </>
+                          ) : (
+                            <>
+                              <PencilIcon className="h-4 w-4 mr-1" />
+                              Amend
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -541,6 +590,23 @@ const Invoices = () => {
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
                     ) : (
                       <CheckCircleIcon className="h-4 w-4" />
+                    )}
+                  </button>
+                )}
+                {invoice.status === 'paid' && (
+                  <button
+                    onClick={() => amendPaidInvoice(invoice._id)}
+                    disabled={markingAsPaid === invoice._id}
+                    className={`p-1 ${
+                      markingAsPaid === invoice._id 
+                        ? 'text-gray-400 cursor-not-allowed' 
+                        : 'text-orange-600 hover:text-orange-900'
+                    }`}
+                  >
+                    {markingAsPaid === invoice._id ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-600"></div>
+                    ) : (
+                      <PencilIcon className="h-4 w-4" />
                     )}
                   </button>
                 )}

@@ -27,7 +27,8 @@ const getEmailFooter = () => {
           <strong>Black Foster Carers Alliance</strong><br>
         </p>
         <p style="color: #6c757d; margin: 5px 0; font-size: 12px;">
-          Email: hello@blackfostercarersalliance.co.uk<br>
+          Email: Enquiries@blackfostercarersalliance.co.uk<br>
+          Phone: 0800 001 6230<br>
           Website: www.blackfostercarersalliance.co.uk
         </p>
         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">

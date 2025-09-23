@@ -63,9 +63,47 @@ const generateContract = async (req, res) => {
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontSize = 12;
     
+    // Add BFCA header
+    const headerFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    page.drawText('BLACK FOSTER CARERS ALLIANCE', { 
+      x: 40, 
+      y: height - 40, 
+      size: 16, 
+      font: headerFont 
+    });
+    
+    page.drawText('Black Foster Carers CIC', { 
+      x: 40, 
+      y: height - 60, 
+      size: 12, 
+      font: font 
+    });
+    
+    page.drawText('6 St Michael Court, West Bromwich B70 BET, United Kingdom', { 
+      x: 40, 
+      y: height - 80, 
+      size: 10, 
+      font: font 
+    });
+    
+    page.drawText('Email: Enquiries@blackfostercarersalliance.co.uk | Phone: 0800 001 6230', { 
+      x: 40, 
+      y: height - 100, 
+      size: 10, 
+      font: font 
+    });
+    
+    // Add separator line
+    page.drawLine({
+      start: { x: 40, y: height - 120 },
+      end: { x: width - 40, y: height - 120 },
+      thickness: 1,
+      color: { r: 0, g: 0, b: 0 }
+    });
+
     // Split content into lines for PDF rendering
     const lines = filledContent.split('\n');
-    let y = height - 40;
+    let y = height - 140;
     
     lines.forEach(line => {
       if (y > 40) { // Prevent text from going off the page

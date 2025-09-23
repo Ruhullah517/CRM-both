@@ -7,6 +7,7 @@ const {
   createInvoice,
   updateInvoice,
   markInvoiceAsPaid,
+  amendPaidInvoice,
   deleteInvoice,
   generateInvoicePDF,
   getInvoiceStats,
@@ -31,6 +32,7 @@ router.delete('/:id', authorize('admin', 'manager'), deleteInvoice);
 
 // Invoice actions
 router.put('/:id/mark-paid', authorize('admin', 'manager', 'staff'), markInvoiceAsPaid);
+router.put('/:id/amend-paid', authorize('admin', 'manager', 'staff'), amendPaidInvoice);
 router.put('/:id/send', authorize('admin', 'manager', 'staff'), sendInvoice);
 router.get('/:id/pdf', authorize('admin', 'manager', 'staff'), generateInvoicePDF);
 
