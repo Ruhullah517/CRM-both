@@ -205,4 +205,6 @@ module.exports = {
   updateUser,
   deleteUser,
   getUserById,
+  forgotPassword,
+  resetPassword,
 }; 
