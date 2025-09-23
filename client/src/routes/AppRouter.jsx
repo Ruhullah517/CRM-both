@@ -30,6 +30,9 @@ import EmailAutomations from '../pages/EmailAutomations';
 import GDPRManagement from '../pages/GDPRManagement';
 import ContactManagement from '../pages/ContactManagement';
 import Reports from '../pages/Reports';
+import InitialAssessment from '../pages/InitialAssessment';
+import FullAssessment from '../pages/FullAssessment';
+import CaseClosure from '../pages/CaseClosure';
 
 
 import PublicFeedback from '../pages/PublicFeedback';
@@ -51,6 +54,9 @@ export default function AppRouter() {
               <Route path="/email-management" element={<EmailManagement />} />
               <Route path="/email-automations" element={<EmailAutomations />} />
               <Route path="/gdpr-management" element={<GDPRManagement />} />
+              <Route path="/initial-assessment/:id" element={<InitialAssessment />} />
+              <Route path="/full-assessment/:id" element={<FullAssessment />} />
+              <Route path="/case-closure/:id" element={<CaseClosure />} />
               <Route path="/contract-templates" element={<ContractTemplates />} />
               <Route path="/mentors" element={<Mentors />} />
               <Route path="/freelancers" element={<Freelancers />} />

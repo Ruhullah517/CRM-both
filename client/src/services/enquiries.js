@@ -25,7 +25,18 @@ export const rejectEnquiry = async (id, reason) => {
 export const assignEnquiry = async (id, staffId) => {
   const response = await axios.post(`${API_URL}/${id}/assign`, { staffId });
   return response.data;
-}; 
+};
+
+export const updateEnquiry = async (id, data) => {
+  const response = await axios.put(`${API_URL}/${id}`, data);
+  return response.data;
+};
+
+export const createEnquiry = async (data) => {
+  const response = await axios.post(API_URL, data);
+  return response.data;
+};
+
 export async function deleteEnquiry(id) {
   const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete enquiry');
