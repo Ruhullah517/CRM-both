@@ -6,7 +6,6 @@ import Candidates from '../pages/Candidates';
 import Cases from '../pages/Cases';
 import Contracts from '../pages/Contracts';
 import Freelancers from '../pages/Freelancers';
-import Contacts from '../pages/Contacts';
 import DashboardLayout from '../layouts/DashboardLayout';
 import ResetPassword from '../pages/ResetPassword';
 import Profile from '../pages/Profile';
@@ -48,7 +47,6 @@ export default function AppRouter() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route element={<PrivateRoute roles={["admin", "manager", "staff"]} />}>
               <Route path="/candidates" element={<Candidates />} />
-              <Route path="/contacts" element={<Contacts />} />
               <Route path="/pipeline" element={<RecruitmentPipeline />} />
               <Route path="/email-templates" element={<EmailTemplates />} />
               <Route path="/email-management" element={<EmailManagement />} />

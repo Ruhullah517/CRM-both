@@ -1,23 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import Navbar from '../components/Navbar';
-import { Outlet, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import AuthGuard from '../components/AuthGuard';
+import { Outlet } from 'react-router-dom';
+import { Bars3Icon } from '@heroicons/react/24/outline';
 
 export default function DashboardLayout({ children }) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    if (!user) navigate('/');
-  }, [user, navigate]);
-
-  if (!user) return null;
-
   return (
-    <div className="flex h-screen bg-gray-100 overflow-hidden">
+    <AuthGuard>
+      <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div 
@@ -56,5 +49,6 @@ export default function DashboardLayout({ children }) {
         </main>
       </div>
     </div>
+    </AuthGuard>
   );
 }

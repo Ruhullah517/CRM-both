@@ -33,23 +33,56 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchAll() {
-      const [casesData, contractsData, freelancersData, enquiriesData, mentorsData, statsData, invoicesData] = await Promise.all([
-        getCases(),
-        getGeneratedContracts(),
-        getFreelancers(),
-        getEnquiries(),
-        getMentors(),
-        getInvoiceStats(),
-        listInvoices(),
-      ]);
-      setCases(casesData);
-      setContracts(contractsData);
-      setFreelancers(freelancersData);
-      setEnquiries(enquiriesData);
-      setMentors(mentorsData);
-      setInvoiceStats(statsData);
-      setOverdueInvoices((invoicesData || []).filter(inv => inv.status === 'overdue').slice(0,5));
-      setLoading(false);
+      // Check if user is authenticated
+      const user = localStorage.getItem('user');
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const [casesData, contractsData, freelancersData, enquiriesData, mentorsData, statsData, invoicesData] = await Promise.all([
+          getCases().catch(err => {
+            console.error('Error fetching cases:', err);
+            return [];
+          }),
+          getGeneratedContracts().catch(err => {
+            console.error('Error fetching contracts:', err);
+            return [];
+          }),
+          getFreelancers().catch(err => {
+            console.error('Error fetching freelancers:', err);
+            return [];
+          }),
+          getEnquiries().catch(err => {
+            console.error('Error fetching enquiries:', err);
+            return [];
+          }),
+          getMentors().catch(err => {
+            console.error('Error fetching mentors:', err);
+            return [];
+          }),
+          getInvoiceStats().catch(err => {
+            console.error('Error fetching invoice stats:', err);
+            return null;
+          }),
+          listInvoices().catch(err => {
+            console.error('Error fetching invoices:', err);
+            return [];
+          }),
+        ]);
+        setCases(casesData);
+        setContracts(contractsData);
+        setFreelancers(freelancersData);
+        setEnquiries(enquiriesData);
+        setMentors(mentorsData);
+        setInvoiceStats(statsData);
+        setOverdueInvoices((invoicesData || []).filter(inv => inv.status === 'overdue').slice(0,5));
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchAll();
   }, []);

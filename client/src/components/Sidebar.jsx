@@ -26,13 +26,12 @@ const navItems = [
   { name: 'Foster Carers', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon },
   { name: 'referrals', path: '/referrals', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon },
   { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon },
-          { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon },
-        { name: 'Contacts', path: '/contacts', roles: ['admin', 'staff'], icon: IdentificationIcon },
-        { name: 'Training Events', path: '/training', roles: ['admin', 'staff'], icon: TrainingIcon },
+  { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon },
+  { name: 'Training Events', path: '/training', roles: ['admin', 'staff'], icon: TrainingIcon },
 
-        { name: 'Certificates', path: '/certificates', roles: ['admin', 'staff'], icon: AcademicCapIcon },
-        { name: 'Invoices', path: '/invoices', roles: ['admin', 'staff'], icon: DocumentTextIcon },
-        { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon },
+  { name: 'Certificates', path: '/certificates', roles: ['admin', 'staff'], icon: AcademicCapIcon },
+  { name: 'Invoices', path: '/invoices', roles: ['admin', 'staff'], icon: DocumentTextIcon },
+  { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon },
 
   { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: EnvelopeIcon },
   { name: 'Email Management', path: '/email-management', roles: ['admin', 'staff'], icon: EnvelopeIcon },

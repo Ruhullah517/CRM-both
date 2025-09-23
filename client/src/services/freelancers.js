@@ -1,33 +1,12 @@
-import axios from 'axios';
-
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://crm-backend-0v14.onrender.com/api';
-
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
-  };
-};
-
-const getFormDataHeaders = () => {
-  const token = localStorage.getItem('token');
-  return {
-    'Authorization': `Bearer ${token}`
-  };
-};
+import api from './api';
 
 export const getFreelancers = async () => {
-  const response = await axios.get(`${API_BASE_URL}/freelancers`, {
-    headers: getAuthHeaders()
-  });
+  const response = await api.get('/freelancers');
   return response.data;
 };
 
 export const getFreelancerById = async (id) => {
-  const response = await axios.get(`${API_BASE_URL}/freelancers/${id}`, {
-    headers: getAuthHeaders()
-  });
+  const response = await api.get(`/freelancers/${id}`);
   return response.data;
 };
 
@@ -47,8 +26,10 @@ export const createFreelancer = async (freelancerData) => {
     }
   });
 
-  const response = await axios.post(`${API_BASE_URL}/freelancers`, formData, {
-    headers: getFormDataHeaders()
+  const response = await api.post('/freelancers', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   });
   return response.data;
 };
@@ -69,66 +50,53 @@ export const updateFreelancer = async (id, freelancerData) => {
     }
   });
 
-  const response = await axios.put(`${API_BASE_URL}/freelancers/${id}`, formData, {
-    headers: getFormDataHeaders()
+  const response = await api.put(`/freelancers/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   });
   return response.data;
 };
 
 export const deleteFreelancer = async (id) => {
-  const response = await axios.delete(`${API_BASE_URL}/freelancers/${id}`, {
-    headers: getAuthHeaders()
-  });
+  const response = await api.delete(`/freelancers/${id}`);
   return response.data;
 };
 
 // HR Module functions
-export const updateFreelancerAvailability = async (id, availability, availabilityNotes) => {
-  const response = await axios.put(`${API_BASE_URL}/freelancers/${id}/availability`, {
-    availability,
-    availabilityNotes
-  }, {
-    headers: getAuthHeaders()
-  });
+export const updateAvailability = async (id, availabilityData) => {
+  const response = await api.put(`/freelancers/${id}/availability`, availabilityData);
   return response.data;
 };
 
 export const addComplianceDocument = async (id, documentData) => {
   const formData = new FormData();
-  
-  Object.keys(documentData).forEach(key => {
-    if (key === 'complianceFile') {
-      if (documentData[key]) {
-        formData.append(key, documentData[key]);
-      }
-    } else {
-      formData.append(key, documentData[key] || '');
+  formData.append('name', documentData.name);
+  formData.append('type', documentData.type);
+  formData.append('expiryDate', documentData.expiryDate);
+  if (documentData.file) {
+    formData.append('file', documentData.file);
+  }
+
+  const response = await api.post(`/freelancers/${id}/compliance`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
     }
   });
-
-  const response = await axios.post(`${API_BASE_URL}/freelancers/${id}/compliance-documents`, formData, {
-    headers: getFormDataHeaders()
-  });
   return response.data;
 };
 
-export const addWorkHistory = async (id, workData) => {
-  const response = await axios.post(`${API_BASE_URL}/freelancers/${id}/work-history`, workData, {
-    headers: getAuthHeaders()
-  });
+export const addWorkHistory = async (id, workHistoryData) => {
+  const response = await api.post(`/freelancers/${id}/work-history`, workHistoryData);
   return response.data;
 };
 
-export const getExpiringCompliance = async (days = 30) => {
-  const response = await axios.get(`${API_BASE_URL}/freelancers/expiring-compliance?days=${days}`, {
-    headers: getAuthHeaders()
-  });
+export const getExpiringCompliance = async () => {
+  const response = await api.get('/freelancers/compliance/expiring');
   return response.data;
 };
 
-export const updateContractRenewal = async (id, contractData) => {
-  const response = await axios.put(`${API_BASE_URL}/freelancers/${id}/contract-renewal`, contractData, {
-    headers: getAuthHeaders()
-  });
+export const updateContractRenewal = async (id, renewalData) => {
+  const response = await api.put(`/freelancers/${id}/contract-renewal`, renewalData);
   return response.data;
 };
