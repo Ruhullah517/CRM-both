@@ -26,6 +26,8 @@ import Certificates from '../pages/Certificates';
 import Invoices from '../pages/Invoices';
 import Calendar from '../pages/Calendar';
 import EmailManagement from '../pages/EmailManagement';
+import EmailAutomations from '../pages/EmailAutomations';
+import GDPRManagement from '../pages/GDPRManagement';
 import ContactManagement from '../pages/ContactManagement';
 import Reports from '../pages/Reports';
 
@@ -46,6 +48,9 @@ export default function AppRouter() {
               <Route path="/contacts" element={<Contacts />} />
               <Route path="/pipeline" element={<RecruitmentPipeline />} />
               <Route path="/email-templates" element={<EmailTemplates />} />
+              <Route path="/email-management" element={<EmailManagement />} />
+              <Route path="/email-automations" element={<EmailAutomations />} />
+              <Route path="/gdpr-management" element={<GDPRManagement />} />
               <Route path="/contract-templates" element={<ContractTemplates />} />
               <Route path="/mentors" element={<Mentors />} />
               <Route path="/freelancers" element={<Freelancers />} />

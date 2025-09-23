@@ -11,7 +11,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { sendBulkEmail, sendIndividualEmail, sendEmailToContactsByTags, getEmailHistory, getEmailStats, previewEmail } from '../services/emails';
 import { getAllContacts, getContactsByTags, getContactStats } from '../services/contacts';
-import { getAllEmailTemplates } from '../services/emailTemplates';
+import { getEmailTemplates } from '../services/emailTemplates';
 
 const EmailManagement = () => {
   const [activeTab, setActiveTab] = useState('send');
@@ -40,7 +40,7 @@ const EmailManagement = () => {
     setLoading(true);
     try {
       const [templatesData, contactsData, statsData, emailStatsData, historyData] = await Promise.all([
-        getAllEmailTemplates(),
+        getEmailTemplates(),
         getAllContacts(),
         getContactStats(),
         getEmailStats(),

@@ -71,23 +71,26 @@ export default function Dashboard() {
     );
   }
   return (
-    <div className="max-w-7xl mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-6 text-left">Dashboard</h1>
-      <div className="mb-8 text-lg text-left">
-        Welcome, <span className="font-semibold">{userInfo?.name}</span> ({userInfo?.role})
+    <div className="max-w-7xl mx-auto">
+      <div className="px-4 py-6">
+        <h1 className="text-2xl font-bold mb-4 text-left">Dashboard</h1>
+        <div className="mb-6 text-base sm:text-lg text-left">
+          Welcome, <span className="font-semibold">{userInfo?.name}</span> ({userInfo?.role})
+        </div>
       </div>
+      
       {/* Summary Widgets */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 px-4 mb-6">
         {summary.map((s, i) => {
           const Icon = s.icon;
           return (
-            <div key={i} className={`flex-1 min-w-[180px] rounded-lg shadow p-6 flex items-center gap-4 ${s.color}`}>
-              <div className={`rounded-full p-2 ${s.iconColor} bg-white shadow`}>
-                <Icon className="w-7 h-7" />
+            <div key={i} className={`rounded-lg shadow p-4 sm:p-6 flex items-center gap-3 sm:gap-4 ${s.color}`}>
+              <div className={`rounded-full p-2 ${s.iconColor} bg-white shadow flex-shrink-0`}>
+                <Icon className="w-5 h-5 sm:w-7 sm:h-7" />
               </div>
-              <div>
-                <div className="text-2xl font-bold mb-1">{s.value}</div>
-                <div className="text-gray-700 font-semibold text-sm">{s.label}</div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xl sm:text-2xl font-bold mb-1">{s.value}</div>
+                <div className="text-gray-700 font-semibold text-xs sm:text-sm truncate">{s.label}</div>
               </div>
             </div>
           );
@@ -95,11 +98,11 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 px-4">
         {/* Left: Pie Chart */}
-        <div className="col-span-1 flex flex-col items-center bg-white rounded shadow p-6">
-          <h2 className="text-xl font-bold mb-4 self-start">Entity Distribution</h2>
-          <ResponsiveContainer width={250} height={250}>
+        <div className="col-span-1 flex flex-col items-center bg-white rounded-lg shadow p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-bold mb-4 self-start">Entity Distribution</h2>
+          <ResponsiveContainer width="100%" height={200}>
             <PieChart>
               <Pie
                 data={pieData}
@@ -135,12 +138,12 @@ export default function Dashboard() {
         </div>
 
         {/* Right: Recent Lists */}
-        <div className="col-span-2 flex flex-col gap-8">
+        <div className="col-span-2 flex flex-col gap-4 lg:gap-8">
           {/* Reminders, Invoices, and Compliance */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
             <RemindersWidget />
             <ComplianceAlertsWidget />
-            <div className="bg-white rounded shadow p-6">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
               <h2 className="text-lg font-bold mb-4">Invoice Overview</h2>
               {invoiceStats ? (
                 <ul className="text-sm space-y-1">

@@ -7,7 +7,7 @@ import {
   UserCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { getContacts, createContact, updateContact, deleteContact } from '../services/contacts';
+import { getAllContacts, createContact, updateContact, deleteContact } from '../services/contacts';
 import { getUsers } from '../services/users';
 import Loader from '../components/Loader';
 import { getEmailTemplates, sendBulkEmail } from '../services/emailTemplates';
@@ -261,7 +261,7 @@ const Contacts = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getContacts();
+      const data = await getAllContacts();
       // Parse tags and emailHistory if needed
       const parsed = data.map(c => ({
         ...c,

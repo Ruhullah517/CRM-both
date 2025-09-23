@@ -1,4 +1,5 @@
 const Contact = require('../models/Contact');
+const { processAutomationTrigger } = require('./emailAutomationController');
 
 // List all contacts
 const getAllContacts = async (req, res) => {
@@ -66,6 +67,10 @@ const createContact = async (req, res) => {
       lastContactDate: new Date()
     });
     await contact.save();
+    
+    // Trigger email automation for contact created
+    processAutomationTrigger('contact_created', 'contact', contact._id, contact.toObject());
+    
     res.status(201).json(contact);
   } catch (error) {
     console.error(error);
@@ -108,7 +113,11 @@ const updateContact = async (req, res) => {
       updated_at: new Date()
     };
     
-    await Contact.findByIdAndUpdate(req.params.id, updateData);
+    const updatedContact = await Contact.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    
+    // Trigger email automation for contact updated
+    processAutomationTrigger('contact_updated', 'contact', req.params.id, updatedContact.toObject());
+    
     res.json({ msg: 'Contact updated' });
   } catch (error) {
     console.error(error);

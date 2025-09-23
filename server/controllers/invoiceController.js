@@ -4,6 +4,7 @@ const Case = require('../models/Case');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const { processAutomationTrigger } = require('./emailAutomationController');
 
 // Get all invoices
 const getAllInvoices = async (req, res) => {
@@ -900,6 +901,9 @@ const sendInvoice = async (req, res) => {
     invoice.status = 'sent';
     invoice.sentAt = new Date();
     await invoice.save();
+
+    // Trigger email automation for invoice sent
+    processAutomationTrigger('invoice_sent', 'invoice', invoice._id, invoice.toObject());
 
     // TODO: Send email with PDF attachment
     // This would integrate with your email service

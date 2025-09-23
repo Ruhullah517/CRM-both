@@ -1,5 +1,6 @@
 const Enquiry = require('../models/Enquiry');
 const Contact = require('../models/Contact');
+const { processAutomationTrigger } = require('./emailAutomationController');
 
 // List all enquiries
 const getAllEnquiries = async (req, res) => {
@@ -145,6 +146,10 @@ const createEnquiry = async (req, res) => {
     await enquiry.save();
     // Create or update contact
     await createOrUpdateContactFromEnquiry(enquiry);
+    
+    // Trigger email automation for enquiry submitted
+    processAutomationTrigger('enquiry_submitted', 'enquiry', enquiry._id, enquiry.toObject());
+    
     res.status(201).json({ id: enquiry._id, msg: 'Enquiry created successfully' });
   } catch (error) {
     console.error('Error creating enquiry:', error);

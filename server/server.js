@@ -37,6 +37,8 @@ app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api/mentors', require('./routes/mentors'));
 app.use('/api/email-templates', require('./routes/emailTemplates'));
 app.use('/api/emails', require('./routes/emails'));
+app.use('/api/email-automations', require('./routes/emailAutomations'));
+app.use('/api/gdpr', require('./routes/gdpr'));
 app.use('/api/contract-templates', require('./routes/contractTemplates'));
 app.use('/api/referrals', require('./routes/referrals'));
 app.use('/api/reminders', require('./routes/reminders'));

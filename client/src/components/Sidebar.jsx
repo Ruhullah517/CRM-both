@@ -16,6 +16,8 @@ import {
   Cog6ToothIcon,
   AcademicCapIcon as TrainingIcon,
   CalendarIcon,
+  ShieldCheckIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import img3 from '../../public/img3.png';
 const navItems = [
@@ -34,6 +36,8 @@ const navItems = [
 
   { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: EnvelopeIcon },
   { name: 'Email Management', path: '/email-management', roles: ['admin', 'staff'], icon: EnvelopeIcon },
+  { name: 'Email Automations', path: '/email-automations', roles: ['admin', 'staff'], icon: EnvelopeIcon },
+  { name: 'GDPR Management', path: '/gdpr-management', roles: ['admin', 'manager'], icon: ShieldCheckIcon },
   { name: 'Contact Management', path: '/contact-management', roles: ['admin', 'staff'], icon: UserGroupIcon },
   { name: 'Reports', path: '/reports', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon },
   { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon },
@@ -43,18 +47,25 @@ const navItems = [
   // { name: 'Settings', path: '/settings', roles: ['admin', 'staff'], icon: Cog6ToothIcon },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ onClose }) {
   const { role } = useAuth();
 
   return (
-    <aside className="h-screen w-20 md:w-56 bg-black text-white flex flex-col py-6 px-2 md:px-4 transition-all duration-200 overflow-y-auto flex-shrink-0">
-      <div className="relative w-full flex justify-center items-center mb-8">
+    <aside className="h-screen w-64 bg-black text-white flex flex-col py-6 px-4 transition-all duration-200 overflow-y-auto flex-shrink-0">
+      <div className="relative w-full flex justify-between items-center mb-8">
         <img
           src={img3}
-          alt=""
-          className="w-6 h-6 md:w-14 md:h-14 object-cover md:rounded-none"
+          alt="BFCA Logo"
+          className="w-14 h-14 object-cover"
           style={{ maxWidth: '100%', height: 'auto' }}
         />
+        {/* Mobile close button */}
+        <button
+          onClick={onClose}
+          className="lg:hidden text-white hover:text-gray-300 focus:outline-none"
+        >
+          <XMarkIcon className="h-6 w-6" />
+        </button>
       </div>
       {/* <div className="mb-8 text-2xl font-bold text-center hidden md:block">BFCA CRM</div> */}
       <nav className="flex flex-col gap-0.5">
@@ -67,11 +78,15 @@ export default function Sidebar() {
                 key={item.name}
                 to={item.path}
                 className={({ isActive }) =>
-                  `px-4 py-2 rounded hover:bg-green-700 text-[15px] transition flex items-center gap-2 justify-center md:justify-start ${isActive ? 'bg-[#2EAB2C] font-semibold' : ''}`
+                  `px-4 py-3 rounded-lg hover:bg-green-700 text-sm transition flex items-center gap-3 ${isActive ? 'bg-[#2EAB2C] font-semibold' : ''}`
                 }
+                onClick={() => {
+                  // Close mobile sidebar when navigating
+                  if (onClose) onClose();
+                }}
               >
-                <Icon className="w-5 h-5" />
-                <span className="hidden md:inline-block">{item.name}</span>
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="truncate">{item.name}</span>
               </NavLink>
             );
           })}
