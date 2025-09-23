@@ -9,24 +9,25 @@ const {
   assignEnquiry,
   deleteEnquiry,
 } = require('../controllers/enquiryController');
+const { authenticate, authorize } = require('../middleware/auth');
 
 // List all enquiries
-router.get('/', getAllEnquiries);
+router.get('/', authenticate, authorize('admin', 'manager', 'staff'), getAllEnquiries);
 
 // Get a single enquiry by ID
-router.get('/:id', getEnquiryById);
+router.get('/:id', authenticate, authorize('admin', 'manager', 'staff'), getEnquiryById);
 
 // Approve an enquiry
-router.post('/:id/approve', approveEnquiry);
+router.post('/:id/approve', authenticate, authorize('admin', 'manager', 'staff'), approveEnquiry);
 
 // Reject an enquiry
-router.post('/:id/reject', rejectEnquiry);
+router.post('/:id/reject', authenticate, authorize('admin', 'manager', 'staff'), rejectEnquiry);
 
 // Assign an enquiry to a staff member
-router.post('/:id/assign', assignEnquiry);
+router.post('/:id/assign', authenticate, authorize('admin', 'manager', 'staff'), assignEnquiry);
 
-router.post('/', createEnquiry);
+router.post('/', authenticate, authorize('admin', 'manager', 'staff'), createEnquiry);
 
-router.delete('/:id', deleteEnquiry);
+router.delete('/:id', authenticate, authorize('admin', 'manager'), deleteEnquiry);
 
 module.exports = router; 

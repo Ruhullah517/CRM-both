@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticate } = require('../middleware/auth');
+const { authenticate, authorize } = require('../middleware/auth');
 const {
   getAllTrainingEvents,
   getTrainingEventById,
@@ -34,35 +34,35 @@ router.get('/bookings/:id', getBookingById);
 router.use(authenticate);
 
 // Training Events
-router.get('/events', getAllTrainingEvents);
-router.get('/events/:id', getTrainingEventById);
-router.post('/events', createTrainingEvent);
-router.put('/events/:id', updateTrainingEvent);
-router.delete('/events/:id', deleteTrainingEvent);
-router.delete('/events/:id/force', forceDeleteTrainingEvent);
+router.get('/events', authorize('admin', 'manager', 'staff', 'trainer'), getAllTrainingEvents);
+router.get('/events/:id', authorize('admin', 'manager', 'staff', 'trainer'), getTrainingEventById);
+router.post('/events', authorize('admin', 'manager', 'staff'), createTrainingEvent);
+router.put('/events/:id', authorize('admin', 'manager', 'staff'), updateTrainingEvent);
+router.delete('/events/:id', authorize('admin', 'manager'), deleteTrainingEvent);
+router.delete('/events/:id/force', authorize('admin'), forceDeleteTrainingEvent);
 
 // Training Bookings
-router.get('/events/:eventId/bookings', getBookingsByEvent);
+router.get('/events/:eventId/bookings', authorize('admin', 'manager', 'staff', 'trainer'), getBookingsByEvent);
 
 // Certificates
-router.get('/certificates', getAllCertificates);
+router.get('/certificates', authorize('admin', 'manager', 'staff', 'trainer'), getAllCertificates);
 
 // Training Bookings
-router.post('/bookings', createBooking);
-router.put('/bookings/:id', updateBookingStatus);
-router.post('/bookings/bulk-import', bulkImportParticipants);
+router.post('/bookings', authorize('admin', 'manager', 'staff'), createBooking);
+router.put('/bookings/:id', authorize('admin', 'manager', 'staff'), updateBookingStatus);
+router.post('/bookings/bulk-import', authorize('admin', 'manager', 'staff'), bulkImportParticipants);
 
 // Certificate routes
-router.get('/certificates/:id/download', downloadCertificate);
-router.post('/certificates/:id/resend-email', resendCertificateEmail);
-router.post('/events/:trainingEventId/generate-certificates', generateMissingCertificates);
-router.post('/events/:trainingEventId/generate-invoices', generateMissingInvoices);
+router.get('/certificates/:id/download', authorize('admin', 'manager', 'staff', 'trainer'), downloadCertificate);
+router.post('/certificates/:id/resend-email', authorize('admin', 'manager', 'staff'), resendCertificateEmail);
+router.post('/events/:trainingEventId/generate-certificates', authorize('admin', 'manager', 'staff'), generateMissingCertificates);
+router.post('/events/:trainingEventId/generate-invoices', authorize('admin', 'manager', 'staff'), generateMissingInvoices);
 
 // Invoice routes
-router.post('/invoices/:id/resend-email', resendInvoiceEmail);
+router.post('/invoices/:id/resend-email', authorize('admin', 'manager', 'staff'), resendInvoiceEmail);
 
 // Email routes
-router.post('/send-booking-link', sendBookingLinkEmail);
+router.post('/send-booking-link', authorize('admin', 'manager', 'staff'), sendBookingLinkEmail);
 
 // File upload for training materials
 router.post('/events/:id/materials', upload.single('material'), (req, res) => {

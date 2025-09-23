@@ -7,7 +7,17 @@ import {
   XMarkIcon,
   PaperClipIcon,
 } from '@heroicons/react/24/outline';
-import { getFreelancers, createFreelancer, updateFreelancer, deleteFreelancer } from '../services/freelancers';
+import { 
+  getFreelancers, 
+  createFreelancer, 
+  updateFreelancer, 
+  deleteFreelancer,
+  updateFreelancerAvailability,
+  addComplianceDocument,
+  addWorkHistory,
+  getExpiringCompliance,
+  updateContractRenewal
+} from '../services/freelancers';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
 
@@ -125,56 +135,216 @@ const FreelancerList = ({ onSelect, onAdd, freelancers, onDelete }) => {
   );
 };
 
-const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl }) => (
-  <div className="max-w-2xl mx-auto p-4 bg-white rounded shadow mt-6">
+const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [showComplianceModal, setShowComplianceModal] = useState(false);
+  const [showWorkHistoryModal, setShowWorkHistoryModal] = useState(false);
+  const [showContractModal, setShowContractModal] = useState(false);
+
+  const availabilityColors = {
+    available: 'bg-green-100 text-green-800',
+    busy: 'bg-yellow-100 text-yellow-800',
+    unavailable: 'bg-red-100 text-red-800'
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-4 bg-white rounded shadow mt-6">
     <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
     <h2 className="text-2xl font-bold mb-4 text-[#2EAB2C]">{freelancer.fullName}</h2>
-    <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+      
+      {/* Tabs */}
+      <div className="flex border-b mb-6">
+        {['overview', 'hr', 'compliance', 'work-history'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 font-semibold capitalize ${
+              activeTab === tab 
+                ? 'border-b-2 border-[#2EAB2C] text-[#2EAB2C]' 
+                : 'text-gray-600 hover:text-[#2EAB2C]'
+            }`}
+          >
+            {tab.replace('-', ' ')}
+          </button>
+        ))}
+      </div>
+
+      {/* Overview Tab */}
+      {activeTab === 'overview' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <div className="mb-2"><span className="font-semibold">Email:</span> {freelancer.email}</div>
-        <div className="mb-2"><span className="font-semibold">Mobile:</span> {freelancer.mobileNumber}</div>
-        <div className="mb-2"><span className="font-semibold">Home Address:</span> {freelancer.homeAddress}</div>
-        <div className="mb-2"><span className="font-semibold">Geographical Location:</span> {freelancer.geographicalLocation}</div>
-        <div className="mb-2"><span className="font-semibold">Role:</span> {freelancer.role}</div>
-        <div className="mb-2"><span className="font-semibold">Miles Willing to Travel:</span> {freelancer.milesWillingToTravel}</div>
-        <div className="mb-2"><span className="font-semibold">On WhatsApp:</span> {freelancer.isOnWhatsApp ? 'Yes' : 'No'}</div>
+            <h3 className="text-lg font-semibold mb-3 text-[#2EAB2C]">Personal Information</h3>
+            <div className="space-y-2">
+              <div><span className="font-semibold">Email:</span> {freelancer.email}</div>
+              <div><span className="font-semibold">Mobile:</span> {freelancer.mobileNumber}</div>
+              <div><span className="font-semibold">Home Address:</span> {freelancer.homeAddress}</div>
+              <div><span className="font-semibold">Geographical Location:</span> {freelancer.geographicalLocation}</div>
+              <div><span className="font-semibold">Role:</span> {freelancer.role}</div>
+              <div><span className="font-semibold">Miles Willing to Travel:</span> {freelancer.milesWillingToTravel}</div>
+              <div><span className="font-semibold">On WhatsApp:</span> {freelancer.isOnWhatsApp ? 'Yes' : 'No'}</div>
+            </div>
       </div>
       <div>
-        <div className="mb-2"><span className="font-semibold">Social Work England Registration:</span> {freelancer.hasSocialWorkEnglandRegistration ? 'Yes' : 'No'}</div>
+            <h3 className="text-lg font-semibold mb-3 text-[#2EAB2C]">Professional Information</h3>
+            <div className="space-y-2">
+              <div><span className="font-semibold">Social Work England Registration:</span> {freelancer.hasSocialWorkEnglandRegistration ? 'Yes' : 'No'}</div>
         {freelancer.hasSocialWorkEnglandRegistration && (
-          <div className="mb-2"><span className="font-semibold">Registration Number:</span> {freelancer.socialWorkEnglandRegistrationNumber}</div>
+                <div><span className="font-semibold">Registration Number:</span> {freelancer.socialWorkEnglandRegistrationNumber}</div>
         )}
-        <div className="mb-2"><span className="font-semibold">DBS Check:</span> {freelancer.hasDBSCheck ? 'Yes' : 'No'}</div>
-        <div className="mb-2"><span className="font-semibold">On Update System:</span> {freelancer.isOnUpdateSystem ? 'Yes' : 'No'}</div>
+              <div><span className="font-semibold">DBS Check:</span> {freelancer.hasDBSCheck ? 'Yes' : 'No'}</div>
+              <div><span className="font-semibold">On Update System:</span> {freelancer.isOnUpdateSystem ? 'Yes' : 'No'}</div>
         {freelancer.dbsCertificateUrl && (
-          <div className="mb-2"><span className="font-semibold">DBS Certificate:</span> <a href={backendBaseUrl + freelancer.dbsCertificateUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">View File</a></div>
+                <div><span className="font-semibold">DBS Certificate:</span> <a href={backendBaseUrl + freelancer.dbsCertificateUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">View File</a></div>
         )}
       </div>
     </div>
-    <div className="mb-6">
-      <div className="mb-2"><span className="font-semibold">Form F Assessment Experience:</span> {freelancer.hasFormFAssessmentExperience ? 'Yes' : 'No'}</div>
-      {freelancer.hasFormFAssessmentExperience && (
-        <div className="mb-2"><span className="font-semibold">Years of Experience:</span> {freelancer.formFAssessmentExperienceYears}</div>
+        </div>
       )}
-      <div className="mb-2"><span className="font-semibold">Other Social Work Assessment Experience:</span> {(freelancer.otherSocialWorkAssessmentExperience || []).join(', ')}</div>
-      <div className="mb-2"><span className="font-semibold">Consideration For:</span> {(freelancer.considerationFor || []).join(', ')}</div>
-      <div className="mb-2"><span className="font-semibold">Qualifications & Training:</span> {freelancer.qualificationsAndTraining}</div>
-      <div className="mb-2"><span className="font-semibold">Additional Info:</span> {freelancer.additionalInfo}</div>
-      <div className="mb-2"><span className="font-semibold">Professional References:</span> {freelancer.professionalReferences}</div>
-      {freelancer.cvUrl && (
-        <div className="mb-2"><span className="font-semibold">CV:</span> <a href={backendBaseUrl + freelancer.cvUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">View File</a></div>
+
+      {/* HR Tab */}
+      {activeTab === 'hr' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-gray-50 p-4 rounded">
+              <h3 className="text-lg font-semibold mb-3 text-[#2EAB2C]">Rates & Availability</h3>
+              <div className="space-y-2">
+                <div><span className="font-semibold">Hourly Rate:</span> £{freelancer.hourlyRate || 0}</div>
+                <div><span className="font-semibold">Daily Rate:</span> £{freelancer.dailyRate || 0}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Availability:</span>
+                  <span className={`px-2 py-1 rounded text-sm ${availabilityColors[freelancer.availability] || 'bg-gray-100'}`}>
+                    {freelancer.availability || 'available'}
+                  </span>
+                </div>
+                {freelancer.availabilityNotes && (
+                  <div><span className="font-semibold">Notes:</span> {freelancer.availabilityNotes}</div>
+                )}
+                <button 
+                  onClick={() => setShowAvailabilityModal(true)}
+                  className="mt-2 px-3 py-1 bg-[#2EAB2C] text-white rounded text-sm hover:bg-green-800"
+                >
+                  Update Availability
+                </button>
+              </div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded">
+              <h3 className="text-lg font-semibold mb-3 text-[#2EAB2C]">Contract Information</h3>
+              <div className="space-y-2">
+                <div><span className="font-semibold">Status:</span> {freelancer.contractStatus || 'active'}</div>
+                <div><span className="font-semibold">Renewal Date:</span> {freelancer.contractRenewalDate ? formatDate(freelancer.contractRenewalDate) : 'Not set'}</div>
+                <button 
+                  onClick={() => setShowContractModal(true)}
+                  className="mt-2 px-3 py-1 bg-[#2EAB2C] text-white rounded text-sm hover:bg-green-800"
+                >
+                  Update Contract
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
-      <div className="mb-2"><span className="font-semibold">Payment Preference:</span> {freelancer.paymentPreferences}</div>
-      {freelancer.paymentOther && (
-        <div className="mb-2"><span className="font-semibold">Other Payment:</span> {freelancer.paymentOther}</div>
-      )}
+
+      {/* Compliance Tab */}
+      {activeTab === 'compliance' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-[#2EAB2C]">Compliance Documents</h3>
+            <button 
+              onClick={() => setShowComplianceModal(true)}
+              className="px-4 py-2 bg-[#2EAB2C] text-white rounded hover:bg-green-800"
+            >
+              Add Document
+            </button>
     </div>
-    <div className="flex gap-2 mt-4">
+          {freelancer.complianceDocuments && freelancer.complianceDocuments.length > 0 ? (
+            <div className="grid gap-4">
+              {freelancer.complianceDocuments.map((doc, index) => (
+                <div key={index} className="border rounded p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-semibold">{doc.name}</h4>
+                      <p className="text-sm text-gray-600">Type: {doc.type}</p>
+                      {doc.expiryDate && (
+                        <p className="text-sm text-gray-600">
+                          Expires: {formatDate(doc.expiryDate)}
+                          {new Date(doc.expiryDate) < new Date() && (
+                            <span className="ml-2 text-red-600 font-semibold">(EXPIRED)</span>
+                          )}
+                        </p>
+                      )}
+                    </div>
+                    {doc.fileUrl && (
+                      <a 
+                        href={backendBaseUrl + doc.fileUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-700 hover:underline"
+                      >
+                        View File
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-600">No compliance documents uploaded yet.</p>
+          )}
+        </div>
+      )}
+
+      {/* Work History Tab */}
+      {activeTab === 'work-history' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-[#2EAB2C]">Work History</h3>
+            <button 
+              onClick={() => setShowWorkHistoryModal(true)}
+              className="px-4 py-2 bg-[#2EAB2C] text-white rounded hover:bg-green-800"
+            >
+              Add Entry
+            </button>
+          </div>
+          {freelancer.workHistory && freelancer.workHistory.length > 0 ? (
+            <div className="grid gap-4">
+              {freelancer.workHistory.map((work, index) => (
+                <div key={index} className="border rounded p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-semibold">{work.assignment}</h4>
+                      <p className="text-sm text-gray-600">
+                        {formatDate(work.startDate)} - {work.endDate ? formatDate(work.endDate) : 'Ongoing'}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {work.hours} hours @ £{work.rate}/hour = £{work.totalAmount}
+                      </p>
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        work.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        work.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {work.status}
+                      </span>
+                      {work.notes && <p className="text-sm mt-2">{work.notes}</p>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-600">No work history recorded yet.</p>
+          )}
+        </div>
+      )}
+
+      <div className="flex gap-2 mt-6">
       <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Update</button>
       <button onClick={() => onDelete(freelancer)} className="px-4 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">Delete</button>
     </div>
   </div>
 );
+};
 
 function formatDateForInput(date) {
   if (!date) return '';
@@ -266,6 +436,14 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
       ? freelancer.paymentPreferences[0] || ''
       : (freelancer?.paymentPreferences || ''),
     paymentOther: freelancer?.paymentOther || '',
+
+    // HR Module fields
+    hourlyRate: freelancer?.hourlyRate || 0,
+    dailyRate: freelancer?.dailyRate || 0,
+    availability: freelancer?.availability || 'available',
+    availabilityNotes: freelancer?.availabilityNotes || '',
+    contractRenewalDate: freelancer?.contractRenewalDate || '',
+    contractStatus: freelancer?.contractStatus || 'active',
   });
 
   // Options for select/multiselect fields
@@ -677,6 +855,69 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
             <input name="paymentOther" placeholder="Other payment preference" value={form.paymentOther} onChange={handleChange} className="w-full px-4 py-2 border rounded mb-2" />
           )}
         </div>
+
+        {/* Section 8: HR Module Information */}
+        <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
+          <h3 className="text-xl font-bold mb-4 text-[#2EAB2C] flex items-center gap-2"><span className="inline-block w-2 h-2 bg-[#2EAB2C] rounded-full"></span>HR Information</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <input 
+              name="hourlyRate" 
+              type="number" 
+              placeholder="Hourly Rate (£)" 
+              value={form.hourlyRate} 
+              onChange={handleChange} 
+              className="w-full px-4 py-2 border rounded" 
+            />
+            <input 
+              name="dailyRate" 
+              type="number" 
+              placeholder="Daily Rate (£)" 
+              value={form.dailyRate} 
+              onChange={handleChange} 
+              className="w-full px-4 py-2 border rounded" 
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block mb-2 font-semibold">Availability</label>
+            <select
+              name="availability"
+              value={form.availability}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded"
+            >
+              <option value="available">Available</option>
+              <option value="busy">Busy</option>
+              <option value="unavailable">Unavailable</option>
+            </select>
+          </div>
+          <textarea 
+            name="availabilityNotes" 
+            placeholder="Availability Notes" 
+            value={form.availabilityNotes} 
+            onChange={handleChange} 
+            className="w-full px-4 py-2 border rounded mb-4" 
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <input 
+              name="contractRenewalDate" 
+              type="date" 
+              placeholder="Contract Renewal Date" 
+              value={formatDateForInput(form.contractRenewalDate)} 
+              onChange={handleChange} 
+              className="w-full px-4 py-2 border rounded" 
+            />
+            <select
+              name="contractStatus"
+              value={form.contractStatus}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded"
+            >
+              <option value="active">Active</option>
+              <option value="expired">Expired</option>
+              <option value="pending_renewal">Pending Renewal</option>
+            </select>
+          </div>
+        </div>
         <button
           type="submit"
           className="w-full bg-gradient-to-r from-[#2EAB2C] to-green-600 text-white py-3 rounded-xl shadow-lg hover:from-green-700 hover:to-green-800 font-extrabold text-lg tracking-wide transition-all duration-200"
@@ -699,7 +940,7 @@ const Freelancers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
-  const backendBaseUrl = "https://backendcrm.blackfostercarersalliance.co.uk";
+  const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
 
   // --- Send Form Online modal state ---
   const [showSendFormModal, setShowSendFormModal] = useState(false);

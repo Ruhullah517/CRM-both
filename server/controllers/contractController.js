@@ -1,6 +1,7 @@
 const GeneratedContract = require('../models/Contract');
 const ContractTemplate = require('../models/ContractTemplate');
 const { PDFDocument, StandardFonts } = require('pdf-lib');
+const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 
@@ -125,10 +126,40 @@ const generateContract = async (req, res) => {
   }
 };
 
-// Send contract for e-signature (stub)
+// Send contract for e-signature via Adobe Sign
 const sendForSignature = async (req, res) => {
-  // TODO: Integrate with DocuSign/Adobe Sign
-  res.json({ msg: 'Signature request sent (stub)' });
+  try {
+    const { id } = req.params;
+    const { accessToken, recipientEmail } = req.body;
+    const contract = await GeneratedContract.findById(id);
+    if (!contract) return res.status(404).json({ msg: 'Contract not found' });
+    if (!contract.generatedDocUrl) return res.status(400).json({ msg: 'Generated PDF not found' });
+    if (!accessToken || !recipientEmail) return res.status(400).json({ msg: 'Missing accessToken or recipientEmail' });
+
+    // Build absolute path to PDF
+    let filePath = contract.generatedDocUrl;
+    if (filePath.startsWith('/')) filePath = filePath.slice(1);
+    const absPath = path.resolve(__dirname, '../..', filePath);
+
+    // Call local Adobe integration route to send agreement
+    const baseUrl = process.env.BACKEND_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
+    const response = await axios.post(`${baseUrl}/api/adobe/send-agreement`, {
+      accessToken,
+      recipientEmail,
+      contractPath: absPath,
+      contractName: contract.name || 'BFCA Contract'
+    });
+
+    const { agreementId, status } = response.data || {};
+    contract.status = 'sent';
+    contract.externalProvider = 'adobe';
+    contract.externalAgreementId = agreementId || contract.externalAgreementId;
+    await contract.save();
+    res.json({ msg: 'Signature request sent', agreementId, providerStatus: status });
+  } catch (error) {
+    console.error('sendForSignature error:', error.response?.data || error.message);
+    res.status(500).json({ msg: 'Failed to send for signature', error: error.response?.data || error.message });
+  }
 };
 
 // Download contract PDF

@@ -35,9 +35,59 @@ const EnquirySchema = new mongoose.Schema({
 
   // CRM-specific fields
   submission_date: { type: Date, default: Date.now },
-  status: { type: String, default: 'New' },
+  status: { 
+    type: String, 
+    enum: ['New', 'Active', 'Paused', 'Completed', 'Withdrawn'],
+    default: 'New' 
+  },
   assigned_to: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  rejection_reason: String
+  rejection_reason: String,
+
+  // Assignments
+  assignedMentor: { type: mongoose.Schema.Types.ObjectId, ref: 'Mentor' },
+  assignedAssessor: { type: mongoose.Schema.Types.ObjectId, ref: 'Freelancer' },
+  mentorNotes: String,
+  assessorNotes: String,
+
+  // Lifecycle controls
+  statusReason: String,
+  pausedUntil: Date,
+
+  // Unified pipeline fields
+  pipelineStage: { 
+    type: String, 
+    enum: ['Enquiry', 'Application', 'Assessment', 'Mentoring', 'Approval'], 
+    default: 'Enquiry' 
+  },
+  stageEntries: [
+    {
+      stage: { type: String, enum: ['Enquiry', 'Application', 'Assessment', 'Mentoring', 'Approval'], required: true },
+      meetingType: { type: String, enum: ['Telephone', 'Online', 'Home Visit', 'Face to Face', 'Other'], default: 'Other' },
+      meetingDate: { type: Date },
+      notes: { type: String },
+      files: [
+        {
+          url: { type: String, required: true },
+          name: { type: String },
+          uploadedAt: { type: Date, default: Date.now }
+        }
+      ],
+      createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      createdAt: { type: Date, default: Date.now }
+    }
+  ]
+  ,
+
+  // Per-stage deadlines and completion tracking
+  stageDeadlines: [
+    {
+      stage: { type: String, enum: ['Enquiry', 'Application', 'Assessment', 'Mentoring', 'Approval'], required: true },
+      dueAt: { type: Date, required: true },
+      completedAt: { type: Date },
+      createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      createdAt: { type: Date, default: Date.now }
+    }
+  ]
 });
 
 module.exports = mongoose.model('Enquiry', EnquirySchema); 

@@ -721,6 +721,199 @@ const createInvoiceFromCase = async (req, res) => {
   }
 };
 
+// Create invoice from training booking
+const createInvoiceFromTrainingBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const { dueDate, notes } = req.body;
+
+    const booking = await TrainingBooking.findById(bookingId)
+      .populate('trainingEvent', 'title price');
+    
+    if (!booking) {
+      return res.status(404).json({ msg: 'Training booking not found' });
+    }
+
+    if (booking.payment.invoiceId) {
+      return res.status(400).json({ msg: 'Invoice already exists for this booking' });
+    }
+
+    // Calculate totals
+    const unitPrice = booking.trainingEvent.price || 0;
+    const subtotal = unitPrice;
+    const taxRate = 0; // Set your tax rate
+    const taxAmount = (subtotal * taxRate) / 100;
+    const total = subtotal + taxAmount;
+
+    const invoice = new Invoice({
+      client: {
+        name: booking.participant.name,
+        email: booking.participant.email,
+        phone: booking.participant.phone,
+        organization: booking.participant.organization
+      },
+      items: [{
+        description: `Training: ${booking.trainingEvent.title}`,
+        quantity: 1,
+        unitPrice: unitPrice,
+        total: unitPrice,
+        type: 'training',
+        relatedId: booking.trainingEvent._id,
+        notes: `Booking ID: ${booking._id}`
+      }],
+      subtotal,
+      taxRate,
+      taxAmount,
+      total,
+      dueDate: dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      issuedDate: new Date(),
+      notes,
+      relatedTrainingEvent: booking.trainingEvent._id,
+      createdBy: req.user.id
+    });
+
+    await invoice.save();
+
+    // Update booking with invoice reference
+    booking.payment.invoiceId = invoice._id;
+    booking.payment.status = 'pending';
+    await booking.save();
+
+    res.status(201).json(invoice);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Auto-create invoices for paid training events
+const autoCreateInvoicesForPaidTraining = async (req, res) => {
+  try {
+    const { trainingEventId } = req.params;
+    
+    const trainingEvent = await TrainingEvent.findById(trainingEventId);
+    if (!trainingEvent) {
+      return res.status(404).json({ msg: 'Training event not found' });
+    }
+
+    // Find all confirmed bookings without invoices
+    const bookings = await TrainingBooking.find({
+      trainingEvent: trainingEventId,
+      status: { $in: ['confirmed', 'attended', 'completed'] },
+      'payment.invoiceId': { $exists: false }
+    });
+
+    const createdInvoices = [];
+
+    for (const booking of bookings) {
+      const unitPrice = trainingEvent.price || 0;
+      const subtotal = unitPrice;
+      const taxRate = 0;
+      const taxAmount = (subtotal * taxRate) / 100;
+      const total = subtotal + taxAmount;
+
+      const invoice = new Invoice({
+        client: {
+          name: booking.participant.name,
+          email: booking.participant.email,
+          phone: booking.participant.phone,
+          organization: booking.participant.organization
+        },
+        items: [{
+          description: `Training: ${trainingEvent.title}`,
+          quantity: 1,
+          unitPrice: unitPrice,
+          total: unitPrice,
+          type: 'training',
+          relatedId: trainingEvent._id,
+          notes: `Booking ID: ${booking._id}`
+        }],
+        subtotal,
+        taxRate,
+        taxAmount,
+        total,
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        issuedDate: new Date(),
+        relatedTrainingEvent: trainingEvent._id,
+        createdBy: req.user.id
+      });
+
+      await invoice.save();
+
+      // Update booking with invoice reference
+      booking.payment.invoiceId = invoice._id;
+      booking.payment.status = 'pending';
+      await booking.save();
+
+      createdInvoices.push(invoice);
+    }
+
+    res.json({
+      message: `Created ${createdInvoices.length} invoices`,
+      invoices: createdInvoices
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Get overdue invoices
+const getOverdueInvoices = async (req, res) => {
+  try {
+    const today = new Date();
+    
+    // First update overdue status
+    await Invoice.updateMany(
+      { 
+        status: { $in: ['sent', 'draft'] },
+        dueDate: { $lt: today }
+      },
+      { status: 'overdue' }
+    );
+
+    const overdueInvoices = await Invoice.find({ status: 'overdue' })
+      .populate('createdBy', 'name')
+      .populate('relatedTrainingEvent', 'title')
+      .populate('relatedCase', 'caseReferenceNumber')
+      .sort({ dueDate: 1 });
+
+    res.json(overdueInvoices);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Send invoice via email
+const sendInvoice = async (req, res) => {
+  try {
+    const invoice = await Invoice.findById(req.params.id);
+    if (!invoice) {
+      return res.status(404).json({ msg: 'Invoice not found' });
+    }
+
+    // Generate PDF
+    const pdfUrl = await generateInvoicePDFFile(invoice);
+    
+    // Update invoice status and sent date
+    invoice.status = 'sent';
+    invoice.sentAt = new Date();
+    await invoice.save();
+
+    // TODO: Send email with PDF attachment
+    // This would integrate with your email service
+    
+    res.json({ 
+      message: 'Invoice sent successfully',
+      pdfUrl: pdfUrl
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 module.exports = {
   getAllInvoices,
   getInvoiceById,
@@ -731,5 +924,9 @@ module.exports = {
   generateInvoicePDF,
   generateInvoicePDFFile,
   getInvoiceStats,
-  createInvoiceFromCase
+  createInvoiceFromCase,
+  createInvoiceFromTrainingBooking,
+  autoCreateInvoicesForPaidTraining,
+  getOverdueInvoices,
+  sendInvoice
 };

@@ -33,6 +33,9 @@ const navItems = [
         { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon },
 
   { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: EnvelopeIcon },
+  { name: 'Email Management', path: '/email-management', roles: ['admin', 'staff'], icon: EnvelopeIcon },
+  { name: 'Contact Management', path: '/contact-management', roles: ['admin', 'staff'], icon: UserGroupIcon },
+  { name: 'Reports', path: '/reports', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon },
   { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon },
   { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon },
   { name: 'Enquiries', path: '/enquiries', roles: ['admin', 'staff'], icon: QuestionMarkCircleIcon },

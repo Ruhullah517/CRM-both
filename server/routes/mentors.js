@@ -8,12 +8,13 @@ const {
   deleteMentor,
   assignMenteesToMentor,
 } = require('../controllers/mentorController');
+const { authenticate, authorize } = require('../middleware/auth');
 
-router.get('/', getAllMentors);
-router.get('/:id', getMentorById);
-router.post('/', createMentor);
-router.put('/:id', updateMentor);
-router.put('/:id/assign-mentees', assignMenteesToMentor);
-router.delete('/:id', deleteMentor);
+router.get('/', authenticate, authorize('admin', 'manager', 'staff'), getAllMentors);
+router.get('/:id', authenticate, authorize('admin', 'manager', 'staff'), getMentorById);
+router.post('/', authenticate, authorize('admin', 'manager', 'staff'), createMentor);
+router.put('/:id', authenticate, authorize('admin', 'manager', 'staff'), updateMentor);
+router.put('/:id/assign-mentees', authenticate, authorize('admin', 'manager', 'staff'), assignMenteesToMentor);
+router.delete('/:id', authenticate, authorize('admin', 'manager'), deleteMentor);
 
 module.exports = router; 

@@ -39,6 +39,9 @@ const createUser = async (req, res) => {
   }
 };
 
+const crypto = require('crypto');
+const { sendMail, getFromAddress } = require('../utils/mailer');
+
 // @desc    Authenticate user & get token
 // @route   POST /api/users/login
 // @access  Public
@@ -72,6 +75,79 @@ const loginUser = async (req, res) => {
         res.json({ token, user: { id: _id, name, email, role } });
       }
     );
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// @desc    Request password reset
+// @route   POST /api/users/forgot-password
+// @access  Public
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    // Always respond 200 to avoid user enumeration
+    if (!user) return res.json({ msg: 'If the email exists, a reset link has been sent' });
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 1000 * 60 * 30); // 30 minutes
+    user.resetPasswordToken = token;
+    user.resetPasswordExpires = expires;
+    await user.save();
+
+    const frontendBase = process.env.FRONTEND_URL || 'https://crm-both.vercel.app';
+    const resetUrl = `${frontendBase}/reset-password?token=${token}`;
+
+    const mailOptions = {
+      from: getFromAddress(),
+      to: user.email,
+      subject: 'Reset your BFCA CRM password',
+      html: `<div style="font-family: Arial, sans-serif;">
+        <p>Hello ${user.name || ''},</p>
+        <p>We received a request to reset your BFCA CRM password. Click the button below to set a new password. This link will expire in 30 minutes.</p>
+        <p style="margin:20px 0;"><a href="${resetUrl}" style="background:#2EAB2C;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Reset Password</a></p>
+        <p>If the button doesn’t work, copy and paste this URL into your browser:<br/><a href="${resetUrl}">${resetUrl}</a></p>
+        <p>If you didn’t request this, you can safely ignore this email.</p>
+      </div>`
+    };
+
+    try {
+      await sendMail(mailOptions);
+    } catch (e) {
+      // If email fails, still return success to avoid information leaks
+    }
+
+    res.json({ msg: 'If the email exists, a reset link has been sent' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// @desc    Reset password with token
+// @route   POST /api/users/reset-password
+// @access  Public
+const resetPassword = async (req, res) => {
+  const { token, password } = req.body;
+  try {
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: new Date() },
+    });
+    if (!user) {
+      return res.status(400).json({ msg: 'Invalid or expired token' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    user.updated_at = new Date();
+    await user.save();
+
+    res.json({ msg: 'Password updated successfully' });
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');

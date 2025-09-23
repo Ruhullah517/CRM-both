@@ -17,10 +17,18 @@ import {
   DocumentTextIcon,
   ArrowDownTrayIcon,
   EnvelopeIcon,
-  StarIcon
+  StarIcon,
+  CreditCardIcon,
+  DocumentCheckIcon
 } from '@heroicons/react/24/outline';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
+import { 
+  createInvoiceFromTrainingBooking, 
+  autoCreateInvoicesForPaidTraining,
+  sendInvoice,
+  generateInvoicePDF 
+} from '../services/invoices';
 
 // Booking Status Form Component
 const BookingStatusForm = ({ booking, onSubmit, onCancel, loading }) => {
@@ -275,6 +283,7 @@ const TrainingEvents = () => {
   const [selectedEventForImport, setSelectedEventForImport] = useState(null);
   const [eventFeedback, setEventFeedback] = useState([]);
   const [loadingFeedback, setLoadingFeedback] = useState(false);
+  const [creatingInvoices, setCreatingInvoices] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -379,6 +388,64 @@ const TrainingEvents = () => {
       console.error('Error fetching bookings:', error);
     } finally {
       setLoadingBookings(false);
+    }
+  };
+
+  const handleAutoCreateInvoices = async (trainingEventId) => {
+    setCreatingInvoices(true);
+    try {
+      const response = await autoCreateInvoicesForPaidTraining(trainingEventId);
+      alert(`Successfully created ${response.invoices.length} invoices!`);
+      // Refresh the events to show updated booking data
+      fetchEvents();
+    } catch (error) {
+      console.error('Error creating invoices:', error);
+      alert('Error creating invoices. Please try again.');
+    } finally {
+      setCreatingInvoices(false);
+    }
+  };
+
+  const handleCreateInvoiceForBooking = async (bookingId) => {
+    try {
+      const response = await createInvoiceFromTrainingBooking(bookingId, {
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      });
+      alert('Invoice created successfully!');
+      // Refresh bookings to show updated data
+      if (currentEventId) {
+        handleViewBookings(currentEventId);
+      }
+    } catch (error) {
+      console.error('Error creating invoice:', error);
+      alert('Error creating invoice. Please try again.');
+    }
+  };
+
+  const handleSendInvoice = async (invoiceId) => {
+    try {
+      await sendInvoice(invoiceId);
+      alert('Invoice sent successfully!');
+    } catch (error) {
+      console.error('Error sending invoice:', error);
+      alert('Error sending invoice. Please try again.');
+    }
+  };
+
+  const handleDownloadInvoicePDF = async (invoiceId) => {
+    try {
+      const pdfBlob = await generateInvoicePDF(invoiceId);
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `invoice-${invoiceId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      alert('Error downloading invoice. Please try again.');
     }
   };
 
@@ -1015,13 +1082,43 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
                             {formatDate(booking.createdAt)}
                           </td>
                           <td className="px-4 py-2">
-                            <button
-                              onClick={() => openUpdateModal(booking)}
-                              className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
-                              disabled={updatingBooking === booking._id}
-                            >
-                              {updatingBooking === booking._id ? 'Updating...' : 'Update Status'}
-                            </button>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => openUpdateModal(booking)}
+                                className="bg-blue-500 text-white px-2 py-1 rounded text-xs hover:bg-blue-600"
+                                disabled={updatingBooking === booking._id}
+                              >
+                                {updatingBooking === booking._id ? 'Updating...' : 'Update'}
+                              </button>
+                              
+                              {/* Invoice Management Buttons */}
+                              {booking.payment?.invoiceId ? (
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() => handleSendInvoice(booking.payment.invoiceId)}
+                                    className="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
+                                    title="Send Invoice"
+                                  >
+                                    <EnvelopeIcon className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDownloadInvoicePDF(booking.payment.invoiceId)}
+                                    className="bg-gray-500 text-white px-2 py-1 rounded text-xs hover:bg-gray-600"
+                                    title="Download PDF"
+                                  >
+                                    <ArrowDownTrayIcon className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => handleCreateInvoiceForBooking(booking._id)}
+                                  className="bg-purple-500 text-white px-2 py-1 rounded text-xs hover:bg-purple-600"
+                                  title="Create Invoice"
+                                >
+                                  <CreditCardIcon className="w-3 h-3" />
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1382,6 +1479,38 @@ const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
                   >
                     Copy
                   </button>
+                </div>
+                
+                {/* Invoice Management Section */}
+                <div className="mt-6">
+                  <h3 className="font-semibold mb-3 text-gray-900">Invoice Management</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Auto-Create Invoices</p>
+                        <p className="text-xs text-gray-600">Generate invoices for all confirmed bookings</p>
+                      </div>
+                      <button
+                        onClick={() => handleAutoCreateInvoices(event._id)}
+                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 flex items-center gap-1"
+                        disabled={creatingInvoices}
+                      >
+                        <DocumentCheckIcon className="w-4 h-4" />
+                        {creatingInvoices ? 'Creating...' : 'Create All'}
+                      </button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      <div className="bg-blue-50 p-2 rounded">
+                        <p className="font-medium text-blue-900">With Invoices</p>
+                        <p className="text-blue-700">{event.bookings?.filter(b => b.payment?.invoiceId).length || 0}</p>
+                      </div>
+                      <div className="bg-yellow-50 p-2 rounded">
+                        <p className="font-medium text-yellow-900">Pending Invoices</p>
+                        <p className="text-yellow-700">{event.bookings?.filter(b => !b.payment?.invoiceId && b.status === 'confirmed').length || 0}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
                          </div>

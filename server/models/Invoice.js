@@ -32,6 +32,7 @@ const InvoiceSchema = new mongoose.Schema({
   },
   dueDate: { type: Date, required: true },
   issuedDate: { type: Date, default: Date.now },
+  sentAt: { type: Date },
   paidDate: Date,
   paymentMethod: String,
   notes: String,

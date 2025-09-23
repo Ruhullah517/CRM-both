@@ -5,10 +5,11 @@ const fs = require('fs');
 const path = require('path');
 const router = express.Router();
 const qs = require('qs'); // Add this at the top if not already
+const { authenticate, authorize } = require('../middleware/auth');
 
 const CLIENT_ID = process.env.ADOBE_CLIENT_ID;
 const CLIENT_SECRET = process.env.ADOBE_CLIENT_SECRET;
-const REDIRECT_URI = 'https://crm-backend-0v14.onrender.com/api/adobe/callback';
+const REDIRECT_URI = 'https://backendcrm.blackfostercarersalliance.co.uk/api/adobe/callback';
 
 // Step 1: Redirect to Adobe Sign
 router.get('/auth', (req, res) => {
@@ -54,8 +55,8 @@ router.get('/callback', async (req, res) => {
     }
 });
 
-// POST /api/adobe/exchange-token (for frontend to call with code)
-router.post('/exchange-token', async (req, res) => {
+// POST /api/adobe/exchange-token (admin only)
+router.post('/exchange-token', authenticate, authorize('admin'), async (req, res) => {
     const { code, redirectUri } = req.body;
 
     try {
@@ -90,8 +91,8 @@ function getBase64(filePath) {
   return file.toString('base64');
 }
 
-// POST /api/adobe/send-agreement
-router.post('/send-agreement', async (req, res) => {
+// POST /api/adobe/send-agreement (admin or staff)
+router.post('/send-agreement', authenticate, authorize('admin', 'manager', 'staff'), async (req, res) => {
   const { accessToken, recipientEmail, contractPath, contractName } = req.body;
 
   // 1. Read and encode the contract PDF
@@ -135,6 +136,29 @@ router.post('/send-agreement', async (req, res) => {
   } catch (err) {
     console.error('Adobe Sign agreement error:', err.response?.data || err.message);
     res.status(500).json({ error: 'Failed to send agreement', details: err.response?.data || err.message });
+  }
+});
+
+// Webhook to receive Adobe agreement status updates
+router.post('/webhook', async (req, res) => {
+  try {
+    const event = req.body;
+    // Expect minimal body: { agreementId, status }
+    if (!event || !event.agreementId) return res.status(400).json({ msg: 'Invalid webhook payload' });
+    const GeneratedContract = require('../models/Contract');
+    const contract = await GeneratedContract.findOne({ externalAgreementId: event.agreementId });
+    if (contract) {
+      if (event.status && event.status.toLowerCase() === 'signed') {
+        contract.status = 'signed';
+      } else if (event.status && event.status.toLowerCase() === 'cancelled') {
+        contract.status = 'cancelled';
+      }
+      await contract.save();
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('Adobe webhook error:', e.message);
+    res.status(200).json({ ok: true });
   }
 });
 

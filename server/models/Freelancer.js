@@ -45,6 +45,36 @@ const FreelancerSchema = new mongoose.Schema({
   source: { type: String, enum: ['admin', 'freelancer'], default: 'freelancer' },
   status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
 
+  // HR Module Enhancements
+  hourlyRate: { type: Number, default: 0 },
+  dailyRate: { type: Number, default: 0 },
+  availability: { 
+    type: String, 
+    enum: ['available', 'busy', 'unavailable'], 
+    default: 'available' 
+  },
+  availabilityNotes: String,
+  complianceDocuments: [{
+    name: String,
+    type: { type: String, enum: ['dbs', 'insurance', 'qualification', 'other'] },
+    expiryDate: Date,
+    fileUrl: String,
+    fileName: String,
+    uploadedAt: { type: Date, default: Date.now }
+  }],
+  workHistory: [{
+    assignment: String,
+    startDate: Date,
+    endDate: Date,
+    hours: Number,
+    rate: Number,
+    totalAmount: Number,
+    status: { type: String, enum: ['completed', 'in_progress', 'cancelled'] },
+    notes: String
+  }],
+  contractRenewalDate: Date,
+  contractStatus: { type: String, enum: ['active', 'expired', 'pending_renewal'], default: 'active' },
+
   // Legacy fields (optional: to support older system)
   legacy: {
     name: String,

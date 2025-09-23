@@ -35,7 +35,7 @@ export default function EmailTemplates() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
-  const backendUrl="https://backendcrm.blackfostercarersalliance.co.uk"
+  const backendUrl="https://crm-backend-0v14.onrender.com"
 
   useEffect(() => {
     fetchTemplates();

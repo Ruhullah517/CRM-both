@@ -36,8 +36,10 @@ app.use('/public/freelancers', require('./routes/publicFreelancers'));
 app.use('/api/contacts', require('./routes/contacts'));
 app.use('/api/mentors', require('./routes/mentors'));
 app.use('/api/email-templates', require('./routes/emailTemplates'));
+app.use('/api/emails', require('./routes/emails'));
 app.use('/api/contract-templates', require('./routes/contractTemplates'));
 app.use('/api/referrals', require('./routes/referrals'));
+app.use('/api/reminders', require('./routes/reminders'));
 app.use('/reports', reportsRouter);
 app.use('/api/adobe', adobeRoutes);
 // Training, Invoices, Calendar, Feedback, and Export routes
@@ -46,6 +48,8 @@ app.use('/api/invoices', require('./routes/invoices'));
 app.use('/api/calendar', require('./routes/calendar'));
 app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api/exports', require('./routes/exports'));
+app.use('/api/recruitment', require('./routes/recruitment'));
+app.use('/api/integrations', require('./routes/integrations'));
 
 
 app.listen(port, () => {

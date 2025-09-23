@@ -8,15 +8,26 @@ const {
   deleteFreelancer,
   sendFreelancerFormLink,
   submitFreelancerPublicForm,
+  updateAvailability,
+  addComplianceDocument,
+  addWorkHistory,
+  getExpiringCompliance,
+  updateContractRenewal,
 } = require('../controllers/freelancerController');
 const freelancerUploads = require('../middleware/freelancerUploads');
+const { authenticate, authorize } = require('../middleware/auth');
 
-router.get('/', getAllFreelancers);
-router.get('/:id', getFreelancerById);
-router.post('/', freelancerUploads, createFreelancer);
-router.post('/send-form-link', sendFreelancerFormLink);
+router.get('/', authenticate, authorize('admin', 'manager', 'staff'), getAllFreelancers);
+router.get('/expiring-compliance', authenticate, authorize('admin', 'manager', 'staff'), getExpiringCompliance);
+router.get('/:id', authenticate, authorize('admin', 'manager', 'staff'), getFreelancerById);
+router.post('/', authenticate, authorize('admin', 'manager', 'staff'), freelancerUploads, createFreelancer);
+router.post('/send-form-link', authenticate, authorize('admin', 'manager', 'staff'), sendFreelancerFormLink);
 router.post('/public', freelancerUploads, submitFreelancerPublicForm);
-router.put('/:id', freelancerUploads, updateFreelancer);
-router.delete('/:id', deleteFreelancer);
+router.put('/:id', authenticate, authorize('admin', 'manager', 'staff'), freelancerUploads, updateFreelancer);
+router.put('/:id/availability', authenticate, authorize('admin', 'manager', 'staff'), updateAvailability);
+router.put('/:id/contract-renewal', authenticate, authorize('admin', 'manager', 'staff'), updateContractRenewal);
+router.post('/:id/compliance-documents', authenticate, authorize('admin', 'manager', 'staff'), freelancerUploads, addComplianceDocument);
+router.post('/:id/work-history', authenticate, authorize('admin', 'manager', 'staff'), addWorkHistory);
+router.delete('/:id', authenticate, authorize('admin', 'manager'), deleteFreelancer);
 
 module.exports = router; 

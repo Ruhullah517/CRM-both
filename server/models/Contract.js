@@ -8,7 +8,9 @@ const GeneratedContractSchema = new mongoose.Schema({
   filledData: { type: Object, required: true }, // key-value mapping of placeholders
   generatedDocUrl: { type: String }, // path to generated PDF
   signedDocUrl: { type: String }, // path to signed PDF (after signature)
-  status: { type: String, enum: ['pending', 'signed', 'cancelled'], default: 'pending' },
+  status: { type: String, enum: ['draft', 'sent', 'signed', 'cancelled'], default: 'draft' },
+  externalProvider: { type: String, enum: ['adobe', 'docusign', null], default: null },
+  externalAgreementId: { type: String },
   createdAt: { type: Date, default: Date.now },
 });
 

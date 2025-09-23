@@ -14,6 +14,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import Loader from '../components/Loader';
+import RemindersWidget from '../components/RemindersWidget';
+import ComplianceAlertsWidget from '../components/ComplianceAlertsWidget';
+import { getInvoiceStats, listInvoices } from '../services/invoices';
 
 const COLORS = ['#3b82f6', '#a21caf', '#22c55e', '#eab308'];
 
@@ -25,21 +28,27 @@ export default function Dashboard() {
   const [enquiries, setEnquiries] = useState([]);
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [invoiceStats, setInvoiceStats] = useState(null);
+  const [overdueInvoices, setOverdueInvoices] = useState([]);
 
   useEffect(() => {
     async function fetchAll() {
-      const [casesData, contractsData, freelancersData, enquiriesData, mentorsData] = await Promise.all([
+      const [casesData, contractsData, freelancersData, enquiriesData, mentorsData, statsData, invoicesData] = await Promise.all([
         getCases(),
         getGeneratedContracts(),
         getFreelancers(),
         getEnquiries(),
         getMentors(),
+        getInvoiceStats(),
+        listInvoices(),
       ]);
       setCases(casesData);
       setContracts(contractsData);
       setFreelancers(freelancersData);
       setEnquiries(enquiriesData);
       setMentors(mentorsData);
+      setInvoiceStats(statsData);
+      setOverdueInvoices((invoicesData || []).filter(inv => inv.status === 'overdue').slice(0,5));
       setLoading(false);
     }
     fetchAll();
@@ -127,6 +136,37 @@ export default function Dashboard() {
 
         {/* Right: Recent Lists */}
         <div className="col-span-2 flex flex-col gap-8">
+          {/* Reminders, Invoices, and Compliance */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <RemindersWidget />
+            <ComplianceAlertsWidget />
+            <div className="bg-white rounded shadow p-6">
+              <h2 className="text-lg font-bold mb-4">Invoice Overview</h2>
+              {invoiceStats ? (
+                <ul className="text-sm space-y-1">
+                  <li><span className="font-semibold">Paid:</span> £{invoiceStats.totalPaid}</li>
+                  <li><span className="font-semibold">Pending:</span> £{invoiceStats.totalPending}</li>
+                  <li><span className="font-semibold text-red-700">Overdue:</span> £{invoiceStats.totalOverdue}</li>
+                  <li><span className="font-semibold">Invoices:</span> {invoiceStats.totalInvoices}</li>
+                  <li><span className="font-semibold">Total Amount:</span> £{invoiceStats.totalAmount}</li>
+                </ul>
+              ) : (
+                <div className="text-xs text-gray-500">No invoice data</div>
+              )}
+              <div className="mt-4">
+                <h3 className="font-semibold mb-2">Recent Overdue</h3>
+                <ul className="space-y-1">
+                  {overdueInvoices.map((inv)=> (
+                    <li key={inv._id} className="text-xs flex justify-between">
+                      <span>{inv.invoiceNumber} - {inv.client?.name}</span>
+                      <span className="text-red-700">£{inv.total?.toFixed(2)}</span>
+                    </li>
+                  ))}
+                  {overdueInvoices.length === 0 && <li className="text-xs text-gray-400">None</li>}
+                </ul>
+              </div>
+            </div>
+          </div>
           {/* Recent Cases */}
           <div className="bg-white rounded shadow p-6">
             <h2 className="text-lg font-bold mb-4">Recent Cases</h2>

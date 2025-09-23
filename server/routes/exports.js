@@ -4,7 +4,9 @@ const { authenticate } = require('../middleware/auth');
 const {
   exportTrainingEvents,
   exportTrainingBookings,
-  exportPaymentHistory
+  exportPaymentHistory,
+  exportContacts,
+  exportEnquiries
 } = require('../controllers/exportController');
 
 // All export routes require authentication
@@ -18,5 +20,11 @@ router.get('/training-bookings', exportTrainingBookings);
 
 // Export payment history
 router.get('/payment-history', exportPaymentHistory);
+
+// Export contacts
+router.get('/contacts', exportContacts);
+
+// Export enquiries
+router.get('/enquiries', exportEnquiries);
 
 module.exports = router;

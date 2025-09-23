@@ -1,6 +1,7 @@
 const Case = require('../models/Case');
 const { v4: uuidv4 } = require('uuid');
 const Contact = require('../models/Contact');
+const CaseMeeting = require('../models/CaseMeeting');
 
 // List all cases
 const getAllCases = async (req, res) => {

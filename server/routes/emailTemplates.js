@@ -14,18 +14,19 @@ const {
 } = require('../controllers/emailTemplateController');
 const { sendBulkEmail } = require('../controllers/emailController');
 const upload = require('../middleware/upload');
+const { authenticate, authorize } = require('../middleware/auth');
 
-router.get('/', getAllEmailTemplates);
-router.get('/:id', getEmailTemplateById);
-router.post('/', upload.single('logo'), createEmailTemplate);
-router.put('/:id', upload.single('logo'), updateEmailTemplate);
-router.delete('/:id', deleteEmailTemplate);
+router.get('/', authenticate, authorize('admin', 'manager', 'staff'), getAllEmailTemplates);
+router.get('/:id', authenticate, authorize('admin', 'manager', 'staff'), getEmailTemplateById);
+router.post('/', authenticate, authorize('admin', 'manager', 'staff'), upload.single('logo'), createEmailTemplate);
+router.put('/:id', authenticate, authorize('admin', 'manager', 'staff'), upload.single('logo'), updateEmailTemplate);
+router.delete('/:id', authenticate, authorize('admin', 'manager'), deleteEmailTemplate);
 
 // Debug endpoint to check template data
-router.get('/debug/templates', debugTemplates);
+router.get('/debug/templates', authenticate, authorize('admin'), debugTemplates);
 
 // Test endpoint to verify logo data
-router.get('/test/logo/:templateId', testTemplateLogo);
+router.get('/test/logo/:templateId', authenticate, authorize('admin', 'manager', 'staff'), testTemplateLogo);
 
 // Serve logo images for email templates
 router.get('/logo/:encodedLogo', serveLogo);
@@ -34,9 +35,9 @@ router.get('/logo/:encodedLogo', serveLogo);
 router.get('/logo/template/:templateId', serveLogoByTemplate);
 
 // Migration endpoint to convert existing templates to base64
-router.post('/migrate-to-base64', migrateTemplatesToBase64);
+router.post('/migrate-to-base64', authenticate, authorize('admin'), migrateTemplatesToBase64);
 
 // Bulk email endpoint
-router.post('/bulk', sendBulkEmail);
+router.post('/bulk', authenticate, authorize('admin', 'manager', 'staff'), sendBulkEmail);
 
 module.exports = router; 

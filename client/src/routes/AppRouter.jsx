@@ -25,6 +25,9 @@ import PublicTrainingBooking from '../pages/PublicTrainingBooking';
 import Certificates from '../pages/Certificates';
 import Invoices from '../pages/Invoices';
 import Calendar from '../pages/Calendar';
+import EmailManagement from '../pages/EmailManagement';
+import ContactManagement from '../pages/ContactManagement';
+import Reports from '../pages/Reports';
 
 
 import PublicFeedback from '../pages/PublicFeedback';
@@ -38,25 +41,38 @@ export default function AppRouter() {
         <Route element={<PrivateRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/candidates" element={<Candidates />} />
-            <Route path="/referrals" element={<Cases />} />
-            <Route path="/contracts" element={<Contracts />} />
-            <Route path="/freelancers" element={<Freelancers />} />
-            <Route path="/contacts" element={<Contacts />} />
+            <Route element={<PrivateRoute roles={["admin", "manager", "staff"]} />}>
+              <Route path="/candidates" element={<Candidates />} />
+              <Route path="/contacts" element={<Contacts />} />
+              <Route path="/pipeline" element={<RecruitmentPipeline />} />
+              <Route path="/email-templates" element={<EmailTemplates />} />
+              <Route path="/contract-templates" element={<ContractTemplates />} />
+              <Route path="/mentors" element={<Mentors />} />
+              <Route path="/freelancers" element={<Freelancers />} />
+              <Route path="/training" element={<TrainingEvents />} />
+              <Route path="/certificates" element={<Certificates />} />
+              <Route path="/invoices" element={<Invoices />} />
+              <Route path="/contracts" element={<Contracts />} />
+              <Route path="/email-management" element={<EmailManagement />} />
+              <Route path="/contact-management" element={<ContactManagement />} />
+              <Route path="/reports" element={<Reports />} />
+            </Route>
+
+            <Route element={<PrivateRoute roles={["admin", "manager", "caseworker"]} />}>
+              <Route path="/referrals" element={<Cases />} />
+            </Route>
+
+            <Route element={<PrivateRoute roles={["admin", "manager", "staff", "caseworker", "trainer"]} />}>
+              <Route path="/calendar" element={<Calendar />} />
+            </Route>
             <Route path="/profile" element={<Profile />} />
-            <Route path="/pipeline" element={<RecruitmentPipeline />} />
-            <Route path="/email-templates" element={<EmailTemplates />} />
-            <Route path="/contract-templates" element={<ContractTemplates />} />
-            <Route path="/mentors" element={<Mentors />} />
-            <Route path="/users" element={<Users />} />
+            {/* Admin-only routes */}
+            <Route element={<PrivateRoute roles={["admin"]} />}>
+              <Route path="/users" element={<Users />} />
+            </Route>
             <Route path="/enquiries" element={<Enquiries />} />
             <Route path="/enquiries/:id" element={<EnquiryDetail />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/training" element={<TrainingEvents />} />
-
-              <Route path="/certificates" element={<Certificates />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/calendar" element={<Calendar />} />
 
           </Route>
         </Route>

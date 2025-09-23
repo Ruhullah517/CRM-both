@@ -8,18 +8,19 @@ const {
   downloadContract,
   deleteGeneratedContract,
 } = require('../controllers/contractController');
+const { authenticate, authorize } = require('../middleware/auth');
 
 // List all generated contracts
-router.get('/', getAllGeneratedContracts);
+router.get('/', authenticate, authorize('admin', 'manager', 'staff'), getAllGeneratedContracts);
 // Get a single generated contract
-router.get('/:id', getGeneratedContract);
+router.get('/:id', authenticate, authorize('admin', 'manager', 'staff'), getGeneratedContract);
 // Generate a new contract
-router.post('/generate', generateContract);
+router.post('/generate', authenticate, authorize('admin', 'manager', 'staff'), generateContract);
 // Send for e-signature
-router.post('/:id/send-signature', sendForSignature);
+router.post('/:id/send-signature', authenticate, authorize('admin', 'manager', 'staff'), sendForSignature);
 // Download contract PDF
-router.get('/:id/download', downloadContract);
+router.get('/:id/download', authenticate, authorize('admin', 'manager', 'staff'), downloadContract);
 // Delete a generated contract
-router.delete('/:id', deleteGeneratedContract);
+router.delete('/:id', authenticate, authorize('admin', 'manager'), deleteGeneratedContract);
 
 module.exports = router; 

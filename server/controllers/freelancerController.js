@@ -368,12 +368,153 @@ const submitFreelancerPublicForm = async (req, res) => {
   }
 };
 
+// Update freelancer availability
+const updateAvailability = async (req, res) => {
+  try {
+    const { availability, availabilityNotes } = req.body;
+    const freelancer = await Freelancer.findByIdAndUpdate(
+      req.params.id,
+      { availability, availabilityNotes, updated_at: new Date() },
+      { new: true }
+    );
+    if (!freelancer) return res.status(404).json({ msg: 'Freelancer not found' });
+    res.json(freelancer);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Add compliance document
+const addComplianceDocument = async (req, res) => {
+  try {
+    const { name, type, expiryDate } = req.body;
+    let fileUrl = req.body.fileUrl;
+    let fileName = req.body.fileName;
+
+    if (req.files && req.files.complianceFile && req.files.complianceFile[0]) {
+      fileUrl = '/uploads/freelancers/compliance/' + req.files.complianceFile[0].filename;
+      fileName = req.files.complianceFile[0].originalname;
+    }
+
+    const document = {
+      name,
+      type,
+      expiryDate: expiryDate ? new Date(expiryDate) : null,
+      fileUrl,
+      fileName
+    };
+
+    const freelancer = await Freelancer.findByIdAndUpdate(
+      req.params.id,
+      { $push: { complianceDocuments: document }, updated_at: new Date() },
+      { new: true }
+    );
+    if (!freelancer) return res.status(404).json({ msg: 'Freelancer not found' });
+    res.json(freelancer);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Add work history entry
+const addWorkHistory = async (req, res) => {
+  try {
+    const { assignment, startDate, endDate, hours, rate, notes } = req.body;
+    const totalAmount = hours * rate;
+
+    const workEntry = {
+      assignment,
+      startDate: new Date(startDate),
+      endDate: endDate ? new Date(endDate) : null,
+      hours,
+      rate,
+      totalAmount,
+      status: endDate ? 'completed' : 'in_progress',
+      notes
+    };
+
+    const freelancer = await Freelancer.findByIdAndUpdate(
+      req.params.id,
+      { $push: { workHistory: workEntry }, updated_at: new Date() },
+      { new: true }
+    );
+    if (!freelancer) return res.status(404).json({ msg: 'Freelancer not found' });
+    res.json(freelancer);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Get compliance documents expiring soon
+const getExpiringCompliance = async (req, res) => {
+  try {
+    const daysAhead = parseInt(req.query.days) || 30;
+    const futureDate = new Date();
+    futureDate.setDate(futureDate.getDate() + daysAhead);
+
+    const freelancers = await Freelancer.find({
+      'complianceDocuments.expiryDate': { $lte: futureDate, $gte: new Date() }
+    }).select('fullName email complianceDocuments');
+
+    const expiringDocs = [];
+    freelancers.forEach(freelancer => {
+      freelancer.complianceDocuments.forEach(doc => {
+        if (doc.expiryDate && doc.expiryDate <= futureDate && doc.expiryDate >= new Date()) {
+          expiringDocs.push({
+            freelancerId: freelancer._id,
+            freelancerName: freelancer.fullName,
+            freelancerEmail: freelancer.email,
+            documentName: doc.name,
+            documentType: doc.type,
+            expiryDate: doc.expiryDate,
+            daysUntilExpiry: Math.ceil((doc.expiryDate - new Date()) / (1000 * 60 * 60 * 24))
+          });
+        }
+      });
+    });
+
+    res.json(expiringDocs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Update contract renewal date
+const updateContractRenewal = async (req, res) => {
+  try {
+    const { contractRenewalDate, contractStatus } = req.body;
+    const freelancer = await Freelancer.findByIdAndUpdate(
+      req.params.id,
+      { 
+        contractRenewalDate: contractRenewalDate ? new Date(contractRenewalDate) : null,
+        contractStatus: contractStatus || 'active',
+        updated_at: new Date() 
+      },
+      { new: true }
+    );
+    if (!freelancer) return res.status(404).json({ msg: 'Freelancer not found' });
+    res.json(freelancer);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 module.exports = {
   getAllFreelancers,
   getFreelancerById,
   createFreelancer,
   updateFreelancer,
   deleteFreelancer,
+  updateAvailability,
+  addComplianceDocument,
+  addWorkHistory,
+  getExpiringCompliance,
+  updateContractRenewal,
 };
 module.exports.sendFreelancerFormLink = sendFreelancerFormLink;
 module.exports.submitFreelancerPublicForm = submitFreelancerPublicForm; 

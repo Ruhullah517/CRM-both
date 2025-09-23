@@ -4,6 +4,8 @@ const Invoice = require('../models/Invoice');
 const Certificate = require('../models/Certificate');
 const Feedback = require('../models/Feedback');
 const { Parser } = require('json2csv');
+const Contact = require('../models/Contact');
+const Enquiry = require('../models/Enquiry');
 
 // Export training events data
 const exportTrainingEvents = async (req, res) => {
@@ -149,5 +151,63 @@ const exportPaymentHistory = async (req, res) => {
 module.exports = {
   exportTrainingEvents,
   exportTrainingBookings,
-  exportPaymentHistory
+  exportPaymentHistory,
+  // New exports
+  exportContacts: async (req, res) => {
+    try {
+      const contacts = await Contact.find().lean();
+      const csvData = contacts.map(c => ({
+        'Contact ID': c._id,
+        'Name': c.name,
+        'Email': c.email || '',
+        'Phone': c.phone || '',
+        'Organization': c.organizationName || '',
+        'Type': c.contactType || c.type || '',
+        'Tags': Array.isArray(c.tags) ? c.tags.join(', ') : '',
+        'Interest Areas': Array.isArray(c.interestAreas) ? c.interestAreas.join(', ') : '',
+        'Lead Source': c.leadSource || '',
+        'Lead Score': c.leadScore ?? '',
+        'Status': c.status || '',
+        'Next Follow-up': c.nextFollowUpDate ? new Date(c.nextFollowUpDate).toLocaleDateString() : '',
+        'Last Contact': c.lastContactDate ? new Date(c.lastContactDate).toLocaleDateString() : '',
+        'Created Date': c.created_at ? new Date(c.created_at).toLocaleDateString() : ''
+      }));
+      const parser = new Parser();
+      const csv = parser.parse(csvData);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=contacts.csv');
+      res.send(csv);
+    } catch (error) {
+      console.error('Error exporting contacts:', error);
+      res.status(500).json({ msg: 'Error exporting data' });
+    }
+  },
+  exportEnquiries: async (req, res) => {
+    try {
+      const enquiries = await Enquiry.find().lean();
+      const csvData = enquiries.map(e => ({
+        'Enquiry ID': e._id,
+        'Full Name': e.full_name,
+        'Email': e.email_address,
+        'Telephone': e.telephone || '',
+        'Location': e.location || '',
+        'Post Code': e.post_code || '',
+        'Submission Date': e.submission_date ? new Date(e.submission_date).toLocaleDateString() : '',
+        'Pipeline Stage': e.pipelineStage || '',
+        'Status': e.status || '',
+        'Assigned Mentor': e.assignedMentor ? String(e.assignedMentor) : '',
+        'Assigned Assessor': e.assignedAssessor ? String(e.assignedAssessor) : '',
+        'Paused Until': e.pausedUntil ? new Date(e.pausedUntil).toLocaleDateString() : '',
+        'Rejection Reason': e.rejection_reason || ''
+      }));
+      const parser = new Parser();
+      const csv = parser.parse(csvData);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=enquiries.csv');
+      res.send(csv);
+    } catch (error) {
+      console.error('Error exporting enquiries:', error);
+      res.status(500).json({ msg: 'Error exporting data' });
+    }
+  }
 };
