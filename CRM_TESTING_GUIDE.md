@@ -89,24 +89,26 @@
 2. Use the public freelancer application form: `http://localhost:5173/freelancer-application`
 3. These will create applications that appear in the Recruitment → Documents tab
 
-### **Step 2.1: View Existing Enquiries**
+### **Step 2.1: View Enquiries List**
 1. Navigate to **Enquiries** in sidebar
 2. ✅ **Verify:** You see a list of enquiries received from the website
 3. Each enquiry shows:
-   - Name, email, submission date
+   - Name, email, phone number
    - Current stage (Enquiry, Initial Assessment, Application, etc.)
    - Assigned staff member
-   - Action buttons (Manage, Assign)
+   - Submission date
+4. Click **"View Recruitment Pipeline"** to see the full pipeline view
 
-### **Step 2.2: Assign Staff Member**
-1. In the enquiries list, find an unassigned enquiry
-2. Click **"Assign"** button
-3. Select a staff member from the dropdown list
-4. Click **"Confirm"**
-5. ✅ **Verify:** Enquiry shows as assigned to staff member
+### **Step 2.2: View Recruitment Pipeline**
+1. Navigate to **Recruitment** in sidebar
+2. ✅ **Verify:** You see the 6-stage pipeline:
+   - **Pipeline Overview:** Shows count of candidates in each stage
+   - **Stage Columns:** 6 columns showing candidates in each stage
+   - **Mentor/Freelancer Applications:** Additional applications from public forms
+3. The stages are: Enquiry → Initial Assessment → Application → Form F Assessment → Mentoring → Approval
 
-### **Step 2.3: Manage Enquiry Details**
-1. Click **"Manage"** on an enquiry to open details
+### **Step 2.3: Manage Individual Enquiry**
+1. From either Enquiries list or Recruitment pipeline, click **"Manage"** on an enquiry
 2. You'll see the **Recruitment Progress** showing current stage
 3. ✅ **Verify:** Progress bar shows current position in pipeline
 4. Review all enquiry information in the collapsible sections
@@ -149,18 +151,9 @@
 3. Click **"Approve Candidate"** or **"Reject Candidate"**
 4. ✅ **Verify:** Final approval decision is recorded
 
-### **Step 2.9: Recruitment Management Page**
-1. Navigate to **Recruitment** in sidebar
-2. ✅ **Verify:** You see three tabs:
-   - **Initial Assessment** - Shows enquiries needing initial assessment
-   - **Documents** - Shows mentor and freelancer applications
-   - **Form F Assessment Tracker** - Shows advanced stage candidates
-3. Test the **"Schedule Meeting"** button in Initial Assessment tab
-4. ✅ **Verify:** Meeting modal opens with proper form fields
-
-### **Step 2.10: Track Pipeline Stages**
-1. Go back to **Enquiries** list
-2. ✅ **Verify:** Your enquiry shows the correct current stage
+### **Step 2.9: Track Pipeline Progress**
+1. Go back to **Recruitment** pipeline view
+2. ✅ **Verify:** Your enquiry has moved to the correct stage column
 3. The stage should progress: Enquiry → Initial Assessment → Application → Form F Assessment → Mentoring → Approval
 
 ---
