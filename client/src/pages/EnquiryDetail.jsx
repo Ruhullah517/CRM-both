@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getEnquiryById, assignEnquiry, deleteEnquiry } from '../services/enquiries';
-import { getAssessmentByEnquiryId, createAssessment } from '../services/assessments';
+import { getAssessmentByEnquiryId, createAssessment, uploadAssessmentAttachment } from '../services/assessments';
 import { createFullAssessment, allocateMentoring, addCaseNote } from '../services/recruitment';
 import { getApplicationByEnquiryId, uploadApplication } from '../services/applications';
 import { getUsers } from '../services/users';
@@ -216,23 +216,7 @@ export default function EnquiryDetail() {
       
       // If a file is selected, upload it first
       if (attachmentFile) {
-        const formData = new FormData();
-        formData.append('attachment', attachmentFile);
-        
-        // Upload the file and get the URL
-        const uploadResponse = await fetch('/api/assessments/upload-attachment', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
-          },
-          body: formData
-        });
-        
-        if (!uploadResponse.ok) {
-          throw new Error('File upload failed');
-        }
-        
-        const uploadData = await uploadResponse.json();
+        const uploadData = await uploadAssessmentAttachment(attachmentFile);
         attachmentUrl = uploadData.url;
       }
       

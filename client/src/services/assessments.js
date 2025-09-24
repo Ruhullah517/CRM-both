@@ -20,4 +20,17 @@ export const createAssessment = async (data) => {
     headers: getAuthHeaders()
   });
   return response.data;
+};
+
+export const uploadAssessmentAttachment = async (file) => {
+  const formData = new FormData();
+  formData.append('attachment', file);
+  
+  const response = await axios.post(`${API_URL}/upload-attachment`, formData, {
+    headers: {
+      ...getAuthHeaders(),
+      'Content-Type': 'multipart/form-data'
+    }
+  });
+  return response.data;
 }; 

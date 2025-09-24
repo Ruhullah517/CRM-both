@@ -5,7 +5,7 @@ const API_URL = 'https://crm-backend-0v14.onrender.com/api/applications';
 
 export const getApplicationByEnquiryId = async (enquiryId) => {
   try {
-    const response = await axios.get(`${API_URL}/${enquiryId}`);
+    const response = await api.get(`/applications/${enquiryId}`);
     return response.data;
   } catch (error) {
     if (error.response && error.response.status === 404) {
@@ -16,7 +16,7 @@ export const getApplicationByEnquiryId = async (enquiryId) => {
 };
 
 export const uploadApplication = async (formData) => {
-  const response = await axios.post(`${API_URL}/upload`, formData, {
+  const response = await api.post('/applications/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
