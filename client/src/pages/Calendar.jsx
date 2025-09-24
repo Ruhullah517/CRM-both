@@ -21,6 +21,7 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
   // Form state for adding new events
   const [formData, setFormData] = useState({
@@ -65,6 +66,7 @@ const Calendar = () => {
 
   const createEvent = async (e) => {
     e.preventDefault();
+    setSubmitting(true);
     try {
       console.log('Creating calendar event with data:', formData);
       const response = await api.post('/calendar', formData);
@@ -86,6 +88,8 @@ const Calendar = () => {
     } catch (error) {
       console.error('Error creating event:', error);
       alert('Error creating calendar event. Please try again.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -442,9 +446,17 @@ const Calendar = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600"
+                    disabled={submitting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
-                    Add Event
+                    {submitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Adding...
+                      </>
+                    ) : (
+                      "Add Event"
+                    )}
                   </button>
                 </div>
               </form>

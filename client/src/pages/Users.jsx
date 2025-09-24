@@ -15,6 +15,7 @@ export default function Users() {
   console.log('Current user:', user);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ email: '', role: roles[0].value, name: '', password: '' });
   const [editId, setEditId] = useState(null);
@@ -49,6 +50,7 @@ export default function Users() {
     e.preventDefault();
     if (!form.email) return;
     setError(null);
+    setSubmitting(true);
     try {
       const payload = { ...form };
       if (!editId && !form.password) {
@@ -69,6 +71,8 @@ export default function Users() {
       fetchUsers();
     } catch (err) {
       setError('Failed to save user');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -225,9 +229,17 @@ export default function Users() {
               />
               <button
                 type="submit"
-                className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold"
+                disabled={submitting}
+                className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                {editId ? 'Save Changes' : 'Add User'}
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {editId ? 'Saving...' : 'Adding...'}
+                  </>
+                ) : (
+                  editId ? 'Save Changes' : 'Add User'
+                )}
               </button>
             </form>
           </div>

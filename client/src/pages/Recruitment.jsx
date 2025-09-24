@@ -22,6 +22,7 @@ const Recruitment = () => {
   const [mentorApplications, setMentorApplications] = useState([]);
   const [freelancerApplications, setFreelancerApplications] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [selectedEnquiry, setSelectedEnquiry] = useState(null);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
@@ -57,10 +58,17 @@ const Recruitment = () => {
 
   const handleMeetingSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Implement meeting creation
-    console.log('Meeting submitted:', meetingForm);
-    setShowMeetingModal(false);
-    setMeetingForm({ type: 'telephone', date: '', notes: '', attendees: '' });
+    setSubmitting(true);
+    try {
+      // TODO: Implement meeting creation
+      console.log('Meeting submitted:', meetingForm);
+      setShowMeetingModal(false);
+      setMeetingForm({ type: 'telephone', date: '', notes: '', attendees: '' });
+    } catch (error) {
+      console.error('Error creating meeting:', error);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const getStageColor = (stage) => {
@@ -388,9 +396,17 @@ const Recruitment = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                    disabled={submitting}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
-                    Schedule Meeting
+                    {submitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Scheduling...
+                      </>
+                    ) : (
+                      "Schedule Meeting"
+                    )}
                   </button>
                 </div>
               </form>

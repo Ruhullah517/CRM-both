@@ -1202,6 +1202,7 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
 };
 
 const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     title: event?.title || '',
     description: event?.description || '',
@@ -1217,17 +1218,24 @@ const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
     tags: event?.tags?.join(', ') || ''
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const eventData = {
-      ...form,
-      tags: form.tags ? form.tags.split(',').map(tag => tag.trim()) : []
-    };
-    
-    if (event) {
-      onSubmit(event._id, eventData);
-    } else {
-      onSubmit(eventData);
+    setSubmitting(true);
+    try {
+      const eventData = {
+        ...form,
+        tags: form.tags ? form.tags.split(',').map(tag => tag.trim()) : []
+      };
+      
+      if (event) {
+        await onSubmit(event._id, eventData);
+      } else {
+        await onSubmit(eventData);
+      }
+    } catch (error) {
+      console.error('Error submitting training event:', error);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -1373,9 +1381,17 @@ const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
             <div className="flex gap-3 pt-4">
               <button
                 type="submit"
-                className="flex-1 bg-[#2EAB2C] text-white py-2 rounded-lg hover:bg-green-700"
+                disabled={submitting}
+                className="flex-1 bg-[#2EAB2C] text-white py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                {event ? 'Update Event' : 'Create Event'}
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    {event ? 'Updating...' : 'Creating...'}
+                  </>
+                ) : (
+                  event ? 'Update Event' : 'Create Event'
+                )}
               </button>
               <button
                 type="button"

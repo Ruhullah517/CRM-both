@@ -337,7 +337,20 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
               <div className="text-xs text-gray-600">Files: {mFiles.map((f,i)=>(<span key={i} className="mr-2">{f.name || f.url}</span>))}</div>
             )}
             <div className="flex justify-end">
-              <button type="submit" className="px-3 py-1.5 bg-[#2EAB2C] text-white rounded text-sm">Add meeting</button>
+              <button 
+                type="submit" 
+                disabled={submitting}
+                className="px-3 py-1.5 bg-[#2EAB2C] text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                    Adding...
+                  </>
+                ) : (
+                  "Add meeting"
+                )}
+              </button>
             </div>
           </form>
         )}
@@ -420,6 +433,8 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
 };
 
 const CaseForm = ({ caseItem, onBack, onSave }) => {
+  const [submitting, setSubmitting] = useState(false);
+  
   // Main fields
   const [clientFullName, setClientFullName] = useState(caseItem?.clientFullName || "");
   const [dateOfBirth, setDateOfBirth] = useState(caseItem?.dateOfBirth ? caseItem.dateOfBirth.slice(0, 10) : "");
@@ -503,9 +518,11 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
   };
   const removeDocument = idx => setSupportingDocuments(supportingDocuments.filter((_, i) => i !== idx));
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    onSave({
+    setSubmitting(true);
+    try {
+      await onSave({
       ...caseItem,
       clientFullName,
       dateOfBirth,
@@ -541,6 +558,11 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
         financeEmail
       }
     });
+    } catch (error) {
+      console.error('Error saving case:', error);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -760,7 +782,20 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
           </div>
           {uploadError && <div className="text-red-500 text-sm">{uploadError}</div>}
         </div>
-        <button type="submit" className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold">{caseItem ? "Save" : "Add"}</button>
+        <button 
+          type="submit" 
+          disabled={submitting}
+          className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          {submitting ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              {caseItem ? "Saving..." : "Adding..."}
+            </>
+          ) : (
+            caseItem ? "Save" : "Add"
+          )}
+        </button>
       </form>
     </div>
   );

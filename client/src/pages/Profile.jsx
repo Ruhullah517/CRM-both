@@ -21,6 +21,8 @@ export default function Profile() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   // Fetch user profile from backend
   useEffect(() => {
@@ -49,8 +51,10 @@ export default function Profile() {
     e.preventDefault();
     setError('');
     setSuccess(false);
+    setPasswordLoading(true);
     if (newPassword !== confirmPassword) {
       setError('New passwords do not match.');
+      setPasswordLoading(false);
       return;
     }
     // Update password in backend
@@ -62,6 +66,8 @@ export default function Profile() {
       setConfirmPassword('');
     } catch (err) {
       setError('Failed to update password.');
+    } finally {
+      setPasswordLoading(false);
     }
   }
 
@@ -78,19 +84,26 @@ export default function Profile() {
 
   async function handleProfileSave(e) {
     e.preventDefault();
-    // If avatarFile is set, upload to a file server or handle as base64 (for now, just use preview)
-    let avatarUrl = editProfile.avatar;
-    // Update backend
-    await updateUser(userInfo.id, {
-      name: editProfile.name,
-      email: editProfile.email,
-      avatar: avatarUrl,
-    });
-    setProfile(editProfile);
-    setEditMode(false);
-    setProfileSuccess(true);
-    setTimeout(() => setProfileSuccess(false), 2000);
-    // Optionally, refresh AuthContext user info here
+    setProfileLoading(true);
+    try {
+      // If avatarFile is set, upload to a file server or handle as base64 (for now, just use preview)
+      let avatarUrl = editProfile.avatar;
+      // Update backend
+      await updateUser(userInfo.id, {
+        name: editProfile.name,
+        email: editProfile.email,
+        avatar: avatarUrl,
+      });
+      setProfile(editProfile);
+      setEditMode(false);
+      setProfileSuccess(true);
+      setTimeout(() => setProfileSuccess(false), 2000);
+      // Optionally, refresh AuthContext user info here
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    } finally {
+      setProfileLoading(false);
+    }
   }
 
   function handleProfileCancel() {
@@ -146,7 +159,20 @@ export default function Profile() {
         />
         {error && <div className="text-red-600 text-sm">{error}</div>}
         {success && <div className="text-green-700 text-sm">Password changed successfully (mocked).</div>}
-        <button type="submit" className="w-full bg-green-700 text-white py-2 rounded hover:bg-green-800">Change Password</button>
+        <button 
+          type="submit" 
+          disabled={passwordLoading}
+          className="w-full bg-green-700 text-white py-2 rounded hover:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+        >
+          {passwordLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              Changing...
+            </>
+          ) : (
+            "Change Password"
+          )}
+        </button>
       </form>
       {/* Edit Profile Modal */}
       {editMode && (
@@ -183,7 +209,20 @@ export default function Profile() {
                 type="email"
               />
               <div className="flex gap-2 mt-4">
-                <button type="submit" className="flex-1 bg-green-700 text-white py-2 rounded hover:bg-green-800 shadow">Save</button>
+                <button 
+                  type="submit" 
+                  disabled={profileLoading}
+                  className="flex-1 bg-green-700 text-white py-2 rounded hover:bg-green-800 shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {profileLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Saving...
+                    </>
+                  ) : (
+                    "Save"
+                  )}
+                </button>
                 <button type="button" className="flex-1 bg-gray-200 text-gray-700 py-2 rounded hover:bg-gray-300 shadow" onClick={handleProfileCancel}>Cancel</button>
               </div>
             </form>
