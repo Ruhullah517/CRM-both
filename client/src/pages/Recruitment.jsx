@@ -158,7 +158,7 @@ const Recruitment = () => {
                   <div key={enquiry._id} className="bg-gray-50 rounded-lg p-4 border">
                     <div className="flex justify-between items-start mb-3">
                       <h3 className="font-semibold text-gray-900">
-                        {enquiry.firstName} {enquiry.lastName}
+                        {enquiry.full_name}
                       </h3>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStageColor(enquiry.pipelineStage)}`}>
                         {enquiry.pipelineStage || 'Enquiry'}
@@ -166,9 +166,9 @@ const Recruitment = () => {
                     </div>
                     
                     <div className="space-y-2 text-sm text-gray-600">
-                      <p><strong>Email:</strong> {enquiry.email}</p>
-                      <p><strong>Phone:</strong> {enquiry.phone}</p>
-                      <p><strong>Submitted:</strong> {new Date(enquiry.createdAt).toLocaleDateString()}</p>
+                      <p><strong>Email:</strong> {enquiry.email_address}</p>
+                      <p><strong>Phone:</strong> {enquiry.telephone}</p>
+                      <p><strong>Submitted:</strong> {new Date(enquiry.submission_date).toLocaleDateString()}</p>
                     </div>
 
                     <div className="mt-4 flex space-x-2">
@@ -288,9 +288,9 @@ const Recruitment = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
                             <div className="text-sm font-medium text-gray-900">
-                              {enquiry.firstName} {enquiry.lastName}
+                              {enquiry.full_name}
                             </div>
-                            <div className="text-sm text-gray-500">{enquiry.email}</div>
+                            <div className="text-sm text-gray-500">{enquiry.email_address}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

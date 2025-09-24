@@ -82,45 +82,51 @@
 
 ## 🎯 **Module 2: Recruitment & Assessment**
 
-### **Step 2.1: Create an Enquiry**
+**Note:** Enquiries come from the website automatically. You cannot create new enquiries manually in the CRM.
+
+**For Testing:** If you don't have any enquiries in the system, you can:
+1. Use the public mentor application form: `http://localhost:5173/mentor-application`
+2. Use the public freelancer application form: `http://localhost:5173/freelancer-application`
+3. These will create applications that appear in the Recruitment → Documents tab
+
+### **Step 2.1: View Existing Enquiries**
 1. Navigate to **Enquiries** in sidebar
-2. Click **"Add New Enquiry"**
-3. Fill in personal details:
-   - **Full Name:** "Sarah Johnson"
-   - **Email:** "sarah@example.com"
-   - **Phone:** "07987654321"
-   - **Location:** "Manchester"
-   - **Post Code:** "M1 1AA"
-   - **Over 21:** Yes
-   - **Has Spare Room:** Yes
-   - **Previous Experience:** Yes
-4. Click **"Save Enquiry"**
-5. ✅ **Verify:** Enquiry appears in list with "Enquiry" stage
+2. ✅ **Verify:** You see a list of enquiries received from the website
+3. Each enquiry shows:
+   - Name, email, submission date
+   - Current stage (Enquiry, Initial Assessment, Application, etc.)
+   - Assigned staff member
+   - Action buttons (Manage, Assign)
 
 ### **Step 2.2: Assign Staff Member**
-1. In the enquiries list, click **"Assign"** for your enquiry
-2. Select a staff member from the dropdown list
-3. Click **"Confirm"**
-4. ✅ **Verify:** Enquiry shows as assigned to staff member
+1. In the enquiries list, find an unassigned enquiry
+2. Click **"Assign"** button
+3. Select a staff member from the dropdown list
+4. Click **"Confirm"**
+5. ✅ **Verify:** Enquiry shows as assigned to staff member
 
-### **Step 2.3: Initial Assessment**
-1. Click **"Manage"** on the enquiry to open details
+### **Step 2.3: Manage Enquiry Details**
+1. Click **"Manage"** on an enquiry to open details
 2. You'll see the **Recruitment Progress** showing current stage
-3. Go to **"1. Initial Assessment"** section
-4. Fill in assessment details:
+3. ✅ **Verify:** Progress bar shows current position in pipeline
+4. Review all enquiry information in the collapsible sections
+
+### **Step 2.4: Initial Assessment**
+1. In enquiry details, go to **"1. Initial Assessment"** section
+2. Fill in assessment details:
    - **Assessment Notes:** "Initial screening completed"
    - **Date:** Today's date
    - **Status:** "Approved"
-5. Click **"Submit Assessment"**
-6. ✅ **Verify:** Progress shows "Initial Assessment" completed
+3. Click **"Submit Assessment"**
+4. ✅ **Verify:** Progress shows "Initial Assessment" completed
 
-### **Step 2.4: Application Documents**
+### **Step 2.5: Application Documents**
 1. Go to **"2. Application Documents"** section
 2. Upload an application form (PDF)
 3. Click **"Upload"**
 4. ✅ **Verify:** Application document is uploaded and visible
 
-### **Step 2.5: Form F Assessment**
+### **Step 2.6: Form F Assessment**
 1. Go to **"3. Form F Assessment"** section
 2. Fill in assessment details:
    - **Recommendation:** "Proceed"
@@ -129,7 +135,7 @@
 3. Click **"Save Full Assessment"**
 4. ✅ **Verify:** Progress shows "Form F Assessment" completed
 
-### **Step 2.6: Mentoring Allocation**
+### **Step 2.7: Mentoring Allocation**
 1. Go to **"4. Mentoring Allocation"** section
 2. Fill in mentoring details:
    - **Select Mentor:** Choose a mentor from the dropdown list
@@ -137,13 +143,22 @@
 3. Click **"Allocate Mentor"**
 4. ✅ **Verify:** Progress shows "Mentoring" stage active
 
-### **Step 2.7: Final Approval**
+### **Step 2.8: Final Approval**
 1. Go to **"5. Final Approval"** section
 2. Review all completed stages
 3. Click **"Approve Candidate"** or **"Reject Candidate"**
 4. ✅ **Verify:** Final approval decision is recorded
 
-### **Step 2.8: Track Pipeline Stages**
+### **Step 2.9: Recruitment Management Page**
+1. Navigate to **Recruitment** in sidebar
+2. ✅ **Verify:** You see three tabs:
+   - **Initial Assessment** - Shows enquiries needing initial assessment
+   - **Documents** - Shows mentor and freelancer applications
+   - **Form F Assessment Tracker** - Shows advanced stage candidates
+3. Test the **"Schedule Meeting"** button in Initial Assessment tab
+4. ✅ **Verify:** Meeting modal opens with proper form fields
+
+### **Step 2.10: Track Pipeline Stages**
 1. Go back to **Enquiries** list
 2. ✅ **Verify:** Your enquiry shows the correct current stage
 3. The stage should progress: Enquiry → Initial Assessment → Application → Form F Assessment → Mentoring → Approval
