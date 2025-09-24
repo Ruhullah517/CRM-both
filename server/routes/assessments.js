@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { createAssessment, getAssessmentByEnquiryId, uploadAttachments } = require('../controllers/assessmentController');
+const { createAssessment, getAssessmentByEnquiryId, uploadAttachments, uploadAttachment } = require('../controllers/assessmentController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // Create a new assessment
@@ -11,5 +11,8 @@ router.get('/:enquiryId', authenticate, authorize('admin', 'manager', 'staff'), 
 
 // Upload assessment attachments
 router.post('/upload-attachments', authenticate, authorize('admin', 'manager', 'staff'), uploadAttachments);
+
+// Upload single assessment attachment
+router.post('/upload-attachment', authenticate, authorize('admin', 'manager', 'staff'), uploadAttachment);
 
 module.exports = router; 

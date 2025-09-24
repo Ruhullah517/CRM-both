@@ -107,7 +107,9 @@ export default function EnquiryDetail() {
   const [notes, setNotes] = useState('');
   const [date, setDate] = useState('');
   const [attachment, setAttachment] = useState('');
+  const [attachmentFile, setAttachmentFile] = useState(null);
   const [status, setStatus] = useState('Pending');
+  const [assessmentSubmitting, setAssessmentSubmitting] = useState(false);
 
   // Application State
   const [application, setApplication] = useState(null);
@@ -207,16 +209,61 @@ export default function EnquiryDetail() {
 
   async function handleAssessmentSubmit(e) {
     e.preventDefault();
-    await createAssessment({
-      enquiry_id: id,
-      staff_id: userInfo?.id,
-      assessment_notes: notes,
-      assessment_date: date,
-      attachments: attachment,
-      status,
-    });
-    setNotes(''); setDate(''); setAttachment(''); setStatus('Pending');
-    fetchAssessment();
+    setAssessmentSubmitting(true);
+    
+    try {
+      let attachmentUrl = attachment;
+      
+      // If a file is selected, upload it first
+      if (attachmentFile) {
+        const formData = new FormData();
+        formData.append('attachment', attachmentFile);
+        
+        // Upload the file and get the URL
+        const uploadResponse = await fetch('/api/assessments/upload-attachment', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: formData
+        });
+        
+        if (!uploadResponse.ok) {
+          throw new Error('File upload failed');
+        }
+        
+        const uploadData = await uploadResponse.json();
+        attachmentUrl = uploadData.url;
+      }
+      
+      // Create the assessment with the file URL
+      await createAssessment({
+        enquiry_id: id,
+        staff_id: userInfo?.id,
+        assessment_notes: notes,
+        assessment_date: date,
+        attachments: attachmentUrl,
+        status,
+      });
+      
+      // Reset form
+      setNotes('');
+      setDate('');
+      setAttachment('');
+      setAttachmentFile(null);
+      setStatus('Pending');
+      
+      // Refresh data
+      await fetchAssessment();
+      await fetchEnquiry();
+      
+      alert('Assessment submitted successfully!');
+    } catch (error) {
+      console.error('Error submitting assessment:', error);
+      alert('Error submitting assessment. Please try again.');
+    } finally {
+      setAssessmentSubmitting(false);
+    }
   }
 
   async function handleApplicationUpload(e) {
@@ -417,12 +464,83 @@ export default function EnquiryDetail() {
             <DetailRow label="Status" value={assessment.status} />
           </div>
         ) : (
-          <form onSubmit={handleAssessmentSubmit}>
-            <div className="mb-2"><label className="block font-semibold mb-1">Assessment Notes</label><textarea className="w-full border rounded px-2 py-1" value={notes} onChange={e => setNotes(e.target.value)} required /></div>
-            <div className="mb-2"><label className="block font-semibold mb-1">Date</label><input type="date" className="w-full border rounded px-2 py-1" value={date} onChange={e => setDate(e.target.value)} required /></div>
-            <div className="mb-2"><label className="block font-semibold mb-1">Attachment (URL)</label><input type="text" className="w-full border rounded px-2 py-1" value={attachment} onChange={e => setAttachment(e.target.value)} /></div>
-            <div className="mb-2"><label className="block font-semibold mb-1">Status</label><select className="w-full border rounded px-2 py-1" value={status} onChange={e => setStatus(e.target.value)}><option value="Pending">Pending</option><option value="Approved">Approved</option><option value="Rejected">Rejected</option></select></div>
-            <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded mt-2">Submit Assessment</button>
+          <form onSubmit={handleAssessmentSubmit} className="space-y-3">
+            <div>
+              <label className="block font-semibold mb-1">Assessment Notes</label>
+              <textarea 
+                className="w-full border rounded px-2 py-1" 
+                value={notes} 
+                onChange={e => setNotes(e.target.value)} 
+                required 
+                rows={3}
+              />
+            </div>
+            
+            <div>
+              <label className="block font-semibold mb-1">Date</label>
+              <input 
+                type="date" 
+                className="w-full border rounded px-2 py-1" 
+                value={date} 
+                onChange={e => setDate(e.target.value)} 
+                required 
+              />
+            </div>
+            
+            <div>
+              <label className="block font-semibold mb-1">Attachment</label>
+              <div className="space-y-2">
+                <input 
+                  type="file" 
+                  className="w-full border rounded px-2 py-1" 
+                  onChange={e => setAttachmentFile(e.target.files[0])}
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt"
+                />
+                {attachmentFile && (
+                  <p className="text-sm text-gray-600">
+                    Selected: {attachmentFile.name}
+                  </p>
+                )}
+                <div className="text-sm text-gray-500">
+                  Or enter URL manually:
+                </div>
+                <input 
+                  type="text" 
+                  className="w-full border rounded px-2 py-1" 
+                  value={attachment} 
+                  onChange={e => setAttachment(e.target.value)}
+                  placeholder="Enter attachment URL"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="block font-semibold mb-1">Status</label>
+              <select 
+                className="w-full border rounded px-2 py-1" 
+                value={status} 
+                onChange={e => setStatus(e.target.value)}
+              >
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            
+            <button 
+              type="submit" 
+              disabled={assessmentSubmitting}
+              className="bg-green-600 text-white px-4 py-2 rounded mt-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {assessmentSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Submitting...
+                </>
+              ) : (
+                'Submit Assessment'
+              )}
+            </button>
           </form>
         )}
       </DetailSection>
