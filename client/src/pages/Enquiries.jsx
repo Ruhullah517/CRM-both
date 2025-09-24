@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getEnquiries, approveEnquiry, rejectEnquiry, assignEnquiry } from '../services/enquiries';
-import { createInitialAssessment, createFullAssessment, allocateMentoring } from '../services/recruitment';
+import { getEnquiries, assignEnquiry } from '../services/enquiries';
+import { getUsers } from '../services/users';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
 
@@ -9,21 +9,24 @@ export default function Enquiries() {
   const [enquiries, setEnquiries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [rejectingId, setRejectingId] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
   const [assigningId, setAssigningId] = useState(null);
   const [staffId, setStaffId] = useState('');
-  const [iaOpenId, setIaOpenId] = useState(null);
-  const [iaResult, setIaResult] = useState('Pass');
-  const [faOpenId, setFaOpenId] = useState(null);
-  const [faRecommendation, setFaRecommendation] = useState('Proceed');
-  const [mentorOpenId, setMentorOpenId] = useState(null);
-  const [mentorId, setMentorId] = useState('');
+  const [staffList, setStaffList] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchEnquiries();
+    fetchStaff();
   }, []);
+
+  async function fetchStaff() {
+    try {
+      const users = await getUsers();
+      setStaffList(users.filter(u => u.role === 'staff' || u.role === 'admin'));
+    } catch (err) {
+      setStaffList([]);
+    }
+  }
 
   async function fetchEnquiries() {
     setLoading(true);
@@ -41,18 +44,6 @@ export default function Enquiries() {
     setLoading(false);
   }
 
-  async function handleApprove(id) {
-    await approveEnquiry(id);
-    fetchEnquiries();
-  }
-
-  async function handleReject(id) {
-    await rejectEnquiry(id, rejectReason);
-    setRejectingId(null);
-    setRejectReason('');
-    fetchEnquiries();
-  }
-
   async function handleAssign(id) {
     await assignEnquiry(id, staffId);
     setAssigningId(null);
@@ -60,12 +51,49 @@ export default function Enquiries() {
     fetchEnquiries();
   }
 
+  // Get the current stage based on enquiry data
+  const getCurrentStage = (enquiry) => {
+    if (enquiry.status === 'Completed' || enquiry.status === 'Approved') return 'Approval';
+    if (enquiry.mentorAllocation?.mentorId) return 'Mentoring';
+    if (enquiry.fullAssessment?.result) return 'Form F Assessment';
+    if (enquiry.initialAssessment?.result) return 'Application';
+    return 'Enquiry';
+  };
+
+  // Get stage color for display
+  const getStageColor = (stage) => {
+    const colors = {
+      'Enquiry': 'bg-gray-100 text-gray-800',
+      'Application': 'bg-yellow-100 text-yellow-800',
+      'Form F Assessment': 'bg-blue-100 text-blue-800',
+      'Mentoring': 'bg-purple-100 text-purple-800',
+      'Approval': 'bg-green-100 text-green-800'
+    };
+    return colors[stage] || 'bg-gray-100 text-gray-800';
+  };
+
   if (loading) return <Loader />;
   if (error) return <div>{error}</div>;
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Initial Enquiry List</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Foster Carer Recruitment Pipeline</h1>
+        <div className="text-sm text-gray-600">
+          <span className="font-semibold">Flow:</span> Enquiry → Initial Assessment → Application → Form F Assessment → Mentoring → Approval
+        </div>
+      </div>
+      
+      {/* Stage Legend */}
+      <div className="mb-6 flex flex-wrap gap-2">
+        <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-sm">Enquiry</span>
+        <span className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-sm">Initial Assessment</span>
+        <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-sm">Application</span>
+        <span className="px-3 py-1 rounded-full bg-purple-100 text-purple-800 text-sm">Form F Assessment</span>
+        <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-sm">Mentoring</span>
+        <span className="px-3 py-1 rounded-full bg-green-100 text-green-800 text-sm">Approval</span>
+      </div>
+
       {/* Table for sm and up */}
       <div className="hidden sm:block">
         {enquiries.length === 0 ? (
@@ -77,85 +105,62 @@ export default function Enquiries() {
                 <th className="border px-4 py-2">Name</th>
                 <th className="border px-4 py-2">Email</th>
                 <th className="border px-4 py-2">Submission Date</th>
-                <th className="border px-4 py-2">Status</th>
+                <th className="border px-4 py-2">Current Stage</th>
                 <th className="border px-4 py-2">Assigned To</th>
                 <th className="border px-4 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {enquiries.map(enq => (
+              {enquiries.map(enq => {
+                const currentStage = getCurrentStage(enq);
+                return (
                 <tr key={enq._id}>
-                  <td className="border px-4 py-2">{enq.full_name}</td>
+                    <td className="border px-4 py-2 font-medium">{enq.full_name}</td>
                   <td className="border px-4 py-2">{enq.email_address}</td>
                   <td className="border px-4 py-2">{formatDate(enq.submission_date)}</td>
-                  <td className="border px-4 py-2">{enq.status}</td>
-                  <td className="border px-4 py-2">{enq.assigned_to_name || '-'}</td>
-                  <td className="border px-4 py-2 space-x-2">
-                    <button className="bg-black text-white px-2 py-1 rounded" onClick={() => navigate(`/enquiries/${enq._id}`)}>View</button>
-                    <button className="bg-green-600 text-white px-2 py-1 rounded" onClick={() => setIaOpenId(enq._id)}>Initial Assessment</button>
-                    <button className="bg-blue-600 text-white px-2 py-1 rounded" onClick={() => setFaOpenId(enq._id)}>Full Assessment</button>
-                    <button className="bg-purple-600 text-white px-2 py-1 rounded" onClick={() => setMentorOpenId(enq._id)}>Allocate Mentor</button>
-                    {/* <button className="bg-green-500 text-white px-2 py-1 rounded" onClick={() => handleApprove(enq._id)} disabled={enq.status === 'Approved'}>Approve</button>
-                    <button className="bg-red-500 text-white px-2 py-1 rounded" onClick={() => setRejectingId(enq._id)} disabled={enq.status === 'Rejected'}>Reject</button>
-                    <button className="bg-yellow-500 text-white px-2 py-1 rounded" onClick={() => setAssigningId(enq._id)}>Assign</button> */}
-                    {rejectingId === enq._id && (
-                      <span className="ml-2">
-                        <input
-                          type="text"
-                          placeholder="Reason"
-                          value={rejectReason}
-                          onChange={e => setRejectReason(e.target.value)}
-                          className="border px-2 py-1 rounded"
-                        />
-                        <button className="bg-red-700 text-white px-2 py-1 rounded ml-1" onClick={() => handleReject(enq._id)}>Confirm</button>
-                        <button className="ml-1" onClick={() => setRejectingId(null)}>Cancel</button>
+                    <td className="border px-4 py-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStageColor(currentStage)}`}>
+                        {currentStage}
                       </span>
+                    </td>
+                    <td className="border px-4 py-2">{enq.assigned_to_name || '-'}</td>
+                    <td className="border px-4 py-2 space-x-2">
+                      <button 
+                        className="bg-[#2EAB2C] text-white px-3 py-1 rounded text-sm hover:bg-green-700" 
+                        onClick={() => navigate(`/enquiries/${enq._id}`)}
+                      >
+                        Manage
+                      </button>
+                      {!enq.assigned_to && (
+                        <button 
+                          className="bg-yellow-500 text-white px-3 py-1 rounded text-sm hover:bg-yellow-600" 
+                          onClick={() => setAssigningId(enq._id)}
+                        >
+                          Assign
+                        </button>
                     )}
-                    {assigningId === enq._id && (
-                      <span className="ml-2">
-                        <input
-                          type="text"
-                          placeholder="Staff ID"
-                          value={staffId}
-                          onChange={e => setStaffId(e.target.value)}
-                          className="border px-2 py-1 rounded"
-                        />
-                        <button className="bg-yellow-700 text-white px-2 py-1 rounded ml-1" onClick={() => handleAssign(enq._id)}>Confirm</button>
-                        <button className="ml-1" onClick={() => setAssigningId(null)}>Cancel</button>
-                      </span>
-                    )}
-                    {iaOpenId === enq._id && (
-                      <span className="ml-2">
-                        <select className="border px-2 py-1 rounded" value={iaResult} onChange={e => setIaResult(e.target.value)}>
-                          <option>Pass</option>
-                          <option>Fail</option>
-                          <option>Needs More Info</option>
-                        </select>
-                        <button className="bg-green-700 text-white px-2 py-1 rounded ml-1" onClick={async () => { await createInitialAssessment({ enquiryId: enq._id, result: iaResult }); setIaOpenId(null); fetchEnquiries(); }}>Save</button>
-                        <button className="ml-1" onClick={() => setIaOpenId(null)}>Cancel</button>
-                      </span>
-                    )}
-                    {faOpenId === enq._id && (
-                      <span className="ml-2">
-                        <select className="border px-2 py-1 rounded" value={faRecommendation} onChange={e => setFaRecommendation(e.target.value)}>
-                          <option>Proceed</option>
-                          <option>Do not proceed</option>
-                          <option>Hold</option>
-                        </select>
-                        <button className="bg-blue-700 text-white px-2 py-1 rounded ml-1" onClick={async () => { await createFullAssessment({ enquiryId: enq._id, recommendation: faRecommendation }); setFaOpenId(null); fetchEnquiries(); }}>Save</button>
-                        <button className="ml-1" onClick={() => setFaOpenId(null)}>Cancel</button>
-                      </span>
-                    )}
-                    {mentorOpenId === enq._id && (
-                      <span className="ml-2">
-                        <input type="text" placeholder="Mentor ID" className="border px-2 py-1 rounded" value={mentorId} onChange={e => setMentorId(e.target.value)} />
-                        <button className="bg-purple-700 text-white px-2 py-1 rounded ml-1" onClick={async () => { await allocateMentoring({ enquiryId: enq._id, mentorId }); setMentorId(''); setMentorOpenId(null); fetchEnquiries(); }}>Save</button>
-                        <button className="ml-1" onClick={() => setMentorOpenId(null)}>Cancel</button>
-                      </span>
-                    )}
+                      {assigningId === enq._id && (
+                        <span className="ml-2">
+                          <select
+                            value={staffId}
+                            onChange={e => setStaffId(e.target.value)}
+                            className="border px-2 py-1 rounded text-sm"
+                          >
+                            <option value="">Select Staff Member</option>
+                            {staffList.map(staff => (
+                              <option key={staff.id || staff._id} value={staff.id || staff._id}>
+                                {staff.name}
+                              </option>
+                            ))}
+                          </select>
+                          <button className="bg-yellow-700 text-white px-2 py-1 rounded ml-1 text-sm" onClick={() => handleAssign(enq._id)} disabled={!staffId}>Confirm</button>
+                          <button className="ml-1 text-sm" onClick={() => setAssigningId(null)}>Cancel</button>
+                        </span>
+                      )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -166,11 +171,15 @@ export default function Enquiries() {
         {enquiries.length === 0 ? (
           <div className="text-center text-gray-500 py-8">No enquiries to show.</div>
         ) : (
-          enquiries.map(enq => (
+          enquiries.map(enq => {
+            const currentStage = getCurrentStage(enq);
+            return (
             <div key={enq._id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
               <div className="flex justify-between items-center">
                 <span className="font-semibold text-[#2EAB2C]">{enq.full_name}</span>
-                <span className="text-xs px-2 py-1 rounded bg-gray-100">{enq.status}</span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStageColor(currentStage)}`}>
+                    {currentStage}
+                  </span>
               </div>
               <div className="text-sm text-gray-700">
                 <span className="font-semibold">Email:</span> {enq.email_address}
@@ -182,43 +191,34 @@ export default function Enquiries() {
                 <span className="font-semibold">Assigned To:</span> {enq.assigned_to_name || '-'}
               </div>
               <div className="flex flex-col gap-2 mt-2">
-                <button className="w-full bg-black text-white px-3 py-2 rounded" onClick={() => navigate(`/enquiries/${enq._id}`)}>View</button>
-                {/* <button className="w-full bg-green-500 text-white px-3 py-2 rounded" onClick={() => handleApprove(enq._id)} disabled={enq.status === 'Approved'}>Approve</button>
-                <button className="w-full bg-red-500 text-white px-3 py-2 rounded" onClick={() => setRejectingId(enq._id)} disabled={enq.status === 'Rejected'}>Reject</button>
-                <button className="w-full bg-yellow-500 text-white px-3 py-2 rounded" onClick={() => setAssigningId(enq._id)}>Assign</button> */}
-                {rejectingId === enq._id && (
-                  <div className="flex flex-col gap-1 mt-2">
-                    <input
-                      type="text"
-                      placeholder="Reason"
-                      value={rejectReason}
-                      onChange={e => setRejectReason(e.target.value)}
-                      className="border px-2 py-1 rounded"
-                    />
-                    <div className="flex gap-2">
-                      <button className="bg-red-700 text-white px-2 py-1 rounded" onClick={() => handleReject(enq._id)}>Confirm</button>
-                      <button className="bg-gray-200 px-2 py-1 rounded" onClick={() => setRejectingId(null)}>Cancel</button>
-                    </div>
-                  </div>
+                  <button className="w-full bg-[#2EAB2C] text-white px-3 py-2 rounded" onClick={() => navigate(`/enquiries/${enq._id}`)}>Manage</button>
+                  {!enq.assigned_to && (
+                    <button className="w-full bg-yellow-500 text-white px-3 py-2 rounded" onClick={() => setAssigningId(enq._id)}>Assign</button>
                 )}
-                {assigningId === enq._id && (
-                  <div className="flex flex-col gap-1 mt-2">
-                    <input
-                      type="text"
-                      placeholder="Staff ID"
-                      value={staffId}
-                      onChange={e => setStaffId(e.target.value)}
-                      className="border px-2 py-1 rounded"
-                    />
-                    <div className="flex gap-2">
-                      <button className="bg-yellow-700 text-white px-2 py-1 rounded" onClick={() => handleAssign(enq._id)}>Confirm</button>
-                      <button className="bg-gray-200 px-2 py-1 rounded" onClick={() => setAssigningId(null)}>Cancel</button>
+                  {assigningId === enq._id && (
+                    <div className="flex flex-col gap-1 mt-2">
+                      <select
+                        value={staffId}
+                        onChange={e => setStaffId(e.target.value)}
+                        className="border px-2 py-1 rounded"
+                      >
+                        <option value="">Select Staff Member</option>
+                        {staffList.map(staff => (
+                          <option key={staff.id || staff._id} value={staff.id || staff._id}>
+                            {staff.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex gap-2">
+                        <button className="bg-yellow-700 text-white px-2 py-1 rounded" onClick={() => handleAssign(enq._id)} disabled={!staffId}>Confirm</button>
+                        <button className="bg-gray-200 px-2 py-1 rounded" onClick={() => setAssigningId(null)}>Cancel</button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

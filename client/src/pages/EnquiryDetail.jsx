@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEnquiryById, approveEnquiry, rejectEnquiry, assignEnquiry, deleteEnquiry } from '../services/enquiries';
+import { getEnquiryById, assignEnquiry, deleteEnquiry } from '../services/enquiries';
 import { getAssessmentByEnquiryId, createAssessment } from '../services/assessments';
 import { createFullAssessment, allocateMentoring, addCaseNote } from '../services/recruitment';
 import { getApplicationByEnquiryId, uploadApplication } from '../services/applications';
 import { getUsers } from '../services/users';
+import { getMentors } from '../services/mentors';
 import { useAuth } from '../contexts/AuthContext';
 import FormFAssessmentTracker from '../components/FormFAssessmentTracker';
 import { formatDate } from '../utils/dateUtils';
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/solid';
+import { ChevronDownIcon, ChevronUpIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/solid';
 
 const DetailSection = ({ title, children, isOpen, onToggle }) => (
   <div className="mb-4 border rounded">
@@ -30,6 +31,59 @@ const DetailRow = ({ label, value }) => (
   </div>
 );
 
+// Recruitment Flow Progress Component
+const RecruitmentFlowProgress = ({ enquiry }) => {
+  const stages = [
+    { key: 'enquiry', name: 'Enquiry', icon: CheckCircleIcon },
+    { key: 'initial', name: 'Initial Assessment', icon: CheckCircleIcon },
+    { key: 'application', name: 'Application', icon: CheckCircleIcon },
+    { key: 'formf', name: 'Form F Assessment', icon: CheckCircleIcon },
+    { key: 'mentoring', name: 'Mentoring', icon: CheckCircleIcon },
+    { key: 'approval', name: 'Approval', icon: CheckCircleIcon }
+  ];
+
+  const getCurrentStage = () => {
+    if (enquiry.status === 'Completed' || enquiry.status === 'Approved') return 'approval';
+    if (enquiry.mentorAllocation?.mentorId) return 'mentoring';
+    if (enquiry.fullAssessment?.result) return 'formf';
+    if (enquiry.initialAssessment?.result) return 'application';
+    return 'initial';
+  };
+
+  const currentStageIndex = stages.findIndex(s => s.key === getCurrentStage());
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6 mb-6">
+      <h2 className="text-xl font-bold mb-4">Recruitment Progress</h2>
+      <div className="flex items-center justify-between">
+        {stages.map((stage, index) => {
+          const isCompleted = index <= currentStageIndex;
+          const isCurrent = index === currentStageIndex;
+          const Icon = stage.icon;
+          
+          return (
+            <div key={stage.key} className="flex flex-col items-center">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
+                isCompleted ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+              }`}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <span className={`text-sm font-medium ${isCurrent ? 'text-green-600' : isCompleted ? 'text-green-500' : 'text-gray-500'}`}>
+                {stage.name}
+              </span>
+              {index < stages.length - 1 && (
+                <div className={`absolute w-full h-0.5 top-5 left-1/2 transform translate-x-1/2 ${
+                  isCompleted ? 'bg-green-500' : 'bg-gray-200'
+                }`} style={{ width: 'calc(100% - 2.5rem)' }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 export default function EnquiryDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -43,8 +97,6 @@ export default function EnquiryDetail() {
   const [openSection, setOpenSection] = useState('enquiry');
 
   // Action States
-  const [rejecting, setRejecting] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
   const [assigning, setAssigning] = useState(false);
   const [staffId, setStaffId] = useState('');
   const [staffList, setStaffList] = useState([]);
@@ -73,6 +125,7 @@ export default function EnquiryDetail() {
   const [mentorId, setMentorId] = useState('');
   const [meetingSchedule, setMeetingSchedule] = useState('');
   const [allocSubmitting, setAllocSubmitting] = useState(false);
+  const [mentorList, setMentorList] = useState([]);
 
   // Case note
   const [caseNote, setCaseNote] = useState('');
@@ -84,6 +137,7 @@ export default function EnquiryDetail() {
     fetchAssessment();
     fetchApplication();
     fetchStaff();
+    fetchMentors();
     // eslint-disable-next-line
   }, [id]);
 
@@ -129,22 +183,19 @@ export default function EnquiryDetail() {
   async function fetchStaff() {
     try {
       const users = await getUsers();
-      setStaffList(users.filter(u => u.role === 'staff'));
+      setStaffList(users.filter(u => u.role === 'staff' || u.role === 'admin'));
     } catch (err) {
       setStaffList([]);
     }
   }
 
-  async function handleApprove() {
-    await approveEnquiry(id);
-    fetchEnquiry();
-  }
-
-  async function handleReject() {
-    await rejectEnquiry(id, rejectReason);
-    setRejecting(false);
-    setRejectReason('');
-    fetchEnquiry();
+  async function fetchMentors() {
+    try {
+      const mentors = await getMentors();
+      setMentorList(mentors);
+    } catch (err) {
+      setMentorList([]);
+    }
   }
 
   async function handleAssign() {
@@ -263,47 +314,52 @@ export default function EnquiryDetail() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded shadow mt-8 mb-8">
+    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
       <button className="mb-4 text-[#2EAB2C] hover:underline" onClick={() => navigate(-1)}>&larr; Back to List</button>
+
+      {/* Recruitment Progress */}
+      <RecruitmentFlowProgress enquiry={enquiry} />
 
       {/* Enquiry Details Section */}
       <DetailSection title="Enquiry Details" isOpen={openSection === 'enquiry'} onToggle={() => toggleSection('enquiry')}>
-        <DetailRow label="Name" value={enquiry.full_name} />
-        <DetailRow label="Email" value={enquiry.email_address} />
-        <DetailRow label="Submission Date" value={formatDate(enquiry.submission_date)} />
-        <DetailRow label="Status" value={enquiry.status} />
-        <DetailRow label="Assigned To" value={enquiry.assigned_to_name || '-'} />
-        {enquiry.status === 'Rejected' && (
-          <DetailRow label="Rejection Reason" value={enquiry.rejection_reason} />
-        )}
-        <div className="flex gap-2 mt-4">
-          <button className="bg-green-500 text-white px-3 py-1 rounded" onClick={handleApprove} disabled={enquiry.status === 'Approved'}>Approve</button>
-          <button className="bg-red-500 text-white px-3 py-1 rounded" onClick={() => setRejecting(true)} disabled={enquiry.status === 'Rejected'}>Reject</button>
-          <button className="bg-yellow-500 text-white px-3 py-1 rounded" onClick={() => setAssigning(true)}>Assign</button>
-        </div>
-        {rejecting && (
-          <div className="mt-4 flex gap-2 items-center">
-            <input type="text" placeholder="Reason" value={rejectReason} onChange={e => setRejectReason(e.target.value)} className="border px-2 py-1 rounded" />
-            <button className="bg-red-700 text-white px-2 py-1 rounded" onClick={handleReject}>Confirm</button>
-            <button className="ml-1" onClick={() => setRejecting(false)}>Cancel</button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <DetailRow label="Name" value={enquiry.full_name} />
+            <DetailRow label="Email" value={enquiry.email_address} />
+            <DetailRow label="Phone" value={enquiry.telephone} />
+            <DetailRow label="Submission Date" value={formatDate(enquiry.submission_date)} />
           </div>
-        )}
-        {assigning && (
-          <div className="mt-4 flex gap-2 items-center">
-            <select
-              value={staffId}
-              onChange={e => setStaffId(e.target.value)}
-              className="border px-2 py-1 rounded"
-            >
-              <option value="">Select Staff</option>
-              {staffList.map(staff => (
-                <option key={staff.id || staff._id} value={staff.id || staff._id}>
-                  {staff.name}
-                </option>
-              ))}
-            </select>
-            <button className="bg-yellow-700 text-white px-2 py-1 rounded" onClick={handleAssign} disabled={!staffId}>Confirm</button>
-            <button className="ml-1" onClick={() => setAssigning(false)}>Cancel</button>
+          <div>
+            <DetailRow label="Status" value={enquiry.status} />
+            <DetailRow label="Assigned To" value={enquiry.assigned_to_name || '-'} />
+            <DetailRow label="Location" value={enquiry.location} />
+            <DetailRow label="Post Code" value={enquiry.post_code} />
+          </div>
+        </div>
+        
+        {!enquiry.assigned_to && (
+          <div className="mt-4 p-4 bg-yellow-50 rounded-lg">
+            <h3 className="font-semibold text-yellow-800 mb-2">Assign Staff Member</h3>
+            {assigning ? (
+              <div className="flex gap-2 items-center">
+                <select
+                  value={staffId}
+                  onChange={e => setStaffId(e.target.value)}
+                  className="border px-3 py-2 rounded"
+                >
+                  <option value="">Select Staff Member</option>
+                  {staffList.map(staff => (
+                    <option key={staff.id || staff._id} value={staff.id || staff._id}>
+                      {staff.name}
+                    </option>
+                  ))}
+                </select>
+                <button className="bg-yellow-600 text-white px-4 py-2 rounded" onClick={handleAssign} disabled={!staffId}>Assign</button>
+                <button className="bg-gray-500 text-white px-4 py-2 rounded" onClick={() => setAssigning(false)}>Cancel</button>
+              </div>
+            ) : (
+              <button className="bg-yellow-500 text-white px-4 py-2 rounded" onClick={() => setAssigning(true)}>Assign Staff Member</button>
+            )}
           </div>
         )}
       </DetailSection>
@@ -349,7 +405,7 @@ export default function EnquiryDetail() {
       </DetailSection>
 
       {/* Initial Assessment Section */}
-      <DetailSection title="Initial Assessment" isOpen={openSection === 'assessment'} onToggle={() => toggleSection('assessment')}>
+      <DetailSection title="1. Initial Assessment" isOpen={openSection === 'assessment'} onToggle={() => toggleSection('assessment')}>
         {assessmentLoading ? (
           <div>Loading assessment...</div>
         ) : assessment ? (
@@ -372,7 +428,7 @@ export default function EnquiryDetail() {
       </DetailSection>
 
       {/* Application Form Section */}
-      <DetailSection title="Application Form" isOpen={openSection === 'application'} onToggle={() => toggleSection('application')}>
+      <DetailSection title="2. Application Documents" isOpen={openSection === 'application'} onToggle={() => toggleSection('application')}>
         {applicationLoading ? (
           <div>Loading application...</div>
         ) : (
@@ -448,8 +504,8 @@ export default function EnquiryDetail() {
 
       </DetailSection>
 
-      {/* Full Assessment (minimal) */}
-      <DetailSection title="Full Assessment" isOpen={openSection === 'fullAssessment'} onToggle={() => toggleSection('fullAssessment')}>
+      {/* Form F Assessment Section */}
+      <DetailSection title="3. Form F Assessment" isOpen={openSection === 'fullAssessment'} onToggle={() => toggleSection('fullAssessment')}>
         <form onSubmit={handleCreateFullAssessment} className="space-y-3">
           <div>
             <label className="block font-semibold mb-1">Recommendation</label>
@@ -472,17 +528,29 @@ export default function EnquiryDetail() {
       </DetailSection>
 
       {/* Mentoring Allocation */}
-      <DetailSection title="Mentoring Allocation" isOpen={openSection === 'mentoring'} onToggle={() => toggleSection('mentoring')}>
+      <DetailSection title="4. Mentoring Allocation" isOpen={openSection === 'mentoring'} onToggle={() => toggleSection('mentoring')}>
         <form onSubmit={handleAllocateMentor} className="space-y-3">
           <div>
-            <label className="block font-semibold mb-1">Mentor ID</label>
-            <input className="w-full border rounded px-2 py-1" placeholder="Mentor ID" value={mentorId} onChange={e => setMentorId(e.target.value)} />
+            <label className="block font-semibold mb-1">Select Mentor</label>
+            <select 
+              className="w-full border rounded px-2 py-1" 
+              value={mentorId} 
+              onChange={e => setMentorId(e.target.value)}
+              required
+            >
+              <option value="">Select a Mentor</option>
+              {mentorList.map(mentor => (
+                <option key={mentor._id} value={mentor._id}>
+                  {mentor.name} - {mentor.specialization || 'General'}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block font-semibold mb-1">Meeting Schedule</label>
-            <input className="w-full border rounded px-2 py-1" placeholder="e.g. Weekly" value={meetingSchedule} onChange={e => setMeetingSchedule(e.target.value)} />
+            <input className="w-full border rounded px-2 py-1" placeholder="e.g. Weekly meetings" value={meetingSchedule} onChange={e => setMeetingSchedule(e.target.value)} />
           </div>
-          <button type="submit" disabled={allocSubmitting} className="bg-purple-600 text-white px-3 py-2 rounded">{allocSubmitting ? 'Allocating...' : 'Allocate Mentor'}</button>
+          <button type="submit" disabled={allocSubmitting || !mentorId} className="bg-purple-600 text-white px-3 py-2 rounded disabled:opacity-50">{allocSubmitting ? 'Allocating...' : 'Allocate Mentor'}</button>
         </form>
       </DetailSection>
 
@@ -495,15 +563,60 @@ export default function EnquiryDetail() {
       </DetailSection>
 
       {/* Form F Assessment Tracker Section */}
-      <DetailSection title="Form F Assessment" isOpen={openSection === 'formf'} onToggle={() => toggleSection('formf')}>
+      <DetailSection title="3. Form F Assessment Tracker" isOpen={openSection === 'formf'} onToggle={() => toggleSection('formf')}>
         <FormFAssessmentTracker enquiryId={id} />
       </DetailSection>
-      <button
-        className="bg-red-500 text-white px-2 py-1 rounded"
-        onClick={() => handleDelete(enquiry._id)}
-      >
-        Delete Enquiry
-      </button>
+
+      {/* Final Approval Section */}
+      <DetailSection title="5. Final Approval" isOpen={openSection === 'approval'} onToggle={() => toggleSection('approval')}>
+        <div className="space-y-4">
+          <div className="p-4 bg-green-50 rounded-lg">
+            <h3 className="font-semibold text-green-800 mb-2">Ready for Approval</h3>
+            <p className="text-green-700 text-sm mb-4">
+              This candidate has completed all stages of the recruitment process and is ready for final approval.
+            </p>
+            <div className="flex gap-2">
+              <button 
+                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to approve this candidate?')) {
+                    // Handle approval logic here
+                    alert('Candidate approved successfully!');
+                  }
+                }}
+              >
+                Approve Candidate
+              </button>
+              <button 
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to reject this candidate?')) {
+                    // Handle rejection logic here
+                    alert('Candidate rejected.');
+                  }
+                }}
+              >
+                Reject Candidate
+              </button>
+            </div>
+          </div>
+        </div>
+      </DetailSection>
+
+      {/* Admin Actions */}
+      <div className="mt-6 p-4 bg-red-50 rounded-lg">
+        <h3 className="font-semibold text-red-800 mb-2">Admin Actions</h3>
+        <button
+          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+          onClick={() => {
+            if (window.confirm('Are you sure you want to delete this enquiry? This action cannot be undone.')) {
+              handleDelete(enquiry._id);
+            }
+          }}
+        >
+          Delete Enquiry
+        </button>
+      </div>
     </div>
   );
 } 

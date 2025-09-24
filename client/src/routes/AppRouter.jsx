@@ -86,13 +86,13 @@ export default function AppRouter() {
             <Route element={<PrivateRoute roles={["admin"]} />}>
               <Route path="/users" element={<Users />} />
             </Route>
-            
+
             {/* Freelancer-specific routes */}
             <Route element={<PrivateRoute roles={["freelancer"]} />}>
               <Route path="/my-profile" element={<Profile />} />
               <Route path="/my-cases" element={<MyCases />} />
             </Route>
-            
+
             {/* Mentor-specific routes */}
             <Route element={<PrivateRoute roles={["mentor"]} />}>
               <Route path="/my-profile" element={<Profile />} />
@@ -100,7 +100,7 @@ export default function AppRouter() {
             </Route>
             <Route path="/enquiries" element={<Enquiries />} />
             <Route path="/enquiries/:id" element={<EnquiryDetail />} />
-              <Route path="/settings" element={<Settings />} />
+            <Route path="/settings" element={<Settings />} />
 
           </Route>
         </Route>
