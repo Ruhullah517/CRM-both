@@ -1,24 +1,12 @@
-import axios from 'axios';
-
-const API_URL = 'https://crm-backend-0v14.onrender.com/api/assessments';
-
-// Get auth token from localStorage
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
+import api from './api';
 
 export const getAssessmentByEnquiryId = async (enquiryId) => {
-  const response = await axios.get(`${API_URL}/${enquiryId}`, {
-    headers: getAuthHeaders()
-  });
+  const response = await api.get(`/assessments/${enquiryId}`);
   return response.data;
 };
 
 export const createAssessment = async (data) => {
-  const response = await axios.post(API_URL, data, {
-    headers: getAuthHeaders()
-  });
+  const response = await api.post('/assessments', data);
   return response.data;
 };
 
@@ -26,9 +14,8 @@ export const uploadAssessmentAttachment = async (file) => {
   const formData = new FormData();
   formData.append('attachment', file);
   
-  const response = await axios.post(`${API_URL}/upload-attachment`, formData, {
+  const response = await api.post('/assessments/upload-attachment', formData, {
     headers: {
-      ...getAuthHeaders(),
       'Content-Type': 'multipart/form-data'
     }
   });
