@@ -32,7 +32,7 @@ const DetailRow = ({ label, value }) => (
 );
 
 // Recruitment Flow Progress Component
-const RecruitmentFlowProgress = ({ enquiry }) => {
+const RecruitmentFlowProgress = ({ enquiry, assessment, application, fullAssessment, mentorAllocation }) => {
   const stages = [
     { key: 'enquiry', name: 'Enquiry', icon: CheckCircleIcon },
     { key: 'initial', name: 'Initial Assessment', icon: CheckCircleIcon },
@@ -42,43 +42,81 @@ const RecruitmentFlowProgress = ({ enquiry }) => {
     { key: 'approval', name: 'Approval', icon: CheckCircleIcon }
   ];
 
-  const getCurrentStage = () => {
-    if (enquiry.status === 'Completed' || enquiry.status === 'Approved') return 'approval';
-    if (enquiry.mentorAllocation?.mentorId) return 'mentoring';
-    if (enquiry.fullAssessment?.result) return 'formf';
-    if (enquiry.initialAssessment?.result) return 'application';
-    return 'initial';
+  // Check completion status of each stage
+  const getStageStatus = () => {
+    return {
+      enquiry: true, // Always completed if enquiry exists
+      initial: !!assessment && assessment.result, // Has assessment with result
+      application: !!application, // Has application uploaded
+      formf: !!fullAssessment && fullAssessment.result, // Has full assessment with result
+      mentoring: !!mentorAllocation && mentorAllocation.mentorId, // Has mentor allocated
+      approval: enquiry.status === 'Completed' || enquiry.status === 'Approved' // Final approval
+    };
   };
 
-  const currentStageIndex = stages.findIndex(s => s.key === getCurrentStage());
+  const stageStatus = getStageStatus();
+  
+  // Find the current stage (last completed stage + 1, or first incomplete stage)
+  const getCurrentStageIndex = () => {
+    for (let i = 0; i < stages.length; i++) {
+      if (!stageStatus[stages[i].key]) {
+        return i;
+      }
+    }
+    return stages.length - 1; // All stages completed
+  };
+
+  const currentStageIndex = getCurrentStageIndex();
 
   return (
     <div className="bg-white rounded-lg shadow p-6 mb-6">
       <h2 className="text-xl font-bold mb-4">Recruitment Progress</h2>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between relative">
         {stages.map((stage, index) => {
-          const isCompleted = index <= currentStageIndex;
-          const isCurrent = index === currentStageIndex;
+          const isCompleted = stageStatus[stage.key];
+          const isCurrent = index === currentStageIndex && !isCompleted;
           const Icon = stage.icon;
           
           return (
-            <div key={stage.key} className="flex flex-col items-center">
+            <div key={stage.key} className="flex flex-col items-center relative z-10">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 ${
-                isCompleted ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                isCompleted 
+                  ? 'bg-green-500 text-white' 
+                  : isCurrent 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-gray-200 text-gray-500'
               }`}>
                 <Icon className="w-5 h-5" />
               </div>
-              <span className={`text-sm font-medium ${isCurrent ? 'text-green-600' : isCompleted ? 'text-green-500' : 'text-gray-500'}`}>
+              <span className={`text-sm font-medium ${
+                isCompleted 
+                  ? 'text-green-600' 
+                  : isCurrent 
+                    ? 'text-blue-600' 
+                    : 'text-gray-500'
+              }`}>
                 {stage.name}
               </span>
               {index < stages.length - 1 && (
-                <div className={`absolute w-full h-0.5 top-5 left-1/2 transform translate-x-1/2 ${
-                  isCompleted ? 'bg-green-500' : 'bg-gray-200'
+                <div className={`absolute w-full h-0.5 top-5 left-1/2 transform translate-x-1/2 z-0 ${
+                  stageStatus[stage.key] ? 'bg-green-500' : 'bg-gray-200'
                 }`} style={{ width: 'calc(100% - 2.5rem)' }} />
               )}
             </div>
           );
         })}
+      </div>
+      
+      {/* Progress Summary */}
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <div className="flex justify-between items-center text-sm">
+          <span className="text-gray-600">
+            Progress: {Object.values(stageStatus).filter(Boolean).length} of {stages.length} stages completed
+          </span>
+          <span className="text-gray-500">
+            Current Stage: {stages[currentStageIndex]?.name || 'Completed'}
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -111,6 +149,14 @@ export default function EnquiryDetail() {
   const [status, setStatus] = useState('Needs More Info');
   const [assessmentSubmitting, setAssessmentSubmitting] = useState(false);
 
+  // Full Assessment State
+  const [fullAssessment, setFullAssessment] = useState(null);
+  const [fullAssessmentLoading, setFullAssessmentLoading] = useState(true);
+
+  // Mentor Allocation State
+  const [mentorAllocation, setMentorAllocation] = useState(null);
+  const [mentorAllocationLoading, setMentorAllocationLoading] = useState(true);
+
   // Application State
   const [application, setApplication] = useState(null);
   const [applicationLoading, setApplicationLoading] = useState(true);
@@ -138,6 +184,8 @@ export default function EnquiryDetail() {
     fetchEnquiry();
     fetchAssessment();
     fetchApplication();
+    fetchFullAssessment();
+    fetchMentorAllocation();
     fetchStaff();
     fetchMentors();
     // eslint-disable-next-line
@@ -198,6 +246,32 @@ export default function EnquiryDetail() {
     } catch (err) {
       setMentorList([]);
     }
+  }
+
+  async function fetchFullAssessment() {
+    setFullAssessmentLoading(true);
+    try {
+      // TODO: Implement full assessment fetch
+      // const data = await getFullAssessmentByEnquiryId(id);
+      // setFullAssessment(data);
+      setFullAssessment(null); // Placeholder
+    } catch (err) {
+      setFullAssessment(null);
+    }
+    setFullAssessmentLoading(false);
+  }
+
+  async function fetchMentorAllocation() {
+    setMentorAllocationLoading(true);
+    try {
+      // TODO: Implement mentor allocation fetch
+      // const data = await getMentorAllocationByEnquiryId(id);
+      // setMentorAllocation(data);
+      setMentorAllocation(null); // Placeholder
+    } catch (err) {
+      setMentorAllocation(null);
+    }
+    setMentorAllocationLoading(false);
   }
 
   async function handleAssign() {
@@ -267,6 +341,8 @@ export default function EnquiryDetail() {
       // Refresh data
       await fetchAssessment();
       await fetchEnquiry();
+      await fetchFullAssessment();
+      await fetchMentorAllocation();
       
       alert('Assessment submitted successfully!');
     } catch (error) {
@@ -295,6 +371,9 @@ export default function EnquiryDetail() {
     try {
       await uploadApplication(formData); // assume this makes a POST request
       await fetchApplication(); // refetch the updated data
+      await fetchEnquiry(); // Refresh enquiry data
+      await fetchFullAssessment(); // Refresh progress data
+      await fetchMentorAllocation(); // Refresh progress data
 
       // Optional: Show success feedback (toast, message, etc.)
       alert('File uploaded successfully.');
@@ -319,6 +398,12 @@ export default function EnquiryDetail() {
         checksDone: faChecksDone ? faChecksDone.split(',').map(s => s.trim()).filter(Boolean) : [],
         notes: faNotes,
       });
+      
+      // Refresh data to update progress
+      await fetchFullAssessment();
+      await fetchEnquiry();
+      await fetchMentorAllocation();
+      
       alert('Full assessment saved.');
     } catch (err) {
       alert('Failed to save full assessment');
@@ -331,6 +416,12 @@ export default function EnquiryDetail() {
     setAllocSubmitting(true);
     try {
       await allocateMentoring({ enquiryId: id, mentorId, meetingSchedule });
+      
+      // Refresh data to update progress
+      await fetchMentorAllocation();
+      await fetchEnquiry();
+      await fetchFullAssessment();
+      
       alert('Mentor allocated.');
     } catch (err) {
       alert('Failed to allocate mentor');
@@ -377,7 +468,13 @@ export default function EnquiryDetail() {
       <button className="mb-4 text-[#2EAB2C] hover:underline" onClick={() => navigate(-1)}>&larr; Back to List</button>
 
       {/* Recruitment Progress */}
-      <RecruitmentFlowProgress enquiry={enquiry} />
+      <RecruitmentFlowProgress 
+        enquiry={enquiry} 
+        assessment={assessment}
+        application={application}
+        fullAssessment={fullAssessment}
+        mentorAllocation={mentorAllocation}
+      />
 
       {/* Enquiry Details Section */}
       <DetailSection title="Enquiry Details" isOpen={openSection === 'enquiry'} onToggle={() => toggleSection('enquiry')}>

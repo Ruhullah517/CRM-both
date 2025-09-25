@@ -12,6 +12,8 @@ import {
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
 import { getEnquiries } from '../services/enquiries';
+import { getAssessmentByEnquiryId } from '../services/assessments';
+import { getApplicationByEnquiryId } from '../services/applications';
 import { getMentorApplications, getFreelancerApplications } from '../services/recruitment';
 
 const Recruitment = () => {
@@ -21,6 +23,7 @@ const Recruitment = () => {
   const [freelancerApplications, setFreelancerApplications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [enquiryStages, setEnquiryStages] = useState({}); // Store stage data for each enquiry
 
   // Define the 6 stages of recruitment
   const stages = [
@@ -48,6 +51,9 @@ const Recruitment = () => {
       setEnquiries(enquiriesData);
       setMentorApplications(mentorsData);
       setFreelancerApplications(freelancersData);
+      
+      // Fetch stage data for each enquiry
+      await loadEnquiryStages(enquiriesData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -55,13 +61,63 @@ const Recruitment = () => {
     }
   };
 
-  // Get current stage for an enquiry
+  const loadEnquiryStages = async (enquiriesData) => {
+    const stagesData = {};
+    
+    // Fetch assessment and application data for each enquiry
+    for (const enquiry of enquiriesData) {
+      try {
+        const [assessment, application] = await Promise.all([
+          getAssessmentByEnquiryId(enquiry._id).catch(() => null),
+          getApplicationByEnquiryId(enquiry._id).catch(() => null)
+        ]);
+        
+        stagesData[enquiry._id] = {
+          assessment,
+          application,
+          // Add more stage data as needed (fullAssessment, mentorAllocation, etc.)
+        };
+      } catch (error) {
+        console.error(`Error loading stage data for enquiry ${enquiry._id}:`, error);
+        stagesData[enquiry._id] = {
+          assessment: null,
+          application: null,
+        };
+      }
+    }
+    
+    setEnquiryStages(stagesData);
+  };
+
+  // Get current stage for an enquiry based on actual data
   const getCurrentStage = (enquiry) => {
+    // Check if enquiry is completed/approved
     if (enquiry.status === 'Completed' || enquiry.status === 'Approved') return 'approval';
-    if (enquiry.mentorAllocation?.mentorId) return 'mentoring';
-    if (enquiry.fullAssessment?.result) return 'form-f-assessment';
-    if (enquiry.initialAssessment?.result) return 'application';
-    return 'initial-assessment';
+    
+    // Get stage data for this enquiry
+    const stageData = enquiryStages[enquiry._id];
+    if (!stageData) return 'enquiry'; // Default if no stage data loaded yet
+    
+    // Check stages in order of completion
+    // 1. Check if initial assessment is completed
+    if (stageData.assessment && stageData.assessment.result) {
+      // 2. Check if application is uploaded
+      if (stageData.application) {
+        // 3. Check if form F assessment is completed (placeholder for now)
+        // if (stageData.fullAssessment && stageData.fullAssessment.result) {
+        //   // 4. Check if mentor is allocated (placeholder for now)
+        //   // if (stageData.mentorAllocation && stageData.mentorAllocation.mentorId) {
+        //   //   return 'mentoring';
+        //   // }
+        //   return 'form-f-assessment';
+        // }
+        return 'application';
+      }
+      return 'initial-assessment';
+    }
+    
+    // Default to enquiry stage
+    return 'enquiry';
   };
 
   // Get enquiries by stage
@@ -73,6 +129,26 @@ const Recruitment = () => {
   const getStageColor = (stageKey) => {
     const stage = stages.find(s => s.key === stageKey);
     return stage ? stage.color : 'bg-gray-100 text-gray-800';
+  };
+
+  // Refresh stage data for a specific enquiry (called when data changes)
+  const refreshEnquiryStage = async (enquiryId) => {
+    try {
+      const [assessment, application] = await Promise.all([
+        getAssessmentByEnquiryId(enquiryId).catch(() => null),
+        getApplicationByEnquiryId(enquiryId).catch(() => null)
+      ]);
+      
+      setEnquiryStages(prev => ({
+        ...prev,
+        [enquiryId]: {
+          assessment,
+          application,
+        }
+      }));
+    } catch (error) {
+      console.error(`Error refreshing stage data for enquiry ${enquiryId}:`, error);
+    }
   };
 
   if (loading) {
@@ -87,10 +163,31 @@ const Recruitment = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white shadow rounded-lg p-6">
-        <h1 className="text-2xl font-bold text-gray-900">Foster Carer Recruitment Pipeline</h1>
-        <p className="mt-2 text-gray-600">
-          Track candidates through the complete recruitment journey: Enquiry → Initial Assessment → Application → Form F Assessment → Mentoring → Approval
-        </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Foster Carer Recruitment Pipeline</h1>
+            <p className="mt-2 text-gray-600">
+              Track candidates through the complete recruitment journey: Enquiry → Initial Assessment → Application → Form F Assessment → Mentoring → Approval
+            </p>
+          </div>
+          <button
+            onClick={loadData}
+            disabled={loading}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          >
+            {loading ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Loading...
+              </>
+            ) : (
+              <>
+                <ArrowRightIcon className="h-4 w-4 mr-2" />
+                Refresh Data
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Stage Overview */}
@@ -133,37 +230,70 @@ const Recruitment = () => {
                     <p className="text-sm">No candidates in this stage</p>
                   </div>
                 ) : (
-                  stageEnquiries.map((enquiry) => (
-                    <div key={enquiry._id} className="bg-gray-50 rounded-lg p-3 border">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-gray-900 text-sm">
-                          {enquiry.full_name}
-                        </h4>
-                        <button
-                          onClick={() => navigate(`/enquiries/${enquiry._id}`)}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <EyeIcon className="h-4 w-4" />
-                        </button>
-                      </div>
-                      
-                      <div className="space-y-1 text-xs text-gray-600">
-                        <p>{enquiry.email_address}</p>
-                        <p>{enquiry.telephone}</p>
-                        <p className="text-gray-500">
-                          {new Date(enquiry.submission_date).toLocaleDateString()}
-                        </p>
-                      </div>
-
-                      {enquiry.assigned_to && (
-                        <div className="mt-2 pt-2 border-t border-gray-200">
-                          <p className="text-xs text-gray-500">
-                            <strong>Assigned to:</strong> {enquiry.assigned_to.name}
+                  stageEnquiries.map((enquiry) => {
+                    const stageData = enquiryStages[enquiry._id];
+                    const currentStage = getCurrentStage(enquiry);
+                    
+                    return (
+                      <div key={enquiry._id} className="bg-gray-50 rounded-lg p-3 border">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium text-gray-900 text-sm">
+                            {enquiry.full_name}
+                          </h4>
+                          <button
+                            onClick={() => navigate(`/enquiries/${enquiry._id}`)}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            <EyeIcon className="h-4 w-4" />
+                          </button>
+                        </div>
+                        
+                        <div className="space-y-1 text-xs text-gray-600">
+                          <p>{enquiry.email_address}</p>
+                          <p>{enquiry.telephone}</p>
+                          <p className="text-gray-500">
+                            {new Date(enquiry.submission_date).toLocaleDateString()}
                           </p>
                         </div>
-                      )}
-                    </div>
-                  ))
+
+                        {/* Stage Progress Indicators */}
+                        <div className="mt-2 pt-2 border-t border-gray-200">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500">Progress:</span>
+                            <div className="flex space-x-1">
+                              {/* Show completion indicators for each stage */}
+                              <div className={`w-2 h-2 rounded-full ${
+                                currentStage === 'enquiry' || stageData?.assessment ? 'bg-green-400' : 'bg-gray-300'
+                              }`} title="Enquiry"></div>
+                              <div className={`w-2 h-2 rounded-full ${
+                                stageData?.assessment?.result ? 'bg-green-400' : 'bg-gray-300'
+                              }`} title="Initial Assessment"></div>
+                              <div className={`w-2 h-2 rounded-full ${
+                                stageData?.application ? 'bg-green-400' : 'bg-gray-300'
+                              }`} title="Application"></div>
+                              <div className={`w-2 h-2 rounded-full ${
+                                currentStage === 'form-f-assessment' ? 'bg-green-400' : 'bg-gray-300'
+                              }`} title="Form F Assessment"></div>
+                              <div className={`w-2 h-2 rounded-full ${
+                                currentStage === 'mentoring' ? 'bg-green-400' : 'bg-gray-300'
+                              }`} title="Mentoring"></div>
+                              <div className={`w-2 h-2 rounded-full ${
+                                currentStage === 'approval' ? 'bg-green-400' : 'bg-gray-300'
+                              }`} title="Approval"></div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {enquiry.assigned_to && (
+                          <div className="mt-2 pt-2 border-t border-gray-200">
+                            <p className="text-xs text-gray-500">
+                              <strong>Assigned to:</strong> {enquiry.assigned_to.name}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
