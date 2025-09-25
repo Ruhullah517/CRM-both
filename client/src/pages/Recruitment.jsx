@@ -125,9 +125,25 @@ const Recruitment = () => {
     return 'enquiry';
   };
 
-  // Get enquiries by stage
+  // Get enquiry status for filtering
+  const getEnquiryStatus = (enquiry) => {
+    if (enquiry.status === 'Approved') return 'approved';
+    if (enquiry.status === 'Assessment Fail') return 'rejected';
+    return 'active';
+  };
+
+  // Filter enquiries for active recruitment vs completed
+  const getActiveEnquiries = () => {
+    return enquiries.filter(enquiry => getEnquiryStatus(enquiry) === 'active');
+  };
+
+  const getCompletedEnquiries = () => {
+    return enquiries.filter(enquiry => getEnquiryStatus(enquiry) === 'approved' || getEnquiryStatus(enquiry) === 'rejected');
+  };
+
+  // Get enquiries by stage (only active recruitment)
   const getEnquiriesByStage = (stageKey) => {
-    return enquiries.filter(enquiry => getCurrentStage(enquiry) === stageKey);
+    return getActiveEnquiries().filter(enquiry => getCurrentStage(enquiry) === stageKey);
   };
 
   // Get stage color
@@ -310,8 +326,58 @@ const Recruitment = () => {
         })}
       </div>
 
-      {/* Additional Resources */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Completed Recruitment Section */}
+          {getCompletedEnquiries().length > 0 && (
+            <div className="bg-white shadow rounded-lg p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Completed Recruitment</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {getCompletedEnquiries().map((enquiry) => {
+                  const enquiryStatus = getEnquiryStatus(enquiry);
+                  return (
+                    <div key={enquiry._id} className={`p-4 rounded-lg border ${
+                      enquiryStatus === 'approved' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+                    }`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-semibold text-gray-900">{enquiry.full_name}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          enquiryStatus === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {enquiryStatus === 'approved' ? '✅ Approved' : '❌ Rejected'}
+                        </span>
+                      </div>
+                      <div className="space-y-1 text-sm text-gray-600">
+                        <p><strong>Email:</strong> {enquiry.email_address}</p>
+                        <p><strong>Phone:</strong> {enquiry.telephone}</p>
+                        <p><strong>Submitted:</strong> {new Date(enquiry.submission_date).toLocaleDateString()}</p>
+                        {enquiry.caseClosure?.closureDate && (
+                          <p><strong>Completed:</strong> {new Date(enquiry.caseClosure.closureDate).toLocaleDateString()}</p>
+                        )}
+                      </div>
+                      <div className="mt-3 flex gap-2">
+                        <button
+                          onClick={() => navigate(`/enquiries/${enquiry._id}`)}
+                          className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md hover:bg-blue-700 text-sm"
+                        >
+                          View Details
+                        </button>
+                        {enquiryStatus === 'approved' && (
+                          <button
+                            onClick={() => navigate('/candidates')}
+                            className="flex-1 bg-green-600 text-white px-3 py-2 rounded-md hover:bg-green-700 text-sm"
+                          >
+                            View as Foster Carer
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Additional Resources */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Mentor Applications */}
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">

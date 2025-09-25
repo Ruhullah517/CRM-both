@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   EyeIcon,
@@ -138,7 +139,10 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
   );
 };
 
-const CandidateDetail = ({ candidate, onBack, onEdit }) => (
+const CandidateDetail = ({ candidate, onBack, onEdit }) => {
+  const navigate = useNavigate();
+  
+  return (
   <div className="max-w-2xl mx-auto p-4 bg-white rounded shadow mt-6">
     <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
     
@@ -235,14 +239,29 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => (
     {/* Show link to original enquiry for approved enquiries */}
     {candidate.fromEnquiry && (
       <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-        <p className="text-sm text-blue-700">
+        <p className="text-sm text-blue-700 mb-2">
           <span className="font-semibold">Note:</span> This foster carer was approved through the recruitment process. 
           To view their complete recruitment history, you can access their original enquiry.
         </p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => navigate(`/enquiries/${candidate.originalEnquiryId}`)}
+            className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+          >
+            View Original Enquiry
+          </button>
+          <button
+            onClick={() => navigate('/recruitment')}
+            className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700"
+          >
+            View Recruitment Pipeline
+          </button>
+        </div>
       </div>
     )}
   </div>
-);
+  );
+};
 
 const CandidateForm = ({ candidate, onBack, onSave, mentors }) => {
   const [name, setName] = useState(candidate?.name || "");
