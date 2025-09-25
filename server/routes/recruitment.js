@@ -437,10 +437,98 @@ router.get('/enquiries/:enquiryId/mentoring', async (req, res) => {
       .populate('mentorAllocation.allocatedBy', 'name email')
       .select('mentorAllocation');
     
+    console.log('Mentor allocation data:', JSON.stringify(mentorAllocation.mentorAllocation, null, 2));
     res.json(mentorAllocation.mentorAllocation);
   } catch (error) {
     console.error('Error fetching mentor allocation:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Final approval routes
+// Approve candidate
+router.post('/enquiries/:enquiryId/approve', async (req, res) => {
+  try {
+    const { enquiryId } = req.params;
+    const { approvalNotes } = req.body;
+    
+    console.log('Approving candidate:', {
+      enquiryId,
+      approvalNotes,
+      approvedBy: req.user?.id
+    });
+    
+    // Check if enquiry exists
+    const enquiry = await Enquiry.findById(enquiryId);
+    if (!enquiry) {
+      console.log('Enquiry not found:', enquiryId);
+      return res.status(404).json({ error: 'Enquiry not found' });
+    }
+    
+    // Update enquiry status to approved
+    const updatedEnquiry = await Enquiry.findByIdAndUpdate(
+      enquiryId,
+      { 
+        status: 'Approved',
+        'caseClosure.closureDate': new Date(),
+        'caseClosure.closureReason': 'Approved for fostering',
+        'caseClosure.outcomes': approvalNotes || 'Candidate approved for fostering',
+        'caseClosure.closedBy': req.user.id,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+    
+    console.log('Candidate approved successfully:', enquiryId);
+    res.status(200).json(updatedEnquiry);
+  } catch (error) {
+    console.error('Error approving candidate:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: error.message, details: error.stack });
+  }
+});
+
+// Reject candidate
+router.post('/enquiries/:enquiryId/reject', async (req, res) => {
+  try {
+    const { enquiryId } = req.params;
+    const { rejectionReason, rejectionNotes } = req.body;
+    
+    console.log('Rejecting candidate:', {
+      enquiryId,
+      rejectionReason,
+      rejectionNotes,
+      rejectedBy: req.user?.id
+    });
+    
+    // Check if enquiry exists
+    const enquiry = await Enquiry.findById(enquiryId);
+    if (!enquiry) {
+      console.log('Enquiry not found:', enquiryId);
+      return res.status(404).json({ error: 'Enquiry not found' });
+    }
+    
+    // Update enquiry status to rejected
+    const updatedEnquiry = await Enquiry.findByIdAndUpdate(
+      enquiryId,
+      { 
+        status: 'Assessment Fail',
+        rejection_reason: rejectionReason,
+        'caseClosure.closureDate': new Date(),
+        'caseClosure.closureReason': 'Rejected',
+        'caseClosure.outcomes': rejectionNotes || 'Candidate rejected',
+        'caseClosure.closedBy': req.user.id,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+    
+    console.log('Candidate rejected successfully:', enquiryId);
+    res.status(200).json(updatedEnquiry);
+  } catch (error) {
+    console.error('Error rejecting candidate:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: error.message, details: error.stack });
   }
 });
 

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getEnquiryById, assignEnquiry, deleteEnquiry } from '../services/enquiries';
 import { getAssessmentByEnquiryId, createAssessment, uploadAssessmentAttachment } from '../services/assessments';
-import { createFullAssessment, getFullAssessmentByEnquiryId, allocateMentoring, getMentorAllocationByEnquiryId, addCaseNote } from '../services/recruitment';
+import { createFullAssessment, getFullAssessmentByEnquiryId, allocateMentoring, getMentorAllocationByEnquiryId, addCaseNote, approveCandidate, rejectCandidate } from '../services/recruitment';
 import { getApplicationByEnquiryId, uploadApplication } from '../services/applications';
 import { getUsers } from '../services/users';
 import { getMentors } from '../services/mentors';
@@ -180,6 +180,13 @@ export default function EnquiryDetail() {
   const [caseNote, setCaseNote] = useState('');
   const [noteSubmitting, setNoteSubmitting] = useState(false);
 
+  // Approval/Rejection state
+  const [approvalNotes, setApprovalNotes] = useState('');
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [rejectionNotes, setRejectionNotes] = useState('');
+  const [approvalSubmitting, setApprovalSubmitting] = useState(false);
+  const [rejectionSubmitting, setRejectionSubmitting] = useState(false);
+
 
   useEffect(() => {
     fetchEnquiry();
@@ -265,6 +272,7 @@ export default function EnquiryDetail() {
     setMentorAllocationLoading(true);
     try {
       const data = await getMentorAllocationByEnquiryId(id);
+      console.log('Fetched mentor allocation data:', data);
       setMentorAllocation(data);
     } catch (err) {
       console.error('Error fetching mentor allocation:', err);
@@ -466,6 +474,58 @@ export default function EnquiryDetail() {
       alert('Failed to add case note');
     }
     setNoteSubmitting(false);
+  }
+
+  async function handleApproveCandidate() {
+    if (!window.confirm('Are you sure you want to approve this candidate? This action cannot be undone.')) {
+      return;
+    }
+    
+    setApprovalSubmitting(true);
+    try {
+      await approveCandidate(id, { approvalNotes });
+      setApprovalNotes('');
+      alert('Candidate approved successfully!');
+      await fetchEnquiry();
+      await fetchAssessment();
+      await fetchApplication();
+      await fetchFullAssessment();
+      await fetchMentorAllocation();
+    } catch (err) {
+      console.error('Error approving candidate:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      alert(`Failed to approve candidate: ${err.response?.data?.message || err.message || 'Please try again.'}`);
+    }
+    setApprovalSubmitting(false);
+  }
+
+  async function handleRejectCandidate() {
+    if (!rejectionReason.trim()) {
+      alert('Please provide a reason for rejection.');
+      return;
+    }
+    
+    if (!window.confirm('Are you sure you want to reject this candidate? This action cannot be undone.')) {
+      return;
+    }
+    
+    setRejectionSubmitting(true);
+    try {
+      await rejectCandidate(id, { rejectionReason, rejectionNotes });
+      setRejectionReason('');
+      setRejectionNotes('');
+      alert('Candidate rejected successfully.');
+      await fetchEnquiry();
+      await fetchAssessment();
+      await fetchApplication();
+      await fetchFullAssessment();
+      await fetchMentorAllocation();
+    } catch (err) {
+      console.error('Error rejecting candidate:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      alert(`Failed to reject candidate: ${err.response?.data?.message || err.message || 'Please try again.'}`);
+    }
+    setRejectionSubmitting(false);
   }
   async function handleDelete(id) {
     if (!window.confirm('Are you sure you want to delete this enquiry?')) return;
@@ -870,36 +930,126 @@ export default function EnquiryDetail() {
       {/* Final Approval Section */}
       <DetailSection title="5. Final Approval" isOpen={openSection === 'approval'} onToggle={() => toggleSection('approval')}>
         <div className="space-y-4">
-          <div className="p-4 bg-green-50 rounded-lg">
-            <h3 className="font-semibold text-green-800 mb-2">Ready for Approval</h3>
-            <p className="text-green-700 text-sm mb-4">
-              This candidate has completed all stages of the recruitment process and is ready for final approval.
-            </p>
-            <div className="flex gap-2">
-              <button 
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to approve this candidate?')) {
-                    // Handle approval logic here
-                    alert('Candidate approved successfully!');
-                  }
-                }}
-              >
-                Approve Candidate
-              </button>
-              <button 
-                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-                onClick={() => {
-                  if (window.confirm('Are you sure you want to reject this candidate?')) {
-                    // Handle rejection logic here
-                    alert('Candidate rejected.');
-                  }
-                }}
-              >
-                Reject Candidate
-              </button>
+          {enquiry?.status === 'Approved' ? (
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h3 className="font-semibold text-green-800 mb-2">✅ Candidate Approved</h3>
+              <p className="text-green-700 text-sm mb-2">
+                This candidate has been approved for fostering.
+              </p>
+              {enquiry.caseClosure && (
+                <div className="text-sm text-green-600">
+                  <p><strong>Approved on:</strong> {formatDate(enquiry.caseClosure.closureDate)}</p>
+                  <p><strong>Outcomes:</strong> {enquiry.caseClosure.outcomes}</p>
+                </div>
+              )}
             </div>
-          </div>
+          ) : enquiry?.status === 'Assessment Fail' ? (
+            <div className="p-4 bg-red-50 rounded-lg">
+              <h3 className="font-semibold text-red-800 mb-2">❌ Candidate Rejected</h3>
+              <p className="text-red-700 text-sm mb-2">
+                This candidate has been rejected.
+              </p>
+              {enquiry.rejection_reason && (
+                <p className="text-sm text-red-600">
+                  <strong>Reason:</strong> {enquiry.rejection_reason}
+                </p>
+              )}
+              {enquiry.caseClosure && (
+                <div className="text-sm text-red-600">
+                  <p><strong>Rejected on:</strong> {formatDate(enquiry.caseClosure.closureDate)}</p>
+                  <p><strong>Outcomes:</strong> {enquiry.caseClosure.outcomes}</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 rounded-lg">
+                <h3 className="font-semibold text-green-800 mb-2">Ready for Approval</h3>
+                <p className="text-green-700 text-sm mb-4">
+                  This candidate has completed all stages of the recruitment process and is ready for final approval.
+                </p>
+              </div>
+
+              {/* Approval Form */}
+              <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                <h4 className="font-semibold text-green-800 mb-3">Approve Candidate</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block font-semibold mb-1">Approval Notes (Optional)</label>
+                    <textarea 
+                      className="w-full border rounded px-2 py-1" 
+                      value={approvalNotes} 
+                      onChange={e => setApprovalNotes(e.target.value)}
+                      placeholder="Add any notes about the approval decision..."
+                      rows={3}
+                    />
+                  </div>
+                  <button 
+                    onClick={handleApproveCandidate}
+                    disabled={approvalSubmitting}
+                    className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  >
+                    {approvalSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Approving...
+                      </>
+                    ) : (
+                      '✅ Approve Candidate'
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Rejection Form */}
+              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+                <h4 className="font-semibold text-red-800 mb-3">Reject Candidate</h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block font-semibold mb-1">Rejection Reason *</label>
+                    <select 
+                      className="w-full border rounded px-2 py-1" 
+                      value={rejectionReason} 
+                      onChange={e => setRejectionReason(e.target.value)}
+                      required
+                    >
+                      <option value="">Select a reason</option>
+                      <option value="Failed Assessment">Failed Assessment</option>
+                      <option value="Insufficient Experience">Insufficient Experience</option>
+                      <option value="Safeguarding Concerns">Safeguarding Concerns</option>
+                      <option value="Not Suitable">Not Suitable</option>
+                      <option value="Withdrew Application">Withdrew Application</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-semibold mb-1">Rejection Notes (Optional)</label>
+                    <textarea 
+                      className="w-full border rounded px-2 py-1" 
+                      value={rejectionNotes} 
+                      onChange={e => setRejectionNotes(e.target.value)}
+                      placeholder="Add any additional notes about the rejection..."
+                      rows={3}
+                    />
+                  </div>
+                  <button 
+                    onClick={handleRejectCandidate}
+                    disabled={rejectionSubmitting || !rejectionReason.trim()}
+                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  >
+                    {rejectionSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Rejecting...
+                      </>
+                    ) : (
+                      '❌ Reject Candidate'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </DetailSection>
 

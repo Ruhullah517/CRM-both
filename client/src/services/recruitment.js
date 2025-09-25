@@ -257,3 +257,37 @@ export const addCaseNote = async (enquiryId, noteData) => {
     throw error;
   }
 };
+
+// Approve candidate
+export const approveCandidate = async (enquiryId, approvalData) => {
+  try {
+    console.log('Service: Approving candidate for enquiry:', enquiryId);
+    console.log('Service: Approval data:', approvalData);
+    
+    const response = await api.post(`/recruitment/enquiries/${enquiryId}/approve`, approvalData);
+    
+    console.log('Service: Candidate approved successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Service: Error approving candidate:', error);
+    console.error('Service: Error response:', error.response?.data);
+    throw error;
+  }
+};
+
+// Reject candidate
+export const rejectCandidate = async (enquiryId, rejectionData) => {
+  try {
+    console.log('Service: Rejecting candidate for enquiry:', enquiryId);
+    console.log('Service: Rejection data:', rejectionData);
+    
+    const response = await api.post(`/recruitment/enquiries/${enquiryId}/reject`, rejectionData);
+    
+    console.log('Service: Candidate rejected successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Service: Error rejecting candidate:', error);
+    console.error('Service: Error response:', error.response?.data);
+    throw error;
+  }
+};

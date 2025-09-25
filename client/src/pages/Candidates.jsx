@@ -54,7 +54,16 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
           <tbody>
             {filtered.map(c => (
               <tr key={c._id} className="border-t hover:bg-green-50 transition">
-                <td className="px-4 py-2 font-semibold">{c.name}</td>
+                <td className="px-4 py-2 font-semibold">
+                  <div className="flex items-center">
+                    {c.name}
+                    {c.fromEnquiry && (
+                      <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                        ✅ Approved
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-4 py-2">
                   <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status]}`}>{c.status}</span>
                 </td>
@@ -69,9 +78,11 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
                   </button>
                 </td>
                 <td className="px-4 py-2">
-                  <button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">
-                    Delete
-                  </button>
+                  {!c.fromEnquiry && (
+                    <button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">
+                      Delete
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -84,7 +95,14 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
         {filtered.map(c => (
           <div key={c._id} className="rounded shadow bg-white p-4 flex flex-col gap-2">
             <div className="flex justify-between items-center">
-              <span className="font-semibold text-base">{c.name}</span>
+              <div className="flex items-center">
+                <span className="font-semibold text-base">{c.name}</span>
+                {c.fromEnquiry && (
+                  <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                    ✅ Approved
+                  </span>
+                )}
+              </div>
               <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status]}`}>{c.status}</span>
             </div>
             <div className="text-sm text-gray-700">
@@ -104,12 +122,14 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
               >
                 View
               </button>
-              <button
-                onClick={() => onDelete(c)}
-                className="flex-1 px-3 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200"
-              >
-                Delete
-              </button>
+              {!c.fromEnquiry && (
+                <button
+                  onClick={() => onDelete(c)}
+                  className="flex-1 px-3 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200"
+                >
+                  Delete
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -121,18 +141,54 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
 const CandidateDetail = ({ candidate, onBack, onEdit }) => (
   <div className="max-w-2xl mx-auto p-4 bg-white rounded shadow mt-6">
     <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
+    
+    {/* Show if this is from an approved enquiry */}
+    {candidate.fromEnquiry && (
+      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+        <div className="flex items-center">
+          <span className="text-green-600 font-semibold">✅ Approved Foster Carer</span>
+          <span className="ml-2 text-sm text-green-600">(From Recruitment Process)</span>
+        </div>
+      </div>
+    )}
+    
     <h2 className="text-xl font-bold mb-2">{candidate.name}</h2>
-    <div className="mb-2"><span className="font-semibold">Status:</span> <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[candidate.status]}`}>{candidate.status}</span></div>
-    <div className="mb-2"><span className="font-semibold">Stage:</span> <span className={`px-2 py-1 rounded text-xs font-semibold ${stageColors[candidate.stage]}`}>{candidate.stage}</span></div>
-    <div className="mb-2">
+    
+    {/* Basic Information */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+      <div><span className="font-semibold">Status:</span> <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[candidate.status]}`}>{candidate.status}</span></div>
+      <div><span className="font-semibold">Stage:</span> <span className={`px-2 py-1 rounded text-xs font-semibold ${stageColors[candidate.stage]}`}>{candidate.stage}</span></div>
+      <div><span className="font-semibold">Email:</span> {candidate.email}</div>
+      {candidate.phone && <div><span className="font-semibold">Phone:</span> {candidate.phone}</div>}
+      {candidate.location && <div><span className="font-semibold">Location:</span> {candidate.location}</div>}
+      {candidate.postCode && <div><span className="font-semibold">Post Code:</span> {candidate.postCode}</div>}
+    </div>
+    
+    {/* Mentor Information */}
+    <div className="mb-4">
       <span className="font-semibold">Mentor:</span> 
-      {candidate.mentor ? (
+      {candidate.mentor && candidate.mentor !== 'Not assigned' ? (
         <span className="ml-2">{candidate.mentor}</span>
       ) : (
         <span className="ml-2 text-gray-400">Not assigned</span>
       )}
     </div>
+    
+    {/* Additional Information for Approved Enquiries */}
+    {candidate.fromEnquiry && (
+      <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+        <h3 className="font-semibold mb-2">Recruitment Information</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+          {candidate.submissionDate && <div><span className="font-semibold">Applied:</span> {formatDate(candidate.submissionDate)}</div>}
+          {candidate.approvedDate && <div><span className="font-semibold">Approved:</span> {formatDate(candidate.approvedDate)}</div>}
+          {candidate.approvedBy && <div><span className="font-semibold">Approved By:</span> {candidate.approvedBy}</div>}
+          {candidate.assignedTo && <div><span className="font-semibold">Assigned To:</span> {candidate.assignedTo}</div>}
+        </div>
+      </div>
+    )}
+    
     <div className="mb-2"><span className="font-semibold">Deadline:</span> {formatDate(candidate.deadline)}</div>
+    
     <h3 className="font-semibold mt-4 mb-1">Notes</h3>
     <ul className="mb-2 list-disc ml-6 text-sm">
       {(candidate.notes || []).map((n, i) => (
@@ -154,6 +210,7 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => (
         </li>
       ))}
     </ul>
+    
     <h3 className="font-semibold mb-1">Documents</h3>
     <ul className="mb-2 text-sm">
       {(candidate.documents || []).map((d, i) =>
@@ -169,7 +226,21 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => (
         </li>
       )}
     </ul>
-    <button onClick={onEdit} className="mt-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
+    
+    {/* Show edit button only for regular candidates, not approved enquiries */}
+    {!candidate.fromEnquiry && (
+      <button onClick={onEdit} className="mt-4 px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
+    )}
+    
+    {/* Show link to original enquiry for approved enquiries */}
+    {candidate.fromEnquiry && (
+      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-700">
+          <span className="font-semibold">Note:</span> This foster carer was approved through the recruitment process. 
+          To view their complete recruitment history, you can access their original enquiry.
+        </p>
+      </div>
+    )}
   </div>
 );
 
