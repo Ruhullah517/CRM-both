@@ -6,18 +6,18 @@ const createAssessment = async (req, res) => {
   const { enquiry_id, staff_id, assessment_notes, assessment_date, attachments, status } = req.body;
   try {
     const assessment = new InitialAssessment({
-      enquiry_id,
-      staff_id,
-      assessment_notes,
-      assessment_date,
-      attachments,
-      status: status || 'Pending',
+      enquiryId: enquiry_id,
+      assessorId: staff_id,
+      date: assessment_date,
+      notes: assessment_notes,
+      result: status || 'Needs More Info',
+      attachments: attachments,
     });
     await assessment.save();
     res.status(201).json(assessment);
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Server error');
+    console.error('Error creating assessment:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
 
@@ -29,12 +29,12 @@ const getAssessmentByEnquiryId = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid enquiry ID format' });
     }
     
-    const assessment = await InitialAssessment.findOne({ enquiry_id: req.params.enquiryId });
+    const assessment = await InitialAssessment.findOne({ enquiryId: req.params.enquiryId });
     if (!assessment) return res.status(404).json({ msg: 'Assessment not found' });
     res.json(assessment);
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Server error');
+    console.error('Error fetching assessment:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
 

@@ -108,7 +108,7 @@ export default function EnquiryDetail() {
   const [date, setDate] = useState('');
   const [attachment, setAttachment] = useState('');
   const [attachmentFile, setAttachmentFile] = useState(null);
-  const [status, setStatus] = useState('Pending');
+  const [status, setStatus] = useState('Needs More Info');
   const [assessmentSubmitting, setAssessmentSubmitting] = useState(false);
 
   // Application State
@@ -212,30 +212,57 @@ export default function EnquiryDetail() {
     setAssessmentSubmitting(true);
     
     try {
-      let attachmentUrl = attachment;
-      
-      // If a file is selected, upload it first
-      if (attachmentFile) {
-        const uploadData = await uploadAssessmentAttachment(attachmentFile);
-        attachmentUrl = uploadData.url;
-      }
-      
-      // Create the assessment with the file URL
-      await createAssessment({
+      // Debug logging
+      console.log('Submitting assessment with data:', {
         enquiry_id: id,
         staff_id: userInfo?.id,
         assessment_notes: notes,
         assessment_date: date,
+        attachments: attachment,
+        status,
+        userInfo: userInfo
+      });
+
+      // Validate required fields
+      if (!notes.trim()) {
+        alert('Please enter assessment notes.');
+        return;
+      }
+      if (!date) {
+        alert('Please select an assessment date.');
+        return;
+      }
+
+      let attachmentUrl = attachment;
+      
+      // If a file is selected, upload it first
+      if (attachmentFile) {
+        console.log('Uploading file:', attachmentFile.name);
+        const uploadData = await uploadAssessmentAttachment(attachmentFile);
+        attachmentUrl = uploadData.url;
+        console.log('File uploaded successfully:', uploadData);
+      }
+      
+      // Create the assessment with the file URL
+      const assessmentData = {
+        enquiry_id: id,
+        staff_id: userInfo?.id || userInfo?.user?.id,
+        assessment_notes: notes,
+        assessment_date: date,
         attachments: attachmentUrl,
         status,
-      });
+      };
+
+      console.log('Creating assessment with data:', assessmentData);
+      const result = await createAssessment(assessmentData);
+      console.log('Assessment created successfully:', result);
       
       // Reset form
       setNotes('');
       setDate('');
       setAttachment('');
       setAttachmentFile(null);
-      setStatus('Pending');
+      setStatus('Needs More Info');
       
       // Refresh data
       await fetchAssessment();
@@ -244,7 +271,8 @@ export default function EnquiryDetail() {
       alert('Assessment submitted successfully!');
     } catch (error) {
       console.error('Error submitting assessment:', error);
-      alert('Error submitting assessment. Please try again.');
+      console.error('Error details:', error.response?.data || error.message);
+      alert(`Error submitting assessment: ${error.response?.data?.message || error.message || 'Please try again.'}`);
     } finally {
       setAssessmentSubmitting(false);
     }
@@ -441,11 +469,11 @@ export default function EnquiryDetail() {
           <div>Loading assessment...</div>
         ) : assessment ? (
           <div>
-            <DetailRow label="Staff ID" value={assessment.staff_id} />
-            <DetailRow label="Notes" value={assessment.assessment_notes} />
-            <DetailRow label="Date" value={formatDate(assessment.assessment_date)} />
+            <DetailRow label="Assessor ID" value={assessment.assessorId} />
+            <DetailRow label="Notes" value={assessment.notes} />
+            <DetailRow label="Date" value={formatDate(assessment.date)} />
             <DetailRow label="Attachment" value={assessment.attachments} />
-            <DetailRow label="Status" value={assessment.status} />
+            <DetailRow label="Result" value={assessment.result} />
           </div>
         ) : (
           <form onSubmit={handleAssessmentSubmit} className="space-y-3">
@@ -505,9 +533,9 @@ export default function EnquiryDetail() {
                 value={status} 
                 onChange={e => setStatus(e.target.value)}
               >
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
+                <option value="Needs More Info">Needs More Info</option>
+                <option value="Pass">Pass</option>
+                <option value="Fail">Fail</option>
               </select>
             </div>
             
