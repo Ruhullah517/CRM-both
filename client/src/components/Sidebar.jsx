@@ -23,41 +23,74 @@ import {
 import img3 from '../../public/img3.png';
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', roles: ['admin', 'staff', 'caseworker', 'freelancer'], icon: HomeIcon },
-  { name: 'Recruitment', path: '/recruitment', roles: ['admin', 'staff'], icon: UserGroupIcon },
-  { name: 'Foster Carers', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon },
-  { name: 'referrals', path: '/referrals', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon },
-  { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon },
-  { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon },
-  { name: 'Training Events', path: '/training', roles: ['admin', 'staff'], icon: TrainingIcon },
-
-  { name: 'Certificates', path: '/certificates', roles: ['admin', 'staff'], icon: AcademicCapIcon },
-  { name: 'Invoices', path: '/invoices', roles: ['admin', 'staff'], icon: DocumentTextIcon },
-  { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon },
-
-  { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: EnvelopeIcon },
-  { name: 'Email Management', path: '/email-management', roles: ['admin', 'staff'], icon: EnvelopeIcon },
-  { name: 'Email Automations', path: '/email-automations', roles: ['admin', 'staff'], icon: EnvelopeIcon },
-  { name: 'GDPR Management', path: '/gdpr-management', roles: ['admin', 'manager'], icon: ShieldCheckIcon },
-  { name: 'Contact Management', path: '/contact-management', roles: ['admin', 'staff'], icon: UserGroupIcon },
-  { name: 'Reports', path: '/reports', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon },
-  { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon },
-  { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon },
-  { name: 'Enquiries', path: '/enquiries', roles: ['admin', 'staff'], icon: QuestionMarkCircleIcon },
-  { name: 'User Management', path: '/users', roles: ['admin'], icon: UserGroupIcon },
+  
+  // Recruitment & Foster Care Section
+  { name: 'Enquiries', path: '/enquiries', roles: ['admin', 'staff'], icon: QuestionMarkCircleIcon, section: 'recruitment' },
+  { name: 'Recruitment Pipeline', path: '/recruitment', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'recruitment' },
+  { name: 'Foster Carers', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'recruitment' },
+  
+  // Case Management Section
+  { name: 'Referrals', path: '/referrals', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon, section: 'cases' },
+  { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'cases' },
+  { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon, section: 'cases' },
+  
+  // Training & Development Section
+  { name: 'Training Events', path: '/training', roles: ['admin', 'staff'], icon: TrainingIcon, section: 'training' },
+  { name: 'Certificates', path: '/certificates', roles: ['admin', 'staff'], icon: AcademicCapIcon, section: 'training' },
+  { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon, section: 'training' },
+  
+  // Staff & Resources Section
+  { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon, section: 'staff' },
+  { name: 'User Management', path: '/users', roles: ['admin'], icon: UserGroupIcon, section: 'staff' },
+  
+  // Communication Section
+  { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },
+  { name: 'Email Management', path: '/email-management', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },
+  { name: 'Email Automations', path: '/email-automations', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },
+  { name: 'Contact Management', path: '/contact-management', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'communication' },
+  
+  // Operations Section
+  { name: 'Invoices', path: '/invoices', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'operations' },
+  { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon, section: 'operations' },
+  { name: 'Reports', path: '/reports', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon, section: 'operations' },
+  { name: 'GDPR Management', path: '/gdpr-management', roles: ['admin', 'manager'], icon: ShieldCheckIcon, section: 'operations' },
   
   // Freelancer-specific items
-  { name: 'My Cases', path: '/my-cases', roles: ['freelancer'], icon: BriefcaseIcon },
-  { name: 'My Profile', path: '/my-profile', roles: ['freelancer'], icon: UserCircleIcon },
+  { name: 'My Cases', path: '/my-cases', roles: ['freelancer'], icon: BriefcaseIcon, section: 'personal' },
+  { name: 'My Profile', path: '/my-profile', roles: ['freelancer'], icon: UserCircleIcon, section: 'personal' },
   
   // Mentor-specific items  
-  { name: 'My Cases', path: '/my-cases', roles: ['mentor'], icon: BriefcaseIcon },
-  { name: 'My Profile', path: '/my-profile', roles: ['mentor'], icon: UserCircleIcon },
+  { name: 'My Cases', path: '/my-cases', roles: ['mentor'], icon: BriefcaseIcon, section: 'personal' },
+  { name: 'My Profile', path: '/my-profile', roles: ['mentor'], icon: UserCircleIcon, section: 'personal' },
   
   // { name: 'Settings', path: '/settings', roles: ['admin', 'staff'], icon: Cog6ToothIcon },
 ];
 
 export default function Sidebar({ onClose }) {
   const { role } = useAuth();
+
+  // Group items by section
+  const groupedItems = navItems
+    .filter(item => role && item.roles.includes(role))
+    .reduce((groups, item) => {
+      const section = item.section || 'other';
+      if (!groups[section]) {
+        groups[section] = [];
+      }
+      groups[section].push(item);
+      return groups;
+    }, {});
+
+  // Section titles
+  const sectionTitles = {
+    recruitment: 'Recruitment & Foster Care',
+    cases: 'Case Management',
+    training: 'Training & Development',
+    staff: 'Staff & Resources',
+    communication: 'Communication',
+    operations: 'Operations',
+    personal: 'Personal'
+  };
 
   return (
     <aside className="h-screen w-64 bg-black text-white flex flex-col py-6 px-4 transition-all duration-200 overflow-y-auto flex-shrink-0">
@@ -76,29 +109,43 @@ export default function Sidebar({ onClose }) {
           <XMarkIcon className="h-6 w-6" />
         </button>
       </div>
-      {/* <div className="mb-8 text-2xl font-bold text-center hidden md:block">BFCA CRM</div> */}
-      <nav className="flex flex-col gap-0.5">
-        {navItems
-          .filter(item => role && item.roles.includes(role))
-          .map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink
-                key={item.name}
-                to={item.path}
-                className={({ isActive }) =>
-                  `px-4 py-3 rounded-lg hover:bg-green-700 text-sm transition flex items-center gap-3 ${isActive ? 'bg-[#2EAB2C] font-semibold' : ''}`
-                }
-                onClick={() => {
-                  // Close mobile sidebar when navigating
-                  if (onClose) onClose();
-                }}
-              >
-                <Icon className="w-5 h-5 flex-shrink-0" />
-                <span className="truncate">{item.name}</span>
-              </NavLink>
-            );
-          })}
+      
+      <nav className="flex flex-col gap-2">
+        {Object.entries(groupedItems).map(([sectionKey, items]) => (
+          <div key={sectionKey} className="mb-4">
+            {/* Section Header */}
+            {sectionTitles[sectionKey] && (
+              <div className="px-2 py-1 mb-2">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {sectionTitles[sectionKey]}
+                </h3>
+              </div>
+            )}
+            
+            {/* Section Items */}
+            <div className="flex flex-col gap-0.5">
+              {items.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={item.name}
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `px-4 py-3 rounded-lg hover:bg-green-700 text-sm transition flex items-center gap-3 ${isActive ? 'bg-[#2EAB2C] font-semibold' : ''}`
+                    }
+                    onClick={() => {
+                      // Close mobile sidebar when navigating
+                      if (onClose) onClose();
+                    }}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="truncate">{item.name}</span>
+                  </NavLink>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
     </aside>
   );
