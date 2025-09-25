@@ -14,7 +14,7 @@ import {
 import { getEnquiries } from '../services/enquiries';
 import { getAssessmentByEnquiryId } from '../services/assessments';
 import { getApplicationByEnquiryId } from '../services/applications';
-import { getMentorApplications, getFreelancerApplications, getFullAssessmentByEnquiryId } from '../services/recruitment';
+import { getMentorApplications, getFreelancerApplications, getFullAssessmentByEnquiryId, getMentorAllocationByEnquiryId } from '../services/recruitment';
 
 const Recruitment = () => {
   const navigate = useNavigate();
@@ -67,17 +67,18 @@ const Recruitment = () => {
     // Fetch assessment and application data for each enquiry
     for (const enquiry of enquiriesData) {
       try {
-        const [assessment, application, fullAssessment] = await Promise.all([
+        const [assessment, application, fullAssessment, mentorAllocation] = await Promise.all([
           getAssessmentByEnquiryId(enquiry._id).catch(() => null),
           getApplicationByEnquiryId(enquiry._id).catch(() => null),
-          getFullAssessmentByEnquiryId(enquiry._id).catch(() => null)
+          getFullAssessmentByEnquiryId(enquiry._id).catch(() => null),
+          getMentorAllocationByEnquiryId(enquiry._id).catch(() => null)
         ]);
         
         stagesData[enquiry._id] = {
           assessment,
           application,
           fullAssessment,
-          // Add more stage data as needed (mentorAllocation, etc.)
+          mentorAllocation,
         };
       } catch (error) {
         console.error(`Error loading stage data for enquiry ${enquiry._id}:`, error);
@@ -85,6 +86,7 @@ const Recruitment = () => {
           assessment: null,
           application: null,
           fullAssessment: null,
+          mentorAllocation: null,
         };
       }
     }
@@ -108,10 +110,10 @@ const Recruitment = () => {
       if (stageData.application) {
         // 3. Check if form F assessment is completed
         if (stageData.fullAssessment && stageData.fullAssessment.recommendation) {
-          // 4. Check if mentor is allocated (placeholder for now)
-          // if (stageData.mentorAllocation && stageData.mentorAllocation.mentorId) {
-          //   return 'mentoring';
-          // }
+          // 4. Check if mentor is allocated
+          if (stageData.mentorAllocation && stageData.mentorAllocation.mentorId) {
+            return 'mentoring';
+          }
           return 'form-f-assessment';
         }
         return 'application';
@@ -137,10 +139,11 @@ const Recruitment = () => {
   // Refresh stage data for a specific enquiry (called when data changes)
   const refreshEnquiryStage = async (enquiryId) => {
     try {
-      const [assessment, application, fullAssessment] = await Promise.all([
+      const [assessment, application, fullAssessment, mentorAllocation] = await Promise.all([
         getAssessmentByEnquiryId(enquiryId).catch(() => null),
         getApplicationByEnquiryId(enquiryId).catch(() => null),
-        getFullAssessmentByEnquiryId(enquiryId).catch(() => null)
+        getFullAssessmentByEnquiryId(enquiryId).catch(() => null),
+        getMentorAllocationByEnquiryId(enquiryId).catch(() => null)
       ]);
       
       setEnquiryStages(prev => ({
@@ -149,6 +152,7 @@ const Recruitment = () => {
           assessment,
           application,
           fullAssessment,
+          mentorAllocation,
         }
       }));
     } catch (error) {
@@ -280,7 +284,7 @@ const Recruitment = () => {
                                 stageData?.fullAssessment?.recommendation ? 'bg-green-400' : 'bg-gray-300'
                               }`} title="Form F Assessment"></div>
                               <div className={`w-2 h-2 rounded-full ${
-                                currentStage === 'mentoring' ? 'bg-green-400' : 'bg-gray-300'
+                                stageData?.mentorAllocation?.mentorId ? 'bg-green-400' : 'bg-gray-300'
                               }`} title="Mentoring"></div>
                               <div className={`w-2 h-2 rounded-full ${
                                 currentStage === 'approval' ? 'bg-green-400' : 'bg-gray-300'

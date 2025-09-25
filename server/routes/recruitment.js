@@ -421,15 +421,23 @@ router.get('/enquiries/:enquiryId/mentoring', async (req, res) => {
   try {
     const { enquiryId } = req.params;
     
-    const enquiry = await Enquiry.findById(enquiryId)
-      .populate('mentorAllocation.mentorId', 'name email phone')
-      .populate('mentorAllocation.allocatedBy', 'name email');
+    const enquiry = await Enquiry.findById(enquiryId);
     
     if (!enquiry) {
       return res.status(404).json({ error: 'Enquiry not found' });
     }
     
-    res.json(enquiry.mentorAllocation || null);
+    if (!enquiry.mentorAllocation) {
+      return res.json(null);
+    }
+    
+    // Populate mentor and allocatedBy data
+    const mentorAllocation = await Enquiry.findById(enquiryId)
+      .populate('mentorAllocation.mentorId', 'name email phone')
+      .populate('mentorAllocation.allocatedBy', 'name email')
+      .select('mentorAllocation');
+    
+    res.json(mentorAllocation.mentorAllocation);
   } catch (error) {
     console.error('Error fetching mentor allocation:', error);
     res.status(500).json({ error: error.message });
