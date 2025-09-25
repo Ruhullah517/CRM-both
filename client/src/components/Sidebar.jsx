@@ -29,10 +29,10 @@ const navItems = [
   { name: 'Recruitment Pipeline', path: '/recruitment', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'recruitment' },
   { name: 'Foster Carers', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'recruitment' },
 
-  // Case Management Section
-  { name: 'Referrals', path: '/referrals', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon, section: 'cases' },
-  { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'cases' },
-  { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon, section: 'cases' },
+  // Contract Management Section
+  // { name: 'Referrals', path: '/referrals', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon, section: 'cases' },
+  { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'contract' },
+  { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon, section: 'contract' },
 
   // Training & Development Section
   { name: 'Training Events', path: '/training', roles: ['admin', 'staff'], icon: TrainingIcon, section: 'training' },
@@ -85,7 +85,7 @@ export default function Sidebar({ onClose }) {
   // Section titles
   const sectionTitles = {
     recruitment: 'Recruitment & Foster Care',
-    cases: 'Case Management',
+    contract: 'Contract Management',
     training: 'Training & Development',
     staff: 'Staff & Resources',
     communication: 'Communication',
