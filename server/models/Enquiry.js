@@ -112,11 +112,14 @@ const EnquirySchema = new mongoose.Schema({
   mentorAllocation: {
     mentorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mentor' },
     startDate: Date,
-    meetingSchedule: String,
+    meetingSchedule: Date, // Changed to Date type
     objectives: String,
     frequency: String,
     duration: String,
-    notesTemplate: String
+    notesTemplate: String,
+    allocatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    allocatedAt: { type: Date, default: Date.now },
+    status: { type: String, enum: ['active', 'completed', 'paused'], default: 'active' }
   },
 
   // Case Closure fields
