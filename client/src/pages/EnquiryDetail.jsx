@@ -431,7 +431,14 @@ export default function EnquiryDetail() {
     e.preventDefault();
     setAllocSubmitting(true);
     try {
-      await allocateMentoring({ enquiryId: id, mentorId, meetingSchedule });
+      const mentoringData = { mentorId, meetingSchedule };
+      console.log('Allocating mentor with data:', {
+        enquiryId: id,
+        mentoringData,
+        userInfo: userInfo
+      });
+      
+      await allocateMentoring(id, mentoringData);
       
       // Refresh data to update progress
       await fetchMentorAllocation();
@@ -819,7 +826,7 @@ export default function EnquiryDetail() {
         ) : mentorAllocation ? (
           <div>
             <DetailRow label="Mentor" value={mentorAllocation.mentorId?.name || mentorAllocation.mentorId} />
-            <DetailRow label="Meeting Schedule" value={mentorAllocation.meetingSchedule} />
+            <DetailRow label="Meeting Date" value={mentorAllocation.meetingSchedule ? formatDate(mentorAllocation.meetingSchedule) : '-'} />
             <DetailRow label="Allocated By" value={mentorAllocation.allocatedBy?.name || 'Unknown'} />
             <DetailRow label="Allocated Date" value={mentorAllocation.allocatedAt ? formatDate(mentorAllocation.allocatedAt) : '-'} />
             <DetailRow label="Status" value={mentorAllocation.status || 'Active'} />
@@ -843,8 +850,8 @@ export default function EnquiryDetail() {
             </select>
           </div>
           <div>
-            <label className="block font-semibold mb-1">Meeting Schedule</label>
-            <input className="w-full border rounded px-2 py-1" placeholder="e.g. Weekly meetings" value={meetingSchedule} onChange={e => setMeetingSchedule(e.target.value)} />
+            <label className="block font-semibold mb-1">Meeting Date</label>
+            <input type="date" className="w-full border rounded px-2 py-1" value={meetingSchedule} onChange={e => setMeetingSchedule(e.target.value)} required />
           </div>
             <button type="submit" disabled={allocSubmitting || !mentorId} className="bg-purple-600 text-white px-3 py-2 rounded disabled:opacity-50">{allocSubmitting ? 'Allocating...' : 'Allocate Mentor'}</button>
           </form>

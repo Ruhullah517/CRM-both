@@ -388,7 +388,7 @@ router.post('/enquiries/:enquiryId/mentoring', async (req, res) => {
     const mentorAllocationData = {
       enquiryId,
       mentorId,
-      meetingSchedule,
+      meetingSchedule: meetingSchedule ? new Date(meetingSchedule) : null,
       allocatedBy: req.user.id,
       allocatedAt: new Date(),
       status: 'active'
