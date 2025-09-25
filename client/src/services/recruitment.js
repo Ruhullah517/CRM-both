@@ -219,10 +219,30 @@ export const getFullAssessmentByEnquiryId = async (enquiryId) => {
 // Allocate mentoring
 export const allocateMentoring = async (enquiryId, mentoringData) => {
   try {
+    console.log('Service: Allocating mentor for enquiry:', enquiryId);
+    console.log('Service: Mentoring data:', mentoringData);
+    
     const response = await api.post(`/recruitment/enquiries/${enquiryId}/mentoring`, mentoringData);
+    
+    console.log('Service: Mentor allocated successfully:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error allocating mentoring:', error);
+    console.error('Service: Error allocating mentoring:', error);
+    console.error('Service: Error response:', error.response?.data);
+    throw error;
+  }
+};
+
+// Get mentor allocation by enquiry ID
+export const getMentorAllocationByEnquiryId = async (enquiryId) => {
+  try {
+    const response = await api.get(`/recruitment/enquiries/${enquiryId}/mentoring`);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return null; // No mentor allocation found
+    }
+    console.error('Error fetching mentor allocation:', error);
     throw error;
   }
 };

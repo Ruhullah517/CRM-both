@@ -356,4 +356,84 @@ router.put('/enquiries/:enquiryId/full-assessment', async (req, res) => {
   }
 });
 
+// Mentor allocation routes
+// Create mentor allocation
+router.post('/enquiries/:enquiryId/mentoring', async (req, res) => {
+  try {
+    const { enquiryId } = req.params;
+    const { mentorId, meetingSchedule } = req.body;
+    
+    console.log('Mentor allocation request:', {
+      enquiryId,
+      mentorId,
+      meetingSchedule,
+      userId: req.user?.id
+    });
+    
+    // Check if enquiry exists
+    const enquiry = await Enquiry.findById(enquiryId);
+    if (!enquiry) {
+      console.log('Enquiry not found:', enquiryId);
+      return res.status(404).json({ error: 'Enquiry not found' });
+    }
+    
+    // Check if mentor exists
+    const mentor = await Mentor.findById(mentorId);
+    if (!mentor) {
+      console.log('Mentor not found:', mentorId);
+      return res.status(404).json({ error: 'Mentor not found' });
+    }
+    
+    // Create mentor allocation record
+    const mentorAllocationData = {
+      enquiryId,
+      mentorId,
+      meetingSchedule,
+      allocatedBy: req.user.id,
+      allocatedAt: new Date(),
+      status: 'active'
+    };
+    
+    console.log('Creating mentor allocation with data:', mentorAllocationData);
+    
+    // For now, we'll store this in the enquiry document
+    // In a real implementation, you might want a separate MentorAllocation model
+    const updatedEnquiry = await Enquiry.findByIdAndUpdate(
+      enquiryId,
+      { 
+        mentorAllocation: mentorAllocationData,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+    
+    console.log('Mentor allocated successfully to enquiry:', enquiryId);
+    res.status(201).json(updatedEnquiry);
+  } catch (error) {
+    console.error('Error allocating mentor:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: error.message, details: error.stack });
+  }
+});
+
+// Get mentor allocation by enquiry ID
+router.get('/enquiries/:enquiryId/mentoring', async (req, res) => {
+  try {
+    const { enquiryId } = req.params;
+    
+    const enquiry = await Enquiry.findById(enquiryId)
+      .populate('mentorAllocation.mentorId', 'name email phone')
+      .populate('mentorAllocation.allocatedBy', 'name email');
+    
+    if (!enquiry) {
+      return res.status(404).json({ error: 'Enquiry not found' });
+    }
+    
+    res.json(enquiry.mentorAllocation || null);
+  } catch (error) {
+    console.error('Error fetching mentor allocation:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

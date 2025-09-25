@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getEnquiryById, assignEnquiry, deleteEnquiry } from '../services/enquiries';
 import { getAssessmentByEnquiryId, createAssessment, uploadAssessmentAttachment } from '../services/assessments';
-import { createFullAssessment, getFullAssessmentByEnquiryId, allocateMentoring, addCaseNote } from '../services/recruitment';
+import { createFullAssessment, getFullAssessmentByEnquiryId, allocateMentoring, getMentorAllocationByEnquiryId, addCaseNote } from '../services/recruitment';
 import { getApplicationByEnquiryId, uploadApplication } from '../services/applications';
 import { getUsers } from '../services/users';
 import { getMentors } from '../services/mentors';
@@ -264,11 +264,10 @@ export default function EnquiryDetail() {
   async function fetchMentorAllocation() {
     setMentorAllocationLoading(true);
     try {
-      // TODO: Implement mentor allocation fetch
-      // const data = await getMentorAllocationByEnquiryId(id);
-      // setMentorAllocation(data);
-      setMentorAllocation(null); // Placeholder
+      const data = await getMentorAllocationByEnquiryId(id);
+      setMentorAllocation(data);
     } catch (err) {
+      console.error('Error fetching mentor allocation:', err);
       setMentorAllocation(null);
     }
     setMentorAllocationLoading(false);
@@ -441,7 +440,9 @@ export default function EnquiryDetail() {
       
       alert('Mentor allocated.');
     } catch (err) {
-      alert('Failed to allocate mentor');
+      console.error('Error allocating mentor:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      alert(`Failed to allocate mentor: ${err.response?.data?.message || err.message || 'Please try again.'}`);
     }
     setAllocSubmitting(false);
   }
@@ -813,7 +814,18 @@ export default function EnquiryDetail() {
 
       {/* Mentoring Allocation */}
       <DetailSection title="4. Mentoring Allocation" isOpen={openSection === 'mentoring'} onToggle={() => toggleSection('mentoring')}>
-        <form onSubmit={handleAllocateMentor} className="space-y-3">
+        {mentorAllocationLoading ? (
+          <div>Loading Mentor Allocation...</div>
+        ) : mentorAllocation ? (
+          <div>
+            <DetailRow label="Mentor" value={mentorAllocation.mentorId?.name || mentorAllocation.mentorId} />
+            <DetailRow label="Meeting Schedule" value={mentorAllocation.meetingSchedule} />
+            <DetailRow label="Allocated By" value={mentorAllocation.allocatedBy?.name || 'Unknown'} />
+            <DetailRow label="Allocated Date" value={mentorAllocation.allocatedAt ? formatDate(mentorAllocation.allocatedAt) : '-'} />
+            <DetailRow label="Status" value={mentorAllocation.status || 'Active'} />
+          </div>
+        ) : (
+          <form onSubmit={handleAllocateMentor} className="space-y-3">
           <div>
             <label className="block font-semibold mb-1">Select Mentor</label>
             <select 
@@ -834,8 +846,9 @@ export default function EnquiryDetail() {
             <label className="block font-semibold mb-1">Meeting Schedule</label>
             <input className="w-full border rounded px-2 py-1" placeholder="e.g. Weekly meetings" value={meetingSchedule} onChange={e => setMeetingSchedule(e.target.value)} />
           </div>
-          <button type="submit" disabled={allocSubmitting || !mentorId} className="bg-purple-600 text-white px-3 py-2 rounded disabled:opacity-50">{allocSubmitting ? 'Allocating...' : 'Allocate Mentor'}</button>
-        </form>
+            <button type="submit" disabled={allocSubmitting || !mentorId} className="bg-purple-600 text-white px-3 py-2 rounded disabled:opacity-50">{allocSubmitting ? 'Allocating...' : 'Allocate Mentor'}</button>
+          </form>
+        )}
       </DetailSection>
 
       {/* Case Notes */}
