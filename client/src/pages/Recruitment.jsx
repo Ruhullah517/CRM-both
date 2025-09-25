@@ -14,7 +14,7 @@ import {
 import { getEnquiries } from '../services/enquiries';
 import { getAssessmentByEnquiryId } from '../services/assessments';
 import { getApplicationByEnquiryId } from '../services/applications';
-import { getMentorApplications, getFreelancerApplications } from '../services/recruitment';
+import { getMentorApplications, getFreelancerApplications, getFullAssessmentByEnquiryId } from '../services/recruitment';
 
 const Recruitment = () => {
   const navigate = useNavigate();
@@ -67,21 +67,24 @@ const Recruitment = () => {
     // Fetch assessment and application data for each enquiry
     for (const enquiry of enquiriesData) {
       try {
-        const [assessment, application] = await Promise.all([
+        const [assessment, application, fullAssessment] = await Promise.all([
           getAssessmentByEnquiryId(enquiry._id).catch(() => null),
-          getApplicationByEnquiryId(enquiry._id).catch(() => null)
+          getApplicationByEnquiryId(enquiry._id).catch(() => null),
+          getFullAssessmentByEnquiryId(enquiry._id).catch(() => null)
         ]);
         
         stagesData[enquiry._id] = {
           assessment,
           application,
-          // Add more stage data as needed (fullAssessment, mentorAllocation, etc.)
+          fullAssessment,
+          // Add more stage data as needed (mentorAllocation, etc.)
         };
       } catch (error) {
         console.error(`Error loading stage data for enquiry ${enquiry._id}:`, error);
         stagesData[enquiry._id] = {
           assessment: null,
           application: null,
+          fullAssessment: null,
         };
       }
     }
@@ -103,14 +106,14 @@ const Recruitment = () => {
     if (stageData.assessment && stageData.assessment.result) {
       // 2. Check if application is uploaded
       if (stageData.application) {
-        // 3. Check if form F assessment is completed (placeholder for now)
-        // if (stageData.fullAssessment && stageData.fullAssessment.result) {
-        //   // 4. Check if mentor is allocated (placeholder for now)
-        //   // if (stageData.mentorAllocation && stageData.mentorAllocation.mentorId) {
-        //   //   return 'mentoring';
-        //   // }
-        //   return 'form-f-assessment';
-        // }
+        // 3. Check if form F assessment is completed
+        if (stageData.fullAssessment && stageData.fullAssessment.recommendation) {
+          // 4. Check if mentor is allocated (placeholder for now)
+          // if (stageData.mentorAllocation && stageData.mentorAllocation.mentorId) {
+          //   return 'mentoring';
+          // }
+          return 'form-f-assessment';
+        }
         return 'application';
       }
       return 'initial-assessment';
@@ -134,9 +137,10 @@ const Recruitment = () => {
   // Refresh stage data for a specific enquiry (called when data changes)
   const refreshEnquiryStage = async (enquiryId) => {
     try {
-      const [assessment, application] = await Promise.all([
+      const [assessment, application, fullAssessment] = await Promise.all([
         getAssessmentByEnquiryId(enquiryId).catch(() => null),
-        getApplicationByEnquiryId(enquiryId).catch(() => null)
+        getApplicationByEnquiryId(enquiryId).catch(() => null),
+        getFullAssessmentByEnquiryId(enquiryId).catch(() => null)
       ]);
       
       setEnquiryStages(prev => ({
@@ -144,6 +148,7 @@ const Recruitment = () => {
         [enquiryId]: {
           assessment,
           application,
+          fullAssessment,
         }
       }));
     } catch (error) {
@@ -272,7 +277,7 @@ const Recruitment = () => {
                                 stageData?.application ? 'bg-green-400' : 'bg-gray-300'
                               }`} title="Application"></div>
                               <div className={`w-2 h-2 rounded-full ${
-                                currentStage === 'form-f-assessment' ? 'bg-green-400' : 'bg-gray-300'
+                                stageData?.fullAssessment?.recommendation ? 'bg-green-400' : 'bg-gray-300'
                               }`} title="Form F Assessment"></div>
                               <div className={`w-2 h-2 rounded-full ${
                                 currentStage === 'mentoring' ? 'bg-green-400' : 'bg-gray-300'

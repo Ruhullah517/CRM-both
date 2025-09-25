@@ -8,6 +8,7 @@ const Enquiry = require('../models/Enquiry');
 const User = require('../models/User');
 const Freelancer = require('../models/Freelancer');
 const Mentor = require('../models/Mentor');
+const FullAssessment = require('../models/FullAssessment');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -261,6 +262,96 @@ router.get('/statistics', async (req, res) => {
       enquiries: enquiryStats
     });
   } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Full Assessment routes
+// Create full assessment
+router.post('/enquiries/:enquiryId/full-assessment', async (req, res) => {
+  try {
+    const { enquiryId } = req.params;
+    const { recommendation, checksDone, notes, meetingType, meetingDate, assessorId } = req.body;
+    
+    console.log('Full assessment creation request:', {
+      enquiryId,
+      recommendation,
+      checksDone,
+      notes,
+      meetingType,
+      meetingDate,
+      assessorId,
+      userId: req.user?.id
+    });
+    
+    // Check if enquiry exists
+    const enquiry = await Enquiry.findById(enquiryId);
+    if (!enquiry) {
+      console.log('Enquiry not found:', enquiryId);
+      return res.status(404).json({ error: 'Enquiry not found' });
+    }
+    
+    // Create full assessment
+    const fullAssessmentData = {
+      enquiryId,
+      assessorId: assessorId || req.user.id,
+      recommendation,
+      checksDone: checksDone || [],
+      notes,
+      meetingType,
+      meetingDate: meetingDate ? new Date(meetingDate) : null,
+      date: new Date()
+    };
+    
+    console.log('Creating full assessment with data:', fullAssessmentData);
+    
+    const fullAssessment = new FullAssessment(fullAssessmentData);
+    await fullAssessment.save();
+    
+    console.log('Full assessment created successfully:', fullAssessment._id);
+    res.status(201).json(fullAssessment);
+  } catch (error) {
+    console.error('Error creating full assessment:', error);
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ error: error.message, details: error.stack });
+  }
+});
+
+// Get full assessment by enquiry ID
+router.get('/enquiries/:enquiryId/full-assessment', async (req, res) => {
+  try {
+    const { enquiryId } = req.params;
+    
+    const fullAssessment = await FullAssessment.findOne({ enquiryId })
+      .populate('assessorId', 'name email')
+      .populate('enquiryId', 'full_name email_address');
+    
+    if (!fullAssessment) {
+      return res.status(404).json({ error: 'Full assessment not found' });
+    }
+    
+    res.json(fullAssessment);
+  } catch (error) {
+    console.error('Error fetching full assessment:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update full assessment
+router.put('/enquiries/:enquiryId/full-assessment', async (req, res) => {
+  try {
+    const { enquiryId } = req.params;
+    const updateData = req.body;
+    
+    const fullAssessment = await FullAssessment.findOneAndUpdate(
+      { enquiryId },
+      { ...updateData, updatedAt: new Date() },
+      { new: true, upsert: true }
+    );
+    
+    res.json(fullAssessment);
+  } catch (error) {
+    console.error('Error updating full assessment:', error);
     res.status(500).json({ error: error.message });
   }
 });

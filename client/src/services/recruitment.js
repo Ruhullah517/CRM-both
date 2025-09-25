@@ -188,10 +188,30 @@ export const createInitialAssessment = async (enquiryId, assessmentData) => {
 // Create full assessment
 export const createFullAssessment = async (enquiryId, assessmentData) => {
   try {
+    console.log('Service: Creating full assessment for enquiry:', enquiryId);
+    console.log('Service: Assessment data:', assessmentData);
+    
     const response = await api.post(`/recruitment/enquiries/${enquiryId}/full-assessment`, assessmentData);
+    
+    console.log('Service: Full assessment created successfully:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error creating full assessment:', error);
+    console.error('Service: Error creating full assessment:', error);
+    console.error('Service: Error response:', error.response?.data);
+    throw error;
+  }
+};
+
+// Get full assessment by enquiry ID
+export const getFullAssessmentByEnquiryId = async (enquiryId) => {
+  try {
+    const response = await api.get(`/recruitment/enquiries/${enquiryId}/full-assessment`);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.status === 404) {
+      return null; // No full assessment found
+    }
+    console.error('Error fetching full assessment:', error);
     throw error;
   }
 };

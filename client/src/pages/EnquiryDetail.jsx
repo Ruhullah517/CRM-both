@@ -2,12 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getEnquiryById, assignEnquiry, deleteEnquiry } from '../services/enquiries';
 import { getAssessmentByEnquiryId, createAssessment, uploadAssessmentAttachment } from '../services/assessments';
-import { createFullAssessment, allocateMentoring, addCaseNote } from '../services/recruitment';
+import { createFullAssessment, getFullAssessmentByEnquiryId, allocateMentoring, addCaseNote } from '../services/recruitment';
 import { getApplicationByEnquiryId, uploadApplication } from '../services/applications';
 import { getUsers } from '../services/users';
 import { getMentors } from '../services/mentors';
 import { useAuth } from '../contexts/AuthContext';
-import FormFAssessmentTracker from '../components/FormFAssessmentTracker';
 import { formatDate } from '../utils/dateUtils';
 import { ChevronDownIcon, ChevronUpIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/solid';
 
@@ -48,7 +47,7 @@ const RecruitmentFlowProgress = ({ enquiry, assessment, application, fullAssessm
       enquiry: true, // Always completed if enquiry exists
       initial: !!assessment && assessment.result, // Has assessment with result
       application: !!application, // Has application uploaded
-      formf: !!fullAssessment && fullAssessment.result, // Has full assessment with result
+      formf: !!fullAssessment && fullAssessment.recommendation, // Has full assessment with recommendation
       mentoring: !!mentorAllocation && mentorAllocation.mentorId, // Has mentor allocated
       approval: enquiry.status === 'Completed' || enquiry.status === 'Approved' // Final approval
     };
@@ -163,10 +162,12 @@ export default function EnquiryDetail() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
 
-  // Full Assessment state (minimal)
+  // Full Assessment state
   const [faRecommendation, setFaRecommendation] = useState('Proceed');
   const [faChecksDone, setFaChecksDone] = useState('');
   const [faNotes, setFaNotes] = useState('');
+  const [faMeetingType, setFaMeetingType] = useState('Home Visit');
+  const [faMeetingDate, setFaMeetingDate] = useState('');
   const [faSubmitting, setFaSubmitting] = useState(false);
 
   // Mentoring allocation
@@ -251,11 +252,10 @@ export default function EnquiryDetail() {
   async function fetchFullAssessment() {
     setFullAssessmentLoading(true);
     try {
-      // TODO: Implement full assessment fetch
-      // const data = await getFullAssessmentByEnquiryId(id);
-      // setFullAssessment(data);
-      setFullAssessment(null); // Placeholder
+      const data = await getFullAssessmentByEnquiryId(id);
+      setFullAssessment(data);
     } catch (err) {
+      console.error('Error fetching full assessment:', err);
       setFullAssessment(null);
     }
     setFullAssessmentLoading(false);
@@ -392,12 +392,27 @@ export default function EnquiryDetail() {
     e.preventDefault();
     setFaSubmitting(true);
     try {
-      await createFullAssessment({
-        enquiryId: id,
+      // Validate required fields
+      if (!faRecommendation) {
+        alert('Please select a recommendation.');
+        return;
+      }
+      
+      const assessmentData = {
         recommendation: faRecommendation,
         checksDone: faChecksDone ? faChecksDone.split(',').map(s => s.trim()).filter(Boolean) : [],
         notes: faNotes,
+        meetingType: faMeetingType,
+        meetingDate: faMeetingDate,
+      };
+      
+      console.log('Creating full assessment with data:', {
+        enquiryId: id,
+        assessmentData,
+        userInfo: userInfo
       });
+      
+      await createFullAssessment(id, assessmentData);
       
       // Refresh data to update progress
       await fetchFullAssessment();
@@ -406,7 +421,9 @@ export default function EnquiryDetail() {
       
       alert('Full assessment saved.');
     } catch (err) {
-      alert('Failed to save full assessment');
+      console.error('Error saving full assessment:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      alert(`Failed to save full assessment: ${err.response?.data?.message || err.message || 'Please try again.'}`);
     }
     setFaSubmitting(false);
   }
@@ -733,25 +750,65 @@ export default function EnquiryDetail() {
 
       {/* Form F Assessment Section */}
       <DetailSection title="3. Form F Assessment" isOpen={openSection === 'fullAssessment'} onToggle={() => toggleSection('fullAssessment')}>
-        <form onSubmit={handleCreateFullAssessment} className="space-y-3">
+        {fullAssessmentLoading ? (
+          <div>Loading Form F Assessment...</div>
+        ) : fullAssessment ? (
           <div>
-            <label className="block font-semibold mb-1">Recommendation</label>
-            <select className="w-full border rounded px-2 py-1" value={faRecommendation} onChange={e => setFaRecommendation(e.target.value)}>
-              <option>Proceed</option>
-              <option>Do not proceed</option>
-              <option>Hold</option>
-            </select>
+            <DetailRow label="Assessor" value={fullAssessment.assessorId?.name || 'Unknown'} />
+            <DetailRow label="Date" value={formatDate(fullAssessment.date)} />
+            <DetailRow label="Recommendation" value={fullAssessment.recommendation} />
+            <DetailRow label="Checks Done" value={fullAssessment.checksDone?.join(', ') || '-'} />
+            <DetailRow label="Meeting Type" value={fullAssessment.meetingType || '-'} />
+            <DetailRow label="Meeting Date" value={fullAssessment.meetingDate ? formatDate(fullAssessment.meetingDate) : '-'} />
+            <DetailRow label="Notes" value={fullAssessment.notes || '-'} />
           </div>
-          <div>
-            <label className="block font-semibold mb-1">Checks Done (comma separated)</label>
-            <input className="w-full border rounded px-2 py-1" placeholder="DBS, References, Home Safety" value={faChecksDone} onChange={e => setFaChecksDone(e.target.value)} />
-          </div>
-          <div>
-            <label className="block font-semibold mb-1">Notes</label>
-            <textarea className="w-full border rounded px-2 py-1" value={faNotes} onChange={e => setFaNotes(e.target.value)} />
-          </div>
-          <button type="submit" disabled={faSubmitting} className="bg-blue-600 text-white px-3 py-2 rounded">{faSubmitting ? 'Saving...' : 'Save Full Assessment'}</button>
-        </form>
+        ) : (
+          <form onSubmit={handleCreateFullAssessment} className="space-y-3">
+            <div>
+              <label className="block font-semibold mb-1">Recommendation</label>
+              <select className="w-full border rounded px-2 py-1" value={faRecommendation} onChange={e => setFaRecommendation(e.target.value)}>
+                <option>Proceed</option>
+                <option>Do not proceed</option>
+                <option>Hold</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold mb-1">Checks Done (comma separated)</label>
+              <input className="w-full border rounded px-2 py-1" placeholder="DBS, References, Home Safety" value={faChecksDone} onChange={e => setFaChecksDone(e.target.value)} />
+            </div>
+            <div>
+              <label className="block font-semibold mb-1">Meeting Type</label>
+              <select className="w-full border rounded px-2 py-1" value={faMeetingType} onChange={e => setFaMeetingType(e.target.value)}>
+                <option>Home Visit</option>
+                <option>Telephone</option>
+                <option>Office Meeting</option>
+                <option>Video Call</option>
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold mb-1">Meeting Date</label>
+              <input type="date" className="w-full border rounded px-2 py-1" value={faMeetingDate} onChange={e => setFaMeetingDate(e.target.value)} />
+            </div>
+            <div>
+              <label className="block font-semibold mb-1">Notes</label>
+              <textarea className="w-full border rounded px-2 py-1" value={faNotes} onChange={e => setFaNotes(e.target.value)} />
+            </div>
+            <button 
+              type="submit" 
+              disabled={faSubmitting} 
+              className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {faSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Saving...
+                </>
+              ) : (
+                'Save Full Assessment'
+              )}
+            </button>
+          </form>
+        )}
       </DetailSection>
 
       {/* Mentoring Allocation */}
@@ -789,10 +846,6 @@ export default function EnquiryDetail() {
         </form>
       </DetailSection>
 
-      {/* Form F Assessment Tracker Section */}
-      <DetailSection title="3. Form F Assessment Tracker" isOpen={openSection === 'formf'} onToggle={() => toggleSection('formf')}>
-        <FormFAssessmentTracker enquiryId={id} />
-      </DetailSection>
 
       {/* Final Approval Section */}
       <DetailSection title="5. Final Approval" isOpen={openSection === 'approval'} onToggle={() => toggleSection('approval')}>

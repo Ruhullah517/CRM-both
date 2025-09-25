@@ -19,6 +19,8 @@ const FullAssessmentSchema = new mongoose.Schema({
   supportNeeds: String,
   trainingNeeds: String,
   meetingNotes: String,
+  meetingType: { type: String, enum: ['Home Visit', 'Telephone', 'Office Meeting', 'Video Call'] },
+  meetingDate: Date,
   recommendation: { type: String, enum: ['Proceed', 'Do not proceed', 'Hold'], required: true },
   notes: String,
   created_at: { type: Date, default: Date.now }
