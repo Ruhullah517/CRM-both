@@ -23,46 +23,47 @@ import {
 import img3 from '../../public/img3.png';
 const navItems = [
   { name: 'Dashboard', path: '/dashboard', roles: ['admin', 'staff', 'caseworker', 'freelancer'], icon: HomeIcon },
-  
+
   // Recruitment & Foster Care Section
   { name: 'Enquiries', path: '/enquiries', roles: ['admin', 'staff'], icon: QuestionMarkCircleIcon, section: 'recruitment' },
   { name: 'Recruitment Pipeline', path: '/recruitment', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'recruitment' },
   { name: 'Foster Carers', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'recruitment' },
-  
+
   // Case Management Section
   { name: 'Referrals', path: '/referrals', roles: ['admin', 'staff', 'caseworker'], icon: FolderOpenIcon, section: 'cases' },
   { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'cases' },
   { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon, section: 'cases' },
-  
+
   // Training & Development Section
   { name: 'Training Events', path: '/training', roles: ['admin', 'staff'], icon: TrainingIcon, section: 'training' },
   { name: 'Certificates', path: '/certificates', roles: ['admin', 'staff'], icon: AcademicCapIcon, section: 'training' },
-  { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon, section: 'training' },
-  
+  { name: 'Invoices', path: '/invoices', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'training' },
+  { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon, section: 'training' },
+
   // Staff & Resources Section
   { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon, section: 'staff' },
+  { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon, section: 'staff' },
   { name: 'User Management', path: '/users', roles: ['admin'], icon: UserGroupIcon, section: 'staff' },
-  
+
   // Communication Section
   { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },
   { name: 'Email Management', path: '/email-management', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },
   { name: 'Email Automations', path: '/email-automations', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },
   { name: 'Contact Management', path: '/contact-management', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'communication' },
-  
+
   // Operations Section
-  { name: 'Invoices', path: '/invoices', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'operations' },
-  { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon, section: 'operations' },
+
   { name: 'Reports', path: '/reports', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon, section: 'operations' },
   { name: 'GDPR Management', path: '/gdpr-management', roles: ['admin', 'manager'], icon: ShieldCheckIcon, section: 'operations' },
-  
+
   // Freelancer-specific items
   { name: 'My Cases', path: '/my-cases', roles: ['freelancer'], icon: BriefcaseIcon, section: 'personal' },
   { name: 'My Profile', path: '/my-profile', roles: ['freelancer'], icon: UserCircleIcon, section: 'personal' },
-  
+
   // Mentor-specific items  
   { name: 'My Cases', path: '/my-cases', roles: ['mentor'], icon: BriefcaseIcon, section: 'personal' },
   { name: 'My Profile', path: '/my-profile', roles: ['mentor'], icon: UserCircleIcon, section: 'personal' },
-  
+
   // { name: 'Settings', path: '/settings', roles: ['admin', 'staff'], icon: Cog6ToothIcon },
 ];
 
@@ -109,7 +110,7 @@ export default function Sidebar({ onClose }) {
           <XMarkIcon className="h-6 w-6" />
         </button>
       </div>
-      
+
       <nav className="flex flex-col gap-2">
         {Object.entries(groupedItems).map(([sectionKey, items]) => (
           <div key={sectionKey} className="mb-4">
@@ -121,7 +122,7 @@ export default function Sidebar({ onClose }) {
                 </h3>
               </div>
             )}
-            
+
             {/* Section Items */}
             <div className="flex flex-col gap-0.5">
               {items.map((item) => {
