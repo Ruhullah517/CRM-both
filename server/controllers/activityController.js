@@ -6,6 +6,7 @@ const logActivity = async (req, res) => {
     const { id: caseId } = req.params; // Get caseId from URL parameters (route uses :id)
     const { type, date, caseworker, description, timeSpent } = req.body;
     
+    console.log('Full request body:', req.body);
     console.log('Activity data received:');
     console.log('caseId:', caseId);
     console.log('caseworker:', caseworker);

@@ -461,13 +461,13 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
               setSubmitting(true);
               try {
                 console.log('User object:', user);
-                console.log('User ID:', user?.user?._id || user?._id);
+                console.log('User ID:', user?.user?.id || user?.id);
                 console.log('Case ID:', caseItem._id);
                 console.log('Activity data being sent:', {
                   type: aForm.type,
                   description: aForm.description,
                   timeSpent: aForm.timeSpent,
-                  caseworker: user?.user?._id || user?._id,
+                  caseworker: user?.user?.id || user?.id,
                   date: new Date()
                 });
                 
@@ -475,7 +475,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
                   type: aForm.type,
                   description: aForm.description,
                   timeSpent: aForm.timeSpent,
-                  caseworker: user?.user?._id || user?._id,
+                  caseworker: user?.user?.id || user?.id,
                   date: new Date()
                 });
                 console.log('Activity logged successfully:', result);
