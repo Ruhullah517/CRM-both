@@ -574,10 +574,17 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
                   Start Progress
                 </button>
               )}
-              {['Open', 'In Progress', 'Active'].includes(caseItem.status) && (
+              {/* Only show close button when case is ready to be closed */}
+              {(['In Progress', 'Active'].includes(caseItem.status) && activities.length > 0) && (
                 <button
                   onClick={async () => {
-                    if (window.confirm('Are you sure you want to close this case? Make sure to add outcome details before closing.')) {
+                    // Check if outcome is documented
+                    if (!caseItem.outcomeAchieved || caseItem.outcomeAchieved.trim() === '') {
+                      alert('Please document the outcome achieved before closing this case. Use the "Edit Case" button to add outcome details.');
+                      return;
+                    }
+                    
+                    if (window.confirm('Are you sure you want to close this case? The outcome has been documented.')) {
                       await updateCase(caseItem._id, {
                         ...caseItem,
                         status: 'Closed',
@@ -588,7 +595,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
                   }}
                   className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-700 text-sm"
                 >
-                  Close Case
+                  Complete Case
                 </button>
               )}
             </div>
@@ -625,7 +632,7 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
   const [pausedReason, setPausedReason] = useState(caseItem?.pausedReason || "");
   const [opened, setOpened] = useState(caseItem?.keyDates?.opened ? caseItem.keyDates.opened.slice(0, 10) : "");
   const [reviewDue, setReviewDue] = useState(caseItem?.keyDates?.reviewDue ? caseItem.keyDates.reviewDue.slice(0, 10) : "");
-  const [closed, setClosed] = useState(caseItem?.keyDates?.closed ? caseItem.keyDates.closed.slice(0, 10) : "");
+  // Date Closed is set automatically when case is closed - not manually editable
   // Notes, outcome, time
   const [notes, setNotes] = useState(caseItem?.notes || "");
   const [outcomeAchieved, setOutcomeAchieved] = useState(caseItem?.outcomeAchieved || "");
@@ -705,7 +712,7 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
       presentingIssues,
       assignedCaseworkers,
       riskLevel,
-      keyDates: { opened, reviewDue, closed },
+      keyDates: { opened, reviewDue, closed: caseItem?.keyDates?.closed }, // Keep existing closed date if any
       status,
       pausedReason,
       notes,
@@ -865,12 +872,7 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
               <label className="block font-semibold mb-1">Date Opened</label>
               <input type="date" value={opened} onChange={e => setOpened(e.target.value)} className="w-full px-4 py-2 border rounded" />
             </div>
-            {status?.includes('Closed') && (
-            <div>
-                <label className="block font-semibold mb-1">Date Closed</label>
-              <input type="date" value={closed} onChange={e => setClosed(e.target.value)} className="w-full px-4 py-2 border rounded" />
-            </div>
-            )}
+            {/* Date Closed is set automatically when case is closed - not manually editable */}
             <div className="md:col-span-2">
               <label className="block font-semibold mb-1">Case Notes/Summary</label>
               <textarea placeholder="Add notes about this case, interactions, progress, etc." value={notes} onChange={e => setNotes(e.target.value)} className="w-full px-4 py-2 border rounded" rows={4} />
