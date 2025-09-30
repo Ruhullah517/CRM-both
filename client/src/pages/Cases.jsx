@@ -132,7 +132,7 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
                   <span
                     className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] ||
                       "bg-gray-100 text-gray-700"
-                      }`}
+                    }`}
                   >
                     {c.status}
                   </span>
@@ -184,7 +184,7 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
               <span
                 className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] ||
                   "bg-gray-100 text-gray-700"
-                  }`}
+                }`}
               >
                 {c.status}
               </span>
@@ -275,39 +275,39 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
           <div className={`flex-1 text-center p-2 rounded ${caseItem.status === 'New' ? 'bg-green-500 text-white' : caseItem.status && caseItem.status !== 'New' ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">1. Referral</div>
             <div className="text-xs">Received</div>
-          </div>
+        </div>
           <div className="text-gray-400">→</div>
           <div className={`flex-1 text-center p-2 rounded ${['Open', 'Awaiting Assessment'].includes(caseItem.status) ? 'bg-green-500 text-white' : ['In Progress', 'Active', 'Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">2. Case</div>
             <div className="text-xs">Created</div>
-          </div>
+        </div>
           <div className="text-gray-400">→</div>
           <div className={`flex-1 text-center p-2 rounded ${caseItem.assignedCaseworkers?.length > 0 ? 'bg-green-500 text-white' : ['In Progress', 'Active', 'Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">3. Assign</div>
             <div className="text-xs">Caseworker</div>
-          </div>
+      </div>
           <div className="text-gray-400">→</div>
           <div className={`flex-1 text-center p-2 rounded ${['In Progress', 'Active'].includes(caseItem.status) ? 'bg-green-500 text-white' : ['Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">4. Log</div>
             <div className="text-xs">Interactions</div>
-          </div>
+                </div>
           <div className="text-gray-400">→</div>
           <div className={`flex-1 text-center p-2 rounded ${['Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">5. Close</div>
             <div className="text-xs">Complete</div>
-          </div>
+            </div>
         </div>
-      </div>
+              </div>
 
       <div className="mb-6 p-4 rounded bg-green-50 border border-green-200 flex flex-col md:flex-row md:items-center md:justify-between">
-        <div>
+              <div>
           <div className="text-lg font-bold mb-1">Case Reference: {caseItem.caseReferenceNumber}</div>
           <div className="text-xl font-bold text-[#2EAB2C]">{caseItem.clientFullName}</div>
-        </div>
+              </div>
         <div className="mt-2 md:mt-0">
           <span className={`px-3 py-1 rounded text-sm font-semibold ${statusColors[caseItem.status?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{caseItem.status}</span>
-        </div>
-      </div>
+              </div>
+            </div>
 
       {/* Carer Details */}
       <div className="mb-4 p-4 rounded bg-gray-50 border border-gray-200">
@@ -375,7 +375,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
                 <span className="text-gray-500 italic">No caseworkers assigned yet</span>
               ) : (
                 (caseItem.assignedCaseworkers || []).map(cw => {
-                  const staff = staffList?.find(s => s._id === cw.userId);
+            const staff = staffList?.find(s => s._id === cw.userId);
                   return (
                     <span key={cw.userId} className="inline-block mr-3 mb-1">
                       <span className={cw.isLead ? 'font-bold text-green-700' : 'text-gray-900'}>
@@ -386,7 +386,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
                   );
                 })
               )}
-            </div>
+        </div>
           </div>
 
           <div>
@@ -452,8 +452,8 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
               </div>
             </div>
           ))}
-        </div>
-        {['admin', 'manager', 'caseworker'].includes(user.user?.role?.toLowerCase()) && (
+      </div>
+      {['admin', 'manager', 'caseworker'].includes(user.user?.role?.toLowerCase()) && (
           <form
             className="mt-3 space-y-2"
             onSubmit={async (e) => {
@@ -506,7 +506,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
                   <option>Case Update</option>
                   <option>Follow-up Action</option>
                 </select>
-              </div>
+        </div>
               <div>
                 <label className="block text-xs text-gray-600 mb-1">Time Spent (hh:mm)</label>
                 <input type="text" placeholder="00:30" className="w-full border rounded px-2 py-1 text-sm" value={aForm.timeSpent} onChange={(e) => setAForm(f => ({ ...f, timeSpent: e.target.value }))} />
@@ -602,7 +602,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
 
 const CaseForm = ({ caseItem, onBack, onSave }) => {
   const [submitting, setSubmitting] = useState(false);
-
+  
   // Main fields
   const [clientFullName, setClientFullName] = useState(caseItem?.clientFullName || "");
   const [dateOfBirth, setDateOfBirth] = useState(caseItem?.dateOfBirth ? caseItem.dateOfBirth.slice(0, 10) : "");
@@ -692,42 +692,42 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
     setSubmitting(true);
     try {
       await onSave({
-        ...caseItem,
-        clientFullName,
-        dateOfBirth,
-        gender,
-        ethnicity,
-        contactInfo: { email, phone },
-        organization,
-        referralSource,
-        caseType,
+      ...caseItem,
+      clientFullName,
+      dateOfBirth,
+      gender,
+      ethnicity,
+      contactInfo: { email, phone },
+      organization,
+      referralSource,
+      caseType,
         supportType,
-        presentingIssues,
-        assignedCaseworkers,
-        riskLevel,
-        keyDates: { opened, reviewDue, closed },
-        status,
-        pausedReason,
-        notes,
-        outcomeAchieved,
-        supportingDocuments,
-        totalTimeLogged,
-        invoiceableHours,
-        referralDetails: {
-          position,
-          hours,
-          sswName,
-          sswContactNumber,
-          sswEmail,
-          sswLocalAuthority,
-          decisionMakerName,
-          decisionMakerContactNumber,
-          decisionMakerEmail,
-          financeContactName,
-          financeContactNumber,
-          financeEmail
-        }
-      });
+      presentingIssues,
+      assignedCaseworkers,
+      riskLevel,
+      keyDates: { opened, reviewDue, closed },
+      status,
+      pausedReason,
+      notes,
+      outcomeAchieved,
+      supportingDocuments,
+      totalTimeLogged,
+      invoiceableHours,
+      referralDetails: {
+        position,
+        hours,
+        sswName,
+        sswContactNumber,
+        sswEmail,
+        sswLocalAuthority,
+        decisionMakerName,
+        decisionMakerContactNumber,
+        decisionMakerEmail,
+        financeContactName,
+        financeContactNumber,
+        financeEmail
+      }
+    });
     } catch (error) {
       console.error('Error saving case:', error);
     } finally {
@@ -866,10 +866,10 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
               <input type="date" value={opened} onChange={e => setOpened(e.target.value)} className="w-full px-4 py-2 border rounded" />
             </div>
             {status?.includes('Closed') && (
-              <div>
+            <div>
                 <label className="block font-semibold mb-1">Date Closed</label>
-                <input type="date" value={closed} onChange={e => setClosed(e.target.value)} className="w-full px-4 py-2 border rounded" />
-              </div>
+              <input type="date" value={closed} onChange={e => setClosed(e.target.value)} className="w-full px-4 py-2 border rounded" />
+            </div>
             )}
             <div className="md:col-span-2">
               <label className="block font-semibold mb-1">Case Notes/Summary</label>
@@ -877,9 +877,9 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
             </div>
             {status?.includes('Closed') && (
               <div className="md:col-span-2">
-                <label className="block font-semibold mb-1">Outcome Achieved</label>
+              <label className="block font-semibold mb-1">Outcome Achieved</label>
                 <textarea placeholder="Describe the final outcome of this case" value={outcomeAchieved} onChange={e => setOutcomeAchieved(e.target.value)} className="w-full px-4 py-2 border rounded" rows={3} />
-              </div>
+            </div>
             )}
           </div>
         </div>
@@ -926,8 +926,8 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
           </div>
           {uploadError && <div className="text-red-500 text-sm">{uploadError}</div>}
         </div>
-        <button
-          type="submit"
+        <button 
+          type="submit" 
           disabled={submitting}
           className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
@@ -985,12 +985,15 @@ const Cases = () => {
     try {
       if (caseData._id) {
         await updateCase(caseData._id, caseData);
+        // Update the selected case with the new data
+        setSelected(caseData);
       } else {
-        await createCase(caseData);
+        const newCase = await createCase(caseData);
+        setSelected(newCase);
       }
       fetchCases();
-      setView("list");
-      setSelected(null);
+      // Stay on detail view with updated case data
+      setView("detail");
     } catch (err) {
       setError("Failed to save case");
     }
@@ -1012,7 +1015,7 @@ const Cases = () => {
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   if (view === "edit") {
-    return <CaseEditForm caseItem={selected} onBack={() => { setView("detail"); setEditMode(false); }} onSave={data => { handleSaveCase(data); setView("detail"); setEditMode(false); }} />;
+    return <CaseEditForm caseItem={selected} onBack={() => { setView("detail"); setEditMode(false); }} onSave={data => { handleSaveCase(data); setEditMode(false); }} />;
   }
   if (view === "detail") {
     return <>
