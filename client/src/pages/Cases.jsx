@@ -287,10 +287,10 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
             <div className="text-xs">Caseworker</div>
       </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${['In Progress', 'Active'].includes(caseItem.status) ? 'bg-green-500 text-white' : ['Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
+          <div className={`flex-1 text-center p-2 rounded ${activities.length > 0 ? 'bg-green-500 text-white' : ['Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">4. Log</div>
             <div className="text-xs">Interactions</div>
-                </div>
+          </div>
           <div className="text-gray-400">→</div>
           <div className={`flex-1 text-center p-2 rounded ${['Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">5. Close</div>
