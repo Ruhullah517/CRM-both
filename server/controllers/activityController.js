@@ -3,7 +3,7 @@ const Activity = require('../models/Activity');
 // Log a new activity
 const logActivity = async (req, res) => {
   try {
-    const { caseId } = req.params; // Get caseId from URL parameters
+    const { id: caseId } = req.params; // Get caseId from URL parameters (route uses :id)
     const { type, date, caseworker, description, timeSpent } = req.body;
     const activity = new Activity({
       caseId,
@@ -24,7 +24,7 @@ const logActivity = async (req, res) => {
 // Get all activities for a case
 const getActivitiesByCase = async (req, res) => {
   try {
-    const { caseId } = req.params;
+    const { id: caseId } = req.params; // Get caseId from URL parameters (route uses :id)
     const activities = await Activity.find({ caseId }).populate('caseworker', 'name email');
     res.json(activities);
   } catch (error) {
