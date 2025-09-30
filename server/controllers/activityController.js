@@ -3,7 +3,8 @@ const Activity = require('../models/Activity');
 // Log a new activity
 const logActivity = async (req, res) => {
   try {
-    const { caseId, type, date, caseworker, description, timeSpent } = req.body;
+    const { caseId } = req.params; // Get caseId from URL parameters
+    const { type, date, caseworker, description, timeSpent } = req.body;
     const activity = new Activity({
       caseId,
       type,
