@@ -460,11 +460,13 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
               e.preventDefault();
               setSubmitting(true);
               try {
+                console.log('User object:', user);
+                console.log('User ID:', user?.user?._id || user?._id);
                 await logActivity(caseItem._id, {
                   type: aForm.type,
                   description: aForm.description,
                   timeSpent: aForm.timeSpent,
-                  caseworker: user.user?._id,
+                  caseworker: user?.user?._id || user?._id,
                   date: new Date()
                 });
                 const data = await getActivitiesByCase(caseItem._id);
