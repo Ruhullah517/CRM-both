@@ -272,22 +272,22 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
       <div className="mb-6 p-4 rounded bg-gradient-to-r from-green-50 to-blue-50 border border-green-200">
         <div className="text-xs font-semibold text-gray-600 mb-2">ADVOCACY & CASE MANAGEMENT WORKFLOW</div>
         <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2">
-          <div className={`flex-1 text-center p-2 rounded ${caseItem.status === 'New' ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+          <div className={`flex-1 text-center p-2 rounded ${caseItem.status === 'New' ? 'bg-green-500 text-white' : caseItem.status && caseItem.status !== 'New' ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">1. Referral</div>
             <div className="text-xs">Received</div>
           </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${['Open', 'Awaiting Assessment'].includes(caseItem.status) ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+          <div className={`flex-1 text-center p-2 rounded ${['Open', 'Awaiting Assessment'].includes(caseItem.status) ? 'bg-green-500 text-white' : ['In Progress', 'Active', 'Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">2. Case</div>
             <div className="text-xs">Created</div>
           </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${caseItem.assignedCaseworkers?.length > 0 ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+          <div className={`flex-1 text-center p-2 rounded ${caseItem.assignedCaseworkers?.length > 0 ? 'bg-green-500 text-white' : ['In Progress', 'Active', 'Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">3. Assign</div>
             <div className="text-xs">Caseworker</div>
           </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${['In Progress', 'Active'].includes(caseItem.status) ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+          <div className={`flex-1 text-center p-2 rounded ${['In Progress', 'Active'].includes(caseItem.status) ? 'bg-green-500 text-white' : ['Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">4. Log</div>
             <div className="text-xs">Interactions</div>
           </div>
