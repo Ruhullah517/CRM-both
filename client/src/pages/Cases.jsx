@@ -272,32 +272,71 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
       <div className="mb-6 p-4 rounded bg-gradient-to-r from-green-50 to-blue-50 border border-green-200">
         <div className="text-xs font-semibold text-gray-600 mb-2">ADVOCACY & CASE MANAGEMENT WORKFLOW</div>
         <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2">
-          <div className={`flex-1 text-center p-2 rounded ${caseItem.status === 'New' ? 'bg-green-500 text-white' : caseItem.status && caseItem.status !== 'New' ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
+          {/* Step 1: Referral Received */}
+          <div className={`flex-1 text-center p-2 rounded ${
+            caseItem.status && caseItem.status !== 'New' 
+              ? 'bg-green-200 text-green-800' // Completed
+              : caseItem.status === 'New' 
+                ? 'bg-green-100 bg-opacity-50 text-green-700' // Current step
+                : 'bg-white text-gray-600' // Not started
+          }`}>
             <div className="text-xs font-semibold">1. Referral</div>
             <div className="text-xs">Received</div>
-        </div>
+          </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${['Open', 'Awaiting Assessment', 'In Progress', 'Active'].includes(caseItem.status) ? 'bg-green-500 text-white' : ['Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
+          
+          {/* Step 2: Case Created */}
+          <div className={`flex-1 text-center p-2 rounded ${
+            ['Open', 'Awaiting Assessment', 'In Progress', 'Active', 'Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status)
+              ? 'bg-green-200 text-green-800' // Completed
+              : caseItem.status === 'New'
+                ? 'bg-green-100 bg-opacity-50 text-green-700' // Current step
+                : 'bg-white text-gray-600' // Not started
+          }`}>
             <div className="text-xs font-semibold">2. Case</div>
             <div className="text-xs">Created</div>
           </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${caseItem.assignedCaseworkers?.length > 0 ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+          
+          {/* Step 3: Assign Caseworker */}
+          <div className={`flex-1 text-center p-2 rounded ${
+            caseItem.assignedCaseworkers?.length > 0
+              ? 'bg-green-200 text-green-800' // Completed
+              : ['Open', 'Awaiting Assessment'].includes(caseItem.status)
+                ? 'bg-green-100 bg-opacity-50 text-green-700' // Current step
+                : 'bg-white text-gray-600' // Not started
+          }`}>
             <div className="text-xs font-semibold">3. Assign</div>
             <div className="text-xs">Caseworker</div>
           </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${activities.length > 0 ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+          
+          {/* Step 4: Log Interactions */}
+          <div className={`flex-1 text-center p-2 rounded ${
+            activities.length > 0
+              ? 'bg-green-200 text-green-800' // Completed
+              : caseItem.assignedCaseworkers?.length > 0 && ['In Progress', 'Active'].includes(caseItem.status)
+                ? 'bg-green-100 bg-opacity-50 text-green-700' // Current step
+                : 'bg-white text-gray-600' // Not started
+          }`}>
             <div className="text-xs font-semibold">4. Log</div>
             <div className="text-xs">Interactions</div>
           </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${['Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+          
+          {/* Step 5: Close Complete */}
+          <div className={`flex-1 text-center p-2 rounded ${
+            ['Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status)
+              ? 'bg-green-200 text-green-800' // Completed
+              : activities.length > 0 && ['In Progress', 'Active'].includes(caseItem.status)
+                ? 'bg-green-100 bg-opacity-50 text-green-700' // Current step
+                : 'bg-white text-gray-600' // Not started
+          }`}>
             <div className="text-xs font-semibold">5. Close</div>
             <div className="text-xs">Complete</div>
-            </div>
+          </div>
         </div>
-              </div>
+      </div>
 
       <div className="mb-6 p-4 rounded bg-green-50 border border-green-200 flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
@@ -610,8 +649,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
   );
 };
 
-const CaseForm = ({ caseItem, onBack, onSave }) => {
-  const [submitting, setSubmitting] = useState(false);
+const CaseForm = ({ caseItem, loading, onBack, onSave }) => {
   
   // Main fields
   const [clientFullName, setClientFullName] = useState(caseItem?.clientFullName || "");
@@ -699,7 +737,6 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setSubmitting(true);
     try {
       await onSave({
       ...caseItem,
@@ -740,8 +777,6 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
     });
     } catch (error) {
       console.error('Error saving case:', error);
-    } finally {
-      setSubmitting(false);
     }
   }
 
@@ -933,10 +968,10 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
         </div>
         <button 
           type="submit" 
-          disabled={submitting}
+          disabled={loading}
           className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
-          {submitting ? (
+          {loading ? (
             <>
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
               {caseItem ? "Saving..." : "Adding..."}
@@ -950,8 +985,8 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
   );
 };
 
-const CaseEditForm = ({ caseItem, onBack, onSave }) => {
-  return <CaseForm caseItem={caseItem} onBack={onBack} onSave={onSave} />;
+const CaseEditForm = ({ caseItem, loading, onBack, onSave }) => {
+  return <CaseForm caseItem={caseItem} loading={loading} onBack={onBack} onSave={onSave} />;
 };
 
 const Cases = () => {
@@ -987,6 +1022,7 @@ const Cases = () => {
   }
 
   async function handleSaveCase(caseData) {
+    setLoading(true);
     try {
       if (caseData._id) {
         await updateCase(caseData._id, caseData);
@@ -1001,6 +1037,8 @@ const Cases = () => {
       setView("detail");
     } catch (err) {
       setError("Failed to save case");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -1020,7 +1058,7 @@ const Cases = () => {
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   if (view === "edit") {
-    return <CaseEditForm caseItem={selected} onBack={() => { setView("detail"); setEditMode(false); }} onSave={data => { handleSaveCase(data); setEditMode(false); }} />;
+    return <CaseEditForm caseItem={selected} loading={loading} onBack={() => { setView("detail"); setEditMode(false); }} onSave={data => { handleSaveCase(data); setEditMode(false); }} />;
   }
   if (view === "detail") {
     return <>
