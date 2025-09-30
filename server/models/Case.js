@@ -28,6 +28,7 @@ const CaseSchema = new mongoose.Schema({
   referrerContactNumber: String,
   referrerEmail: String,
   caseType: String,
+  supportType: { type: String }, // Type of advocacy support provided
   presentingIssues: String,
   assignedCaseworkers: [CaseworkerSchema],
   riskLevel: { type: String, enum: ['Low', 'Medium', 'High'] },
@@ -40,10 +41,13 @@ const CaseSchema = new mongoose.Schema({
     type: String,
     enum: [
       'New',
+      'Open',
+      'In Progress',
       'Awaiting Assessment',
       'Active',
       'Paused',
       'Escalated',
+      'Closed',
       'Closed – Resolved',
       'Closed – Unresolved'
     ],

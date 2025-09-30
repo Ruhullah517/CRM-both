@@ -13,6 +13,7 @@ import api from '../services/api';
 import Loader from '../components/Loader';
 import { listCaseMeetings, createCaseMeeting, uploadCaseMeetingFile } from '../services/caseMeetings';
 import { createReminder } from '../services/reminders';
+import { getActivitiesByCase, logActivity } from '../services/activities';
 
 const statuses = ['Open', 'In Progress', 'Closed'];
 const caseworkers = ['Sarah Brown', 'Mike Green', 'Jane Lee'];
@@ -30,12 +31,38 @@ const genderOptions = ['Male', 'Female', 'Other'];
 const riskLevels = ['Low', 'Medium', 'High'];
 const statusOptions = [
   'New',
+  'Open',
+  'In Progress',
   'Awaiting Assessment',
   'Active',
   'Paused',
   'Escalated',
+  'Closed',
   'Closed – Resolved',
   'Closed – Unresolved'
+];
+
+const supportTypes = [
+  'Emotional Support',
+  'Legal Advocacy',
+  'Financial Guidance',
+  'Housing Assistance',
+  'Employment Support',
+  'Educational Support',
+  'Healthcare Navigation',
+  'Family Mediation',
+  'Crisis Intervention',
+  'Other'
+];
+
+const activityTypes = [
+  'Phone Call',
+  'Email',
+  'Client Meeting',
+  'Internal Discussion',
+  'Document Upload',
+  'Case Update',
+  'Follow-up Action'
 ];
 
 const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
@@ -88,12 +115,11 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
             <tr className="bg-green-50">
               <th className="px-4 py-2">Reference</th>
               <th className="px-4 py-2">Client</th>
-              <th className="px-4 py-2">Type</th>
+              <th className="px-4 py-2">Support Type</th>
               <th className="px-4 py-2">Status</th>
               <th className="px-4 py-2">Risk</th>
               <th className="px-4 py-2">Caseworkers</th>
               <th className="px-4 py-2">Opened</th>
-              <th className="px-4 py-2"></th>
               <th className="px-4 py-2"></th>
             </tr>
           </thead>
@@ -104,7 +130,7 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
                   {c.caseReferenceNumber}
                 </td>
                 <td className="px-4 py-2 font-semibold">{c.clientFullName}</td>
-                <td className="px-4 py-2">{c.caseType}</td>
+                <td className="px-4 py-2 text-sm">{c.supportType || c.caseType}</td>
                 <td className="px-4 py-2">
                   <span
                     className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -220,6 +246,12 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
   const [mForm, setMForm] = React.useState({ meetingType: 'Telephone', meetingDate: '', notes: '' });
   const [mReminder, setMReminder] = React.useState({ enabled: false, dueAt: '' });
   const [mFiles, setMFiles] = React.useState([]);
+  
+  // Activity logging state
+  const [activities, setActivities] = React.useState([]);
+  const [aLoading, setALoading] = React.useState(false);
+  const [aForm, setAForm] = React.useState({ type: 'Phone Call', description: '', timeSpent: '00:00' });
+  const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     (async () => {
@@ -232,9 +264,53 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
       }
     })();
   }, [caseItem._id]);
+
+  React.useEffect(() => {
+    (async () => {
+      setALoading(true);
+      try {
+        const data = await getActivitiesByCase(caseItem._id);
+        setActivities(data || []);
+      } finally {
+        setALoading(false);
+      }
+    })();
+  }, [caseItem._id]);
   return (
     <div className="max-w-3xl mx-auto p-4 bg-white rounded shadow mt-6">
       <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
+      
+      {/* Workflow Progress Indicator */}
+      <div className="mb-6 p-4 rounded bg-gradient-to-r from-green-50 to-blue-50 border border-green-200">
+        <div className="text-xs font-semibold text-gray-600 mb-2">ADVOCACY & CASE MANAGEMENT WORKFLOW</div>
+        <div className="flex items-center justify-between gap-2 overflow-x-auto pb-2">
+          <div className={`flex-1 text-center p-2 rounded ${caseItem.status === 'New' ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+            <div className="text-xs font-semibold">1. Referral</div>
+            <div className="text-xs">Received</div>
+          </div>
+          <div className="text-gray-400">→</div>
+          <div className={`flex-1 text-center p-2 rounded ${['Open', 'Awaiting Assessment'].includes(caseItem.status) ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+            <div className="text-xs font-semibold">2. Case</div>
+            <div className="text-xs">Created</div>
+          </div>
+          <div className="text-gray-400">→</div>
+          <div className={`flex-1 text-center p-2 rounded ${caseItem.assignedCaseworkers?.length > 0 ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+            <div className="text-xs font-semibold">3. Assign</div>
+            <div className="text-xs">Caseworker</div>
+          </div>
+          <div className="text-gray-400">→</div>
+          <div className={`flex-1 text-center p-2 rounded ${['In Progress', 'Active'].includes(caseItem.status) ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+            <div className="text-xs font-semibold">4. Log</div>
+            <div className="text-xs">Interactions</div>
+          </div>
+          <div className="text-gray-400">→</div>
+          <div className={`flex-1 text-center p-2 rounded ${['Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
+            <div className="text-xs font-semibold">5. Close</div>
+            <div className="text-xs">Complete</div>
+          </div>
+        </div>
+      </div>
+
       <div className="mb-6 p-4 rounded bg-green-50 border border-green-200 flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
           <div className="text-lg font-bold mb-1">Case Reference: {caseItem.caseReferenceNumber}</div>
@@ -355,6 +431,90 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
           </form>
         )}
       </div>
+
+      {/* Activity Timeline / Interaction Log */}
+      <div className="mb-4 p-4 rounded bg-gray-50 border border-gray-200">
+        <div className="font-semibold text-green-900 mb-2 text-lg">Activity Timeline / Interaction Log</div>
+        {aLoading && <div className="text-xs text-gray-500">Loading...</div>}
+        <div className="space-y-2 max-h-80 overflow-y-auto">
+          {activities.length === 0 && (
+            <div className="text-xs text-gray-500">No activities logged yet</div>
+          )}
+          {activities.map((a) => (
+            <div key={a._id} className="border-l-4 border-green-500 rounded p-2 bg-white">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="text-xs font-semibold text-green-700">{a.type}</div>
+                  <div className="text-sm mt-1">{a.description}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    By: {a.caseworker?.name || 'Unknown'} • {new Date(a.date).toLocaleString()}
+                    {a.timeSpent && a.timeSpent !== '00:00' && ` • Time spent: ${a.timeSpent}`}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {['admin', 'manager', 'caseworker'].includes(user.user?.role?.toLowerCase()) && (
+          <form
+            className="mt-3 space-y-2"
+            onSubmit={async (e)=>{
+              e.preventDefault();
+              setSubmitting(true);
+              try {
+                await logActivity(caseItem._id, {
+                  type: aForm.type,
+                  description: aForm.description,
+                  timeSpent: aForm.timeSpent,
+                  caseworker: user.user?._id,
+                  date: new Date()
+                });
+                const data = await getActivitiesByCase(caseItem._id);
+                setActivities(data || []);
+                setAForm({ type: 'Phone Call', description: '', timeSpent: '00:00' });
+              } catch (err) {
+                console.error('Error logging activity:', err);
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Activity Type</label>
+                <select className="w-full border rounded px-2 py-1 text-sm" value={aForm.type} onChange={(e)=>setAForm(f=>({...f, type: e.target.value}))}>
+                  {activityTypes.map(t => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs text-gray-600 mb-1">Time Spent (hh:mm)</label>
+                <input type="text" placeholder="00:30" className="w-full border rounded px-2 py-1 text-sm" value={aForm.timeSpent} onChange={(e)=>setAForm(f=>({...f, timeSpent: e.target.value}))} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Description</label>
+              <textarea className="w-full border rounded px-2 py-1 text-sm" rows={3} value={aForm.description} onChange={(e)=>setAForm(f=>({...f, description: e.target.value}))} placeholder="Describe the interaction or activity..." />
+            </div>
+            <div className="flex justify-end">
+              <button 
+                type="submit" 
+                disabled={submitting}
+                className="px-3 py-1.5 bg-[#2EAB2C] text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                    Logging...
+                  </>
+                ) : (
+                  "Log Activity"
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
       {/* Carer Details */}
       <div className="mb-4 p-4 rounded bg-gray-50 border border-gray-200">
         <div className="font-semibold text-green-900 mb-2 text-lg">Carer Details</div>
@@ -409,6 +569,8 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
       <div className="mb-4 p-4 rounded bg-gray-50 border border-gray-200">
         <div className="font-semibold text-green-900 mb-2 text-lg">Case Information</div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+          <div><span className="font-semibold">Case Type:</span> {caseItem.caseType}</div>
+          <div><span className="font-semibold">Support Type:</span> {caseItem.supportType || 'Not specified'}</div>
           <div><span className="font-semibold">Presenting Issues:</span> {caseItem.presentingIssues}</div>
           <div><span className="font-semibold">Caseworkers:</span> {(caseItem.assignedCaseworkers || []).map(cw => {
             const staff = staffList?.find(s => s._id === cw.userId);
@@ -445,6 +607,7 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
   const [organization, setOrganization] = useState(caseItem?.organization || "");
   const [referralSource, setReferralSource] = useState(caseItem?.referralSource || "");
   const [caseType, setCaseType] = useState(caseItem?.caseType || "");
+  const [supportType, setSupportType] = useState(caseItem?.supportType || "");
   const [presentingIssues, setPresentingIssues] = useState(caseItem?.presentingIssues || "");
   // Caseworkers
   const [assignedCaseworkers, setAssignedCaseworkers] = useState(caseItem?.assignedCaseworkers || []);
@@ -532,6 +695,7 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
       organization,
       referralSource,
       caseType,
+      supportType,
       presentingIssues,
       assignedCaseworkers,
       riskLevel,
@@ -687,6 +851,17 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
         <div className="p-4 rounded bg-gray-50 border border-gray-200 mb-2">
           <div className="font-semibold text-green-900 mb-2 text-lg">Case Information</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+            <div>
+              <label className="block font-semibold mb-1">Case Type</label>
+              <input placeholder="Case Type" value={caseType} onChange={e => setCaseType(e.target.value)} className="w-full px-4 py-2 border rounded" />
+            </div>
+            <div>
+              <label className="block font-semibold mb-1">Support Type</label>
+              <select value={supportType} onChange={e => setSupportType(e.target.value)} className="w-full px-4 py-2 border rounded">
+                <option value="">Select Support Type</option>
+                {supportTypes.map(st => <option key={st} value={st}>{st}</option>)}
+              </select>
+            </div>
             <div>
               <label className="block font-semibold mb-1">Presenting Issues</label>
               <input placeholder="Presenting Issues" value={presentingIssues} onChange={e => setPresentingIssues(e.target.value)} className="w-full px-4 py-2 border rounded" />

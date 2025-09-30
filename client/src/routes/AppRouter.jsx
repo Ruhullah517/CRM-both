@@ -74,7 +74,8 @@ export default function AppRouter() {
               <Route path="/reports" element={<Reports />} />
             </Route>
 
-            <Route element={<PrivateRoute roles={["admin", "manager", "caseworker"]} />}>
+            <Route element={<PrivateRoute roles={["admin", "manager", "caseworker", "staff"]} />}>
+              <Route path="/cases" element={<Cases />} />
               <Route path="/referrals" element={<Cases />} />
             </Route>
 
