@@ -282,12 +282,12 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
             <div className="text-xs">Created</div>
           </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${caseItem.assignedCaseworkers?.length > 0 ? 'bg-green-500 text-white' : ['Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
+          <div className={`flex-1 text-center p-2 rounded ${caseItem.assignedCaseworkers?.length > 0 ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">3. Assign</div>
             <div className="text-xs">Caseworker</div>
           </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${activities.length > 0 ? 'bg-green-500 text-white' : ['Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
+          <div className={`flex-1 text-center p-2 rounded ${activities.length > 0 ? 'bg-green-500 text-white' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">4. Log</div>
             <div className="text-xs">Interactions</div>
           </div>
@@ -585,11 +585,14 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
                     }
                     
                     if (window.confirm('Are you sure you want to close this case? The outcome has been documented.')) {
+                      const currentDate = new Date();
+                      console.log('Setting closed date to:', currentDate);
                       await updateCase(caseItem._id, {
                         ...caseItem,
                         status: 'Closed',
-                        keyDates: { ...caseItem.keyDates, closed: new Date() }
+                        keyDates: { ...caseItem.keyDates, closed: currentDate }
                       });
+                      console.log('Case updated successfully');
                       window.location.reload();
                     }
                   }}
