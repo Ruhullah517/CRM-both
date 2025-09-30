@@ -277,15 +277,15 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
             <div className="text-xs">Received</div>
         </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${['Open', 'Awaiting Assessment'].includes(caseItem.status) ? 'bg-green-500 text-white' : ['In Progress', 'Active', 'Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
+          <div className={`flex-1 text-center p-2 rounded ${['Open', 'Awaiting Assessment', 'In Progress', 'Active'].includes(caseItem.status) ? 'bg-green-500 text-white' : ['Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">2. Case</div>
             <div className="text-xs">Created</div>
-        </div>
+          </div>
           <div className="text-gray-400">→</div>
-          <div className={`flex-1 text-center p-2 rounded ${caseItem.assignedCaseworkers?.length > 0 ? 'bg-green-500 text-white' : ['In Progress', 'Active', 'Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
+          <div className={`flex-1 text-center p-2 rounded ${caseItem.assignedCaseworkers?.length > 0 ? 'bg-green-500 text-white' : ['Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">3. Assign</div>
             <div className="text-xs">Caseworker</div>
-      </div>
+          </div>
           <div className="text-gray-400">→</div>
           <div className={`flex-1 text-center p-2 rounded ${activities.length > 0 ? 'bg-green-500 text-white' : ['Paused', 'Escalated', 'Closed', 'Closed – Resolved', 'Closed – Unresolved'].includes(caseItem.status) ? 'bg-green-200 text-green-800' : 'bg-white text-gray-600'}`}>
             <div className="text-xs font-semibold">4. Log</div>
