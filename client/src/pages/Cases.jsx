@@ -462,14 +462,26 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
               try {
                 console.log('User object:', user);
                 console.log('User ID:', user?.user?._id || user?._id);
-                await logActivity(caseItem._id, {
+                console.log('Case ID:', caseItem._id);
+                console.log('Activity data being sent:', {
                   type: aForm.type,
                   description: aForm.description,
                   timeSpent: aForm.timeSpent,
                   caseworker: user?.user?._id || user?._id,
                   date: new Date()
                 });
+                
+                const result = await logActivity(caseItem._id, {
+                  type: aForm.type,
+                  description: aForm.description,
+                  timeSpent: aForm.timeSpent,
+                  caseworker: user?.user?._id || user?._id,
+                  date: new Date()
+                });
+                console.log('Activity logged successfully:', result);
+                
                 const data = await getActivitiesByCase(caseItem._id);
+                console.log('Activities retrieved:', data);
                 setActivities(data || []);
                 setAForm({ type: 'Phone Call', description: '', timeSpent: '00:00' });
               } catch (err) {

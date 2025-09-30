@@ -22,11 +22,17 @@ const logActivity = async (req, res) => {
       description,
       timeSpent
     });
-    await activity.save();
-    res.status(201).json(activity);
+    
+    console.log('Activity object created:', activity);
+    console.log('About to save activity...');
+    
+    const savedActivity = await activity.save();
+    console.log('Activity saved successfully:', savedActivity);
+    
+    res.status(201).json(savedActivity);
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Server error');
+    console.error('Error in logActivity:', error);
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 };
 
