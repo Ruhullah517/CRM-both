@@ -130,10 +130,9 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
                 <td className="px-4 py-2 font-semibold">{c.clientFullName}</td>
                 <td className="px-4 py-2">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      statusColors[c.status?.toLowerCase()] ||
+                    className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] ||
                       "bg-gray-100 text-gray-700"
-                    }`}
+                      }`}
                   >
                     {c.status}
                   </span>
@@ -183,10 +182,9 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
                 {c.caseReferenceNumber}
               </span>
               <span
-                className={`px-2 py-1 rounded text-xs font-semibold ${
-                  statusColors[c.status?.toLowerCase()] ||
+                className={`px-2 py-1 rounded text-xs font-semibold ${statusColors[c.status?.toLowerCase()] ||
                   "bg-gray-100 text-gray-700"
-                }`}
+                  }`}
               >
                 {c.status}
               </span>
@@ -236,7 +234,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
   const [mForm, setMForm] = React.useState({ meetingType: 'Telephone', meetingDate: '', notes: '' });
   const [mReminder, setMReminder] = React.useState({ enabled: false, dueAt: '' });
   const [mFiles, setMFiles] = React.useState([]);
-  
+
   // Activity logging state
   const [activities, setActivities] = React.useState([]);
   const [aLoading, setALoading] = React.useState(false);
@@ -269,7 +267,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
   return (
     <div className="max-w-3xl mx-auto p-4 bg-white rounded shadow mt-6">
       <button onClick={onBack} className="mb-4 text-[#2EAB2C] hover:underline">&larr; Back</button>
-      
+
       {/* Workflow Progress Indicator */}
       <div className="mb-6 p-4 rounded bg-gradient-to-r from-green-50 to-blue-50 border border-green-200">
         <div className="text-xs font-semibold text-gray-600 mb-2">ADVOCACY & CASE MANAGEMENT WORKFLOW</div>
@@ -309,200 +307,6 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
         <div className="mt-2 md:mt-0">
           <span className={`px-3 py-1 rounded text-sm font-semibold ${statusColors[caseItem.status?.toLowerCase()] || 'bg-gray-100 text-gray-700'}`}>{caseItem.status}</span>
         </div>
-      </div>
-      {/* Meetings Timeline */}
-      <div className="mb-4 p-4 rounded bg-gray-50 border border-gray-200">
-        <div className="font-semibold text-green-900 mb-2 text-lg">Meetings</div>
-        {mLoading && <div className="text-xs text-gray-500">Loading...</div>}
-        <div className="space-y-2">
-          {meetings.length === 0 && (
-            <div className="text-xs text-gray-500">No meetings yet</div>
-          )}
-          {meetings.map((m) => (
-            <div key={m._id} className="border rounded p-2 bg-white">
-              <div className="text-xs text-gray-600">{m.meetingType} • {new Date(m.meetingDate).toLocaleString()}</div>
-              {m.notes && <div className="text-sm mt-1">{m.notes}</div>}
-              {Array.isArray(m.attachments) && m.attachments.length > 0 && (
-                <div className="mt-1 text-xs">
-                  Attachments:
-                  <ul className="list-disc ml-5">
-                    {m.attachments.map((a, i) => (
-                      <li key={i}><a className="text-blue-700 hover:underline" href={backendBaseUrl + a.url} target="_blank" rel="noopener noreferrer">{a.name || a.url}</a></li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        {['admin', 'manager', 'caseworker'].includes(user.user?.role?.toLowerCase()) && (
-          <form
-            className="mt-3 space-y-2"
-            onSubmit={async (e)=>{
-              e.preventDefault();
-              await createCaseMeeting(caseItem._id, {
-                meetingType: mForm.meetingType,
-                meetingDate: mForm.meetingDate ? new Date(mForm.meetingDate) : new Date(),
-                notes: mForm.notes,
-                attachments: mFiles,
-              });
-              if (mReminder.enabled && mReminder.dueAt) {
-                try {
-                  await createReminder({
-                    title: `Follow-up meeting for ${caseItem.caseReferenceNumber}`,
-                    description: mForm.notes,
-                    dueAt: new Date(mReminder.dueAt),
-                    entityType: 'case',
-                    entityId: caseItem._id,
-                  });
-                } catch {}
-              }
-              const data = await listCaseMeetings(caseItem._id);
-              setMeetings(data || []);
-              setMForm({ meetingType: 'Telephone', meetingDate: '', notes: '' });
-              setMFiles([]);
-              setMReminder({ enabled: false, dueAt: '' });
-            }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Meeting type</label>
-                <select className="w-full border rounded px-2 py-1 text-sm" value={mForm.meetingType} onChange={(e)=>setMForm(f=>({...f, meetingType: e.target.value}))}>
-                  <option>Telephone</option>
-                  <option>Online</option>
-                  <option>Home Visit</option>
-                  <option>Face to Face</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Meeting date</label>
-                <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm" value={mForm.meetingDate} onChange={(e)=>setMForm(f=>({...f, meetingDate: e.target.value}))} />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Attachments</label>
-                <input type="file" onChange={async (e)=>{
-                  const file = e.target.files && e.target.files[0];
-                  if (!file) return;
-                  const meta = await uploadCaseMeetingFile(caseItem._id, file);
-                  setMFiles(list=>[...list, meta]);
-                }} />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Notes</label>
-              <textarea className="w-full border rounded px-2 py-1 text-sm" rows={3} value={mForm.notes} onChange={(e)=>setMForm(f=>({...f, notes: e.target.value}))} />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={mReminder.enabled} onChange={(e)=>setMReminder(r=>({...r, enabled: e.target.checked}))} /> Create reminder</label>
-              <div className="md:col-span-2">
-                <input type="datetime-local" disabled={!mReminder.enabled} className="w-full border rounded px-2 py-1 text-sm" value={mReminder.dueAt} onChange={(e)=>setMReminder(r=>({...r, dueAt: e.target.value}))} />
-              </div>
-            </div>
-            {mFiles.length > 0 && (
-              <div className="text-xs text-gray-600">Files: {mFiles.map((f,i)=>(<span key={i} className="mr-2">{f.name || f.url}</span>))}</div>
-            )}
-            <div className="flex justify-end">
-              <button 
-                type="submit" 
-                disabled={submitting}
-                className="px-3 py-1.5 bg-[#2EAB2C] text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                {submitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                    Adding...
-                  </>
-                ) : (
-                  "Add meeting"
-                )}
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
-
-      {/* Activity Timeline / Interaction Log */}
-      <div className="mb-4 p-4 rounded bg-gray-50 border border-gray-200">
-        <div className="font-semibold text-green-900 mb-2 text-lg">Activity Timeline / Interaction Log</div>
-        {aLoading && <div className="text-xs text-gray-500">Loading...</div>}
-        <div className="space-y-2 max-h-80 overflow-y-auto">
-          {activities.length === 0 && (
-            <div className="text-xs text-gray-500">No activities logged yet</div>
-          )}
-          {activities.map((a) => (
-            <div key={a._id} className="border-l-4 border-green-500 rounded p-2 bg-white">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="text-xs font-semibold text-green-700">{a.type}</div>
-                  <div className="text-sm mt-1">{a.description}</div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    By: {a.caseworker?.name || 'Unknown'} • {new Date(a.date).toLocaleString()}
-                    {a.timeSpent && a.timeSpent !== '00:00' && ` • Time spent: ${a.timeSpent}`}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        {['admin', 'manager', 'caseworker'].includes(user.user?.role?.toLowerCase()) && (
-          <form
-            className="mt-3 space-y-2"
-            onSubmit={async (e)=>{
-              e.preventDefault();
-              setSubmitting(true);
-              try {
-                await logActivity(caseItem._id, {
-                  type: aForm.type,
-                  description: aForm.description,
-                  timeSpent: aForm.timeSpent,
-                  caseworker: user.user?._id,
-                  date: new Date()
-                });
-                const data = await getActivitiesByCase(caseItem._id);
-                setActivities(data || []);
-                setAForm({ type: 'Phone Call', description: '', timeSpent: '00:00' });
-              } catch (err) {
-                console.error('Error logging activity:', err);
-              } finally {
-                setSubmitting(false);
-              }
-            }}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-              <div>
-                <label className="block text-xs text-gray-600 mb-1">Activity Type</label>
-                <select className="w-full border rounded px-2 py-1 text-sm" value={aForm.type} onChange={(e)=>setAForm(f=>({...f, type: e.target.value}))}>
-                  {activityTypes.map(t => <option key={t}>{t}</option>)}
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs text-gray-600 mb-1">Time Spent (hh:mm)</label>
-                <input type="text" placeholder="00:30" className="w-full border rounded px-2 py-1 text-sm" value={aForm.timeSpent} onChange={(e)=>setAForm(f=>({...f, timeSpent: e.target.value}))} />
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-gray-600 mb-1">Description</label>
-              <textarea className="w-full border rounded px-2 py-1 text-sm" rows={3} value={aForm.description} onChange={(e)=>setAForm(f=>({...f, description: e.target.value}))} placeholder="Describe the interaction or activity..." />
-            </div>
-            <div className="flex justify-end">
-              <button 
-                type="submit" 
-                disabled={submitting}
-                className="px-3 py-1.5 bg-[#2EAB2C] text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                {submitting ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
-                    Logging...
-                  </>
-                ) : (
-                  "Log Activity"
-                )}
-              </button>
-            </div>
-          </form>
-        )}
       </div>
 
       {/* Carer Details */}
@@ -563,7 +367,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
             <span className="font-semibold text-gray-700">Presenting Issues:</span>
             <p className="text-gray-900 mt-1">{caseItem.presentingIssues || 'Not provided'}</p>
           </div>
-          
+
           <div>
             <span className="font-semibold text-gray-700">Assigned Caseworkers:</span>
             <div className="mt-1">
@@ -584,17 +388,17 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
               )}
             </div>
           </div>
-          
+
           <div>
             <span className="font-semibold text-gray-700">Case Notes/Summary:</span>
             <p className="text-gray-900 mt-1 whitespace-pre-wrap">{caseItem.notes || 'No notes added yet'}</p>
           </div>
-          
+
           <div>
             <span className="font-semibold text-gray-700">Outcome Achieved:</span>
             <p className="text-gray-900 mt-1 whitespace-pre-wrap">{caseItem.outcomeAchieved || (caseItem.status?.includes('Closed') ? 'No outcome documented' : 'Case still in progress')}</p>
           </div>
-          
+
           <div>
             <span className="font-semibold text-gray-700">Supporting Documents:</span>
             {(caseItem.supportingDocuments || []).length === 0 ? (
@@ -626,13 +430,207 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
           </div>
         </div>
       </div>
+      {/* Meetings Timeline */}
+      <div className="mb-4 p-4 rounded bg-gray-50 border border-gray-200">
+        <div className="font-semibold text-green-900 mb-2 text-lg">Meetings</div>
+        {mLoading && <div className="text-xs text-gray-500">Loading...</div>}
+        <div className="space-y-2">
+          {meetings.length === 0 && (
+            <div className="text-xs text-gray-500">No meetings yet</div>
+          )}
+          {meetings.map((m) => (
+            <div key={m._id} className="border rounded p-2 bg-white">
+              <div className="text-xs text-gray-600">{m.meetingType} • {new Date(m.meetingDate).toLocaleString()}</div>
+              {m.notes && <div className="text-sm mt-1">{m.notes}</div>}
+              {Array.isArray(m.attachments) && m.attachments.length > 0 && (
+                <div className="mt-1 text-xs">
+                  Attachments:
+                  <ul className="list-disc ml-5">
+                    {m.attachments.map((a, i) => (
+                      <li key={i}><a className="text-blue-700 hover:underline" href={backendBaseUrl + a.url} target="_blank" rel="noopener noreferrer">{a.name || a.url}</a></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+        {['admin', 'manager', 'caseworker'].includes(user.user?.role?.toLowerCase()) && (
+          <form
+            className="mt-3 space-y-2"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              await createCaseMeeting(caseItem._id, {
+                meetingType: mForm.meetingType,
+                meetingDate: mForm.meetingDate ? new Date(mForm.meetingDate) : new Date(),
+                notes: mForm.notes,
+                attachments: mFiles,
+              });
+              if (mReminder.enabled && mReminder.dueAt) {
+                try {
+                  await createReminder({
+                    title: `Follow-up meeting for ${caseItem.caseReferenceNumber}`,
+                    description: mForm.notes,
+                    dueAt: new Date(mReminder.dueAt),
+                    entityType: 'case',
+                    entityId: caseItem._id,
+                  });
+                } catch { }
+              }
+              const data = await listCaseMeetings(caseItem._id);
+              setMeetings(data || []);
+              setMForm({ meetingType: 'Telephone', meetingDate: '', notes: '' });
+              setMFiles([]);
+              setMReminder({ enabled: false, dueAt: '' });
+            }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Meeting type</label>
+                <select className="w-full border rounded px-2 py-1 text-sm" value={mForm.meetingType} onChange={(e) => setMForm(f => ({ ...f, meetingType: e.target.value }))}>
+                  <option>Telephone</option>
+                  <option>Online</option>
+                  <option>Home Visit</option>
+                  <option>Face to Face</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Meeting date</label>
+                <input type="datetime-local" className="w-full border rounded px-2 py-1 text-sm" value={mForm.meetingDate} onChange={(e) => setMForm(f => ({ ...f, meetingDate: e.target.value }))} />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Attachments</label>
+                <input type="file" onChange={async (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  if (!file) return;
+                  const meta = await uploadCaseMeetingFile(caseItem._id, file);
+                  setMFiles(list => [...list, meta]);
+                }} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Notes</label>
+              <textarea className="w-full border rounded px-2 py-1 text-sm" rows={3} value={mForm.notes} onChange={(e) => setMForm(f => ({ ...f, notes: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={mReminder.enabled} onChange={(e) => setMReminder(r => ({ ...r, enabled: e.target.checked }))} /> Create reminder</label>
+              <div className="md:col-span-2">
+                <input type="datetime-local" disabled={!mReminder.enabled} className="w-full border rounded px-2 py-1 text-sm" value={mReminder.dueAt} onChange={(e) => setMReminder(r => ({ ...r, dueAt: e.target.value }))} />
+              </div>
+            </div>
+            {mFiles.length > 0 && (
+              <div className="text-xs text-gray-600">Files: {mFiles.map((f, i) => (<span key={i} className="mr-2">{f.name || f.url}</span>))}</div>
+            )}
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-3 py-1.5 bg-[#2EAB2C] text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                    Adding...
+                  </>
+                ) : (
+                  "Add meeting"
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+
+      {/* Activity Timeline / Interaction Log */}
+      <div className="mb-4 p-4 rounded bg-gray-50 border border-gray-200">
+        <div className="font-semibold text-green-900 mb-2 text-lg">Activity Timeline / Interaction Log</div>
+        {aLoading && <div className="text-xs text-gray-500">Loading...</div>}
+        <div className="space-y-2 max-h-80 overflow-y-auto">
+          {activities.length === 0 && (
+            <div className="text-xs text-gray-500">No activities logged yet</div>
+          )}
+          {activities.map((a) => (
+            <div key={a._id} className="border-l-4 border-green-500 rounded p-2 bg-white">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="text-xs font-semibold text-green-700">{a.type}</div>
+                  <div className="text-sm mt-1">{a.description}</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    By: {a.caseworker?.name || 'Unknown'} • {new Date(a.date).toLocaleString()}
+                    {a.timeSpent && a.timeSpent !== '00:00' && ` • Time spent: ${a.timeSpent}`}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {['admin', 'manager', 'caseworker'].includes(user.user?.role?.toLowerCase()) && (
+          <form
+            className="mt-3 space-y-2"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setSubmitting(true);
+              try {
+                await logActivity(caseItem._id, {
+                  type: aForm.type,
+                  description: aForm.description,
+                  timeSpent: aForm.timeSpent,
+                  caseworker: user.user?._id,
+                  date: new Date()
+                });
+                const data = await getActivitiesByCase(caseItem._id);
+                setActivities(data || []);
+                setAForm({ type: 'Phone Call', description: '', timeSpent: '00:00' });
+              } catch (err) {
+                console.error('Error logging activity:', err);
+              } finally {
+                setSubmitting(false);
+              }
+            }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Activity Type</label>
+                <select className="w-full border rounded px-2 py-1 text-sm" value={aForm.type} onChange={(e) => setAForm(f => ({ ...f, type: e.target.value }))}>
+                  {activityTypes.map(t => <option key={t}>{t}</option>)}
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs text-gray-600 mb-1">Time Spent (hh:mm)</label>
+                <input type="text" placeholder="00:30" className="w-full border rounded px-2 py-1 text-sm" value={aForm.timeSpent} onChange={(e) => setAForm(f => ({ ...f, timeSpent: e.target.value }))} />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-600 mb-1">Description</label>
+              <textarea className="w-full border rounded px-2 py-1 text-sm" rows={3} value={aForm.description} onChange={(e) => setAForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe the interaction or activity..." />
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-3 py-1.5 bg-[#2EAB2C] text-white rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                    Logging...
+                  </>
+                ) : (
+                  "Log Activity"
+                )}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
       {['admin', 'manager', 'caseworker'].includes(user.user?.role?.toLowerCase()) && (
         <div className="flex flex-col sm:flex-row gap-2 justify-end mt-6">
           {/* Quick Status Actions */}
           {!caseItem.status?.includes('Closed') && (
             <div className="flex gap-2 flex-wrap">
               {caseItem.status === 'New' && (
-                <button 
+                <button
                   onClick={async () => {
                     await updateCase(caseItem._id, { ...caseItem, status: 'Open', keyDates: { ...caseItem.keyDates, opened: caseItem.keyDates?.opened || new Date() } });
                     window.location.reload();
@@ -643,7 +641,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
                 </button>
               )}
               {['New', 'Open', 'Awaiting Assessment'].includes(caseItem.status) && caseItem.assignedCaseworkers?.length > 0 && (
-                <button 
+                <button
                   onClick={async () => {
                     await updateCase(caseItem._id, { ...caseItem, status: 'In Progress' });
                     window.location.reload();
@@ -654,13 +652,13 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
                 </button>
               )}
               {['Open', 'In Progress', 'Active'].includes(caseItem.status) && (
-                <button 
+                <button
                   onClick={async () => {
                     if (window.confirm('Are you sure you want to close this case? Make sure to add outcome details before closing.')) {
-                      await updateCase(caseItem._id, { 
-                        ...caseItem, 
-                        status: 'Closed', 
-                        keyDates: { ...caseItem.keyDates, closed: new Date() } 
+                      await updateCase(caseItem._id, {
+                        ...caseItem,
+                        status: 'Closed',
+                        keyDates: { ...caseItem.keyDates, closed: new Date() }
                       });
                       window.location.reload();
                     }
@@ -681,7 +679,7 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
 
 const CaseForm = ({ caseItem, onBack, onSave }) => {
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Main fields
   const [clientFullName, setClientFullName] = useState(caseItem?.clientFullName || "");
   const [dateOfBirth, setDateOfBirth] = useState(caseItem?.dateOfBirth ? caseItem.dateOfBirth.slice(0, 10) : "");
@@ -771,42 +769,42 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
     setSubmitting(true);
     try {
       await onSave({
-      ...caseItem,
-      clientFullName,
-      dateOfBirth,
-      gender,
-      ethnicity,
-      contactInfo: { email, phone },
-      organization,
-      referralSource,
-      caseType,
-      supportType,
-      presentingIssues,
-      assignedCaseworkers,
-      riskLevel,
-      keyDates: { opened, reviewDue, closed },
-      status,
-      pausedReason,
-      notes,
-      outcomeAchieved,
-      supportingDocuments,
-      totalTimeLogged,
-      invoiceableHours,
-      referralDetails: {
-        position,
-        hours,
-        sswName,
-        sswContactNumber,
-        sswEmail,
-        sswLocalAuthority,
-        decisionMakerName,
-        decisionMakerContactNumber,
-        decisionMakerEmail,
-        financeContactName,
-        financeContactNumber,
-        financeEmail
-      }
-    });
+        ...caseItem,
+        clientFullName,
+        dateOfBirth,
+        gender,
+        ethnicity,
+        contactInfo: { email, phone },
+        organization,
+        referralSource,
+        caseType,
+        supportType,
+        presentingIssues,
+        assignedCaseworkers,
+        riskLevel,
+        keyDates: { opened, reviewDue, closed },
+        status,
+        pausedReason,
+        notes,
+        outcomeAchieved,
+        supportingDocuments,
+        totalTimeLogged,
+        invoiceableHours,
+        referralDetails: {
+          position,
+          hours,
+          sswName,
+          sswContactNumber,
+          sswEmail,
+          sswLocalAuthority,
+          decisionMakerName,
+          decisionMakerContactNumber,
+          decisionMakerEmail,
+          financeContactName,
+          financeContactNumber,
+          financeEmail
+        }
+      });
     } catch (error) {
       console.error('Error saving case:', error);
     } finally {
@@ -1012,8 +1010,8 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
           </div>
           {uploadError && <div className="text-red-500 text-sm">{uploadError}</div>}
         </div>
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={submitting}
           className="w-full bg-[#2EAB2C] text-white py-2 rounded hover:bg-green-800 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
