@@ -115,9 +115,7 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
             <tr className="bg-green-50">
               <th className="px-4 py-2">Reference</th>
               <th className="px-4 py-2">Client</th>
-              <th className="px-4 py-2">Support Type</th>
               <th className="px-4 py-2">Status</th>
-              <th className="px-4 py-2">Risk</th>
               <th className="px-4 py-2">Caseworkers</th>
               <th className="px-4 py-2">Opened</th>
               <th className="px-4 py-2"></th>
@@ -130,7 +128,6 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
                   {c.caseReferenceNumber}
                 </td>
                 <td className="px-4 py-2 font-semibold">{c.clientFullName}</td>
-                <td className="px-4 py-2 text-sm">{c.supportType || c.caseType}</td>
                 <td className="px-4 py-2">
                   <span
                     className={`px-2 py-1 rounded text-xs font-semibold ${
@@ -141,7 +138,6 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
                     {c.status}
                   </span>
                 </td>
-                <td className="px-4 py-2">{c.riskLevel}</td>
                 <td className="px-4 py-2">
                   {(c.assignedCaseworkers || []).map((cw) => {
                     const staff = staffList.find((s) => s._id === cw.userId);
@@ -196,12 +192,6 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
               </span>
             </div>
             <div className="font-semibold text-lg">{c.clientFullName}</div>
-            <div className="text-sm text-gray-700">
-              <span className="font-semibold">Type:</span> {c.caseType}
-            </div>
-            <div className="text-sm text-gray-700">
-              <span className="font-semibold">Risk:</span> {c.riskLevel}
-            </div>
             <div className="text-sm text-gray-700">
               <span className="font-semibold">Caseworkers:</span>{" "}
               {(c.assignedCaseworkers || []).map((cw) => {
@@ -567,27 +557,122 @@ const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
       </div>
       {/* Case Information */}
       <div className="mb-4 p-4 rounded bg-gray-50 border border-gray-200">
-        <div className="font-semibold text-green-900 mb-2 text-lg">Case Information</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-          <div><span className="font-semibold">Case Type:</span> {caseItem.caseType}</div>
-          <div><span className="font-semibold">Support Type:</span> {caseItem.supportType || 'Not specified'}</div>
-          <div><span className="font-semibold">Presenting Issues:</span> {caseItem.presentingIssues}</div>
-          <div><span className="font-semibold">Caseworkers:</span> {(caseItem.assignedCaseworkers || []).map(cw => {
-            const staff = staffList?.find(s => s._id === cw.userId);
-            return <span key={cw.userId} className={cw.isLead ? 'font-bold' : ''}>{staff ? staff.name : cw.userId}{cw.isLead ? ' (Lead)' : ''}<br /></span>;
-          })}</div>
-          <div><span className="font-semibold">Risk Level:</span> {caseItem.riskLevel}</div>
-          <div><span className="font-semibold">Key Dates:</span> Opened: {caseItem.keyDates?.opened ? formatDate(caseItem.keyDates.opened) : '-'} | Review Due: {caseItem.keyDates?.reviewDue ? formatDate(caseItem.keyDates.reviewDue) : '-'} | Closed: {caseItem.keyDates?.closed ? formatDate(caseItem.keyDates.closed) : '-'}</div>
-          <div><span className="font-semibold">Notes/Case Summary:</span> {caseItem.notes}</div>
-          <div><span className="font-semibold">Outcome Achieved:</span> {caseItem.outcomeAchieved}</div>
-          <div><span className="font-semibold">Supporting Documents:</span> <ul className="list-disc ml-6">{(caseItem.supportingDocuments || []).map((doc, i) => <li key={i}><a href={backendBaseUrl + doc.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">{doc.name}</a></li>)}</ul></div>
-          <div><span className="font-semibold">Total Time Logged:</span> {caseItem.totalTimeLogged}</div>
-          <div><span className="font-semibold">Invoiceable Hours:</span> {caseItem.invoiceableHours}</div>
+        <div className="font-semibold text-green-900 mb-2 text-lg">Case Summary & Information</div>
+        <div className="space-y-3">
+          <div>
+            <span className="font-semibold text-gray-700">Presenting Issues:</span>
+            <p className="text-gray-900 mt-1">{caseItem.presentingIssues || 'Not provided'}</p>
+          </div>
+          
+          <div>
+            <span className="font-semibold text-gray-700">Assigned Caseworkers:</span>
+            <div className="mt-1">
+              {(caseItem.assignedCaseworkers || []).length === 0 ? (
+                <span className="text-gray-500 italic">No caseworkers assigned yet</span>
+              ) : (
+                (caseItem.assignedCaseworkers || []).map(cw => {
+                  const staff = staffList?.find(s => s._id === cw.userId);
+                  return (
+                    <span key={cw.userId} className="inline-block mr-3 mb-1">
+                      <span className={cw.isLead ? 'font-bold text-green-700' : 'text-gray-900'}>
+                        {staff ? staff.name : cw.userId}
+                        {cw.isLead && <span className="ml-1 text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded">Lead</span>}
+                      </span>
+                    </span>
+                  );
+                })
+              )}
+            </div>
+          </div>
+          
+          <div>
+            <span className="font-semibold text-gray-700">Case Notes/Summary:</span>
+            <p className="text-gray-900 mt-1 whitespace-pre-wrap">{caseItem.notes || 'No notes added yet'}</p>
+          </div>
+          
+          <div>
+            <span className="font-semibold text-gray-700">Outcome Achieved:</span>
+            <p className="text-gray-900 mt-1 whitespace-pre-wrap">{caseItem.outcomeAchieved || (caseItem.status?.includes('Closed') ? 'No outcome documented' : 'Case still in progress')}</p>
+          </div>
+          
+          <div>
+            <span className="font-semibold text-gray-700">Supporting Documents:</span>
+            {(caseItem.supportingDocuments || []).length === 0 ? (
+              <p className="text-gray-500 italic mt-1">No documents attached</p>
+            ) : (
+              <ul className="list-disc ml-6 mt-1">
+                {(caseItem.supportingDocuments || []).map((doc, i) => (
+                  <li key={i}>
+                    <a href={backendBaseUrl + doc.url} className="text-blue-700 hover:underline" target="_blank" rel="noopener noreferrer">
+                      {doc.name}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t">
+            <div>
+              <span className="font-semibold text-gray-700">Date Opened:</span>
+              <p className="text-gray-900">{caseItem.keyDates?.opened ? formatDate(caseItem.keyDates.opened) : 'Not set'}</p>
+            </div>
+            {caseItem.keyDates?.closed && (
+              <div>
+                <span className="font-semibold text-gray-700">Date Closed:</span>
+                <p className="text-gray-900">{formatDate(caseItem.keyDates.closed)}</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       {['admin', 'manager', 'caseworker'].includes(user.user?.role?.toLowerCase()) && (
-        <div className="flex gap-2 justify-end mt-6">
-          <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit</button>
+        <div className="flex flex-col sm:flex-row gap-2 justify-end mt-6">
+          {/* Quick Status Actions */}
+          {!caseItem.status?.includes('Closed') && (
+            <div className="flex gap-2 flex-wrap">
+              {caseItem.status === 'New' && (
+                <button 
+                  onClick={async () => {
+                    await updateCase(caseItem._id, { ...caseItem, status: 'Open', keyDates: { ...caseItem.keyDates, opened: caseItem.keyDates?.opened || new Date() } });
+                    window.location.reload();
+                  }}
+                  className="px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-700 text-sm"
+                >
+                  Mark as Open
+                </button>
+              )}
+              {['New', 'Open', 'Awaiting Assessment'].includes(caseItem.status) && caseItem.assignedCaseworkers?.length > 0 && (
+                <button 
+                  onClick={async () => {
+                    await updateCase(caseItem._id, { ...caseItem, status: 'In Progress' });
+                    window.location.reload();
+                  }}
+                  className="px-4 py-2 rounded bg-yellow-500 text-white font-semibold hover:bg-yellow-700 text-sm"
+                >
+                  Start Progress
+                </button>
+              )}
+              {['Open', 'In Progress', 'Active'].includes(caseItem.status) && (
+                <button 
+                  onClick={async () => {
+                    if (window.confirm('Are you sure you want to close this case? Make sure to add outcome details before closing.')) {
+                      await updateCase(caseItem._id, { 
+                        ...caseItem, 
+                        status: 'Closed', 
+                        keyDates: { ...caseItem.keyDates, closed: new Date() } 
+                      });
+                      window.location.reload();
+                    }
+                  }}
+                  className="px-4 py-2 rounded bg-red-500 text-white font-semibold hover:bg-red-700 text-sm"
+                >
+                  Close Case
+                </button>
+              )}
+            </div>
+          )}
+          <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Edit Case</button>
         </div>
       )}
     </div>
@@ -851,27 +936,9 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
         <div className="p-4 rounded bg-gray-50 border border-gray-200 mb-2">
           <div className="font-semibold text-green-900 mb-2 text-lg">Case Information</div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-            <div>
-              <label className="block font-semibold mb-1">Case Type</label>
-              <input placeholder="Case Type" value={caseType} onChange={e => setCaseType(e.target.value)} className="w-full px-4 py-2 border rounded" />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Support Type</label>
-              <select value={supportType} onChange={e => setSupportType(e.target.value)} className="w-full px-4 py-2 border rounded">
-                <option value="">Select Support Type</option>
-                {supportTypes.map(st => <option key={st} value={st}>{st}</option>)}
-              </select>
-            </div>
-            <div>
+            <div className="md:col-span-2">
               <label className="block font-semibold mb-1">Presenting Issues</label>
-              <input placeholder="Presenting Issues" value={presentingIssues} onChange={e => setPresentingIssues(e.target.value)} className="w-full px-4 py-2 border rounded" />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Risk Level</label>
-              <select value={riskLevel} onChange={e => setRiskLevel(e.target.value)} className="w-full px-4 py-2 border rounded">
-                <option value="">Select Risk Level</option>
-                {riskLevels.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
+              <textarea placeholder="Describe the issues/reasons for this case" value={presentingIssues} onChange={e => setPresentingIssues(e.target.value)} className="w-full px-4 py-2 border rounded" rows={3} />
             </div>
             <div>
               <label className="block font-semibold mb-1">Status</label>
@@ -881,37 +948,25 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
               </select>
             </div>
             <div>
-              <label className="block font-semibold mb-1">Paused Reason</label>
-              <input placeholder="Paused Reason" value={pausedReason} onChange={e => setPausedReason(e.target.value)} className="w-full px-4 py-2 border rounded" />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Opened</label>
+              <label className="block font-semibold mb-1">Date Opened</label>
               <input type="date" value={opened} onChange={e => setOpened(e.target.value)} className="w-full px-4 py-2 border rounded" />
             </div>
-            <div>
-              <label className="block font-semibold mb-1">Review Due</label>
-              <input type="date" value={reviewDue} onChange={e => setReviewDue(e.target.value)} className="w-full px-4 py-2 border rounded" />
+            {status?.includes('Closed') && (
+              <div>
+                <label className="block font-semibold mb-1">Date Closed</label>
+                <input type="date" value={closed} onChange={e => setClosed(e.target.value)} className="w-full px-4 py-2 border rounded" />
+              </div>
+            )}
+            <div className="md:col-span-2">
+              <label className="block font-semibold mb-1">Case Notes/Summary</label>
+              <textarea placeholder="Add notes about this case, interactions, progress, etc." value={notes} onChange={e => setNotes(e.target.value)} className="w-full px-4 py-2 border rounded" rows={4} />
             </div>
-            <div>
-              <label className="block font-semibold mb-1">Closed</label>
-              <input type="date" value={closed} onChange={e => setClosed(e.target.value)} className="w-full px-4 py-2 border rounded" />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Notes/Case Summary</label>
-              <textarea placeholder="Notes/Case Summary" value={notes} onChange={e => setNotes(e.target.value)} className="w-full px-4 py-2 border rounded" />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Outcome Achieved</label>
-              <input placeholder="Outcome Achieved" value={outcomeAchieved} onChange={e => setOutcomeAchieved(e.target.value)} className="w-full px-4 py-2 border rounded" />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Total Time Logged (hh:mm)</label>
-              <input placeholder="Total Time Logged (hh:mm)" value={totalTimeLogged} onChange={e => setTotalTimeLogged(e.target.value)} className="w-full px-4 py-2 border rounded" />
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Invoiceable Hours (hh:mm)</label>
-              <input placeholder="Invoiceable Hours (hh:mm)" value={invoiceableHours} onChange={e => setInvoiceableHours(e.target.value)} className="w-full px-4 py-2 border rounded" />
-            </div>
+            {status?.includes('Closed') && (
+              <div className="md:col-span-2">
+                <label className="block font-semibold mb-1">Outcome Achieved</label>
+                <textarea placeholder="Describe the final outcome of this case" value={outcomeAchieved} onChange={e => setOutcomeAchieved(e.target.value)} className="w-full px-4 py-2 border rounded" rows={3} />
+              </div>
+            )}
           </div>
         </div>
         {/* Assigned Caseworkers */}
