@@ -915,12 +915,10 @@ const CaseForm = ({ caseItem, loading, onBack, onSave }) => {
               <label className="block font-semibold mb-1">Case Notes/Summary</label>
               <textarea placeholder="Add notes about this case, interactions, progress, etc." value={notes} onChange={e => setNotes(e.target.value)} className="w-full px-4 py-2 border rounded" rows={4} />
             </div>
-            {status?.includes('Closed') && (
-              <div className="md:col-span-2">
+            <div className="md:col-span-2">
               <label className="block font-semibold mb-1">Outcome Achieved</label>
-                <textarea placeholder="Describe the final outcome of this case" value={outcomeAchieved} onChange={e => setOutcomeAchieved(e.target.value)} className="w-full px-4 py-2 border rounded" rows={3} />
+              <textarea placeholder="Describe the final outcome of this case" value={outcomeAchieved} onChange={e => setOutcomeAchieved(e.target.value)} className="w-full px-4 py-2 border rounded" rows={3} />
             </div>
-            )}
           </div>
         </div>
         {/* Assigned Caseworkers */}
