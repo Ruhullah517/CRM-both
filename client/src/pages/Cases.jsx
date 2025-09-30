@@ -939,13 +939,6 @@ const CaseForm = ({ caseItem, onBack, onSave }) => {
               <textarea placeholder="Describe the issues/reasons for this case" value={presentingIssues} onChange={e => setPresentingIssues(e.target.value)} className="w-full px-4 py-2 border rounded" rows={3} />
             </div>
             <div>
-              <label className="block font-semibold mb-1">Status</label>
-              <select value={status} onChange={e => setStatus(e.target.value)} className="w-full px-4 py-2 border rounded">
-                <option value="">Select Status</option>
-                {statusOptions.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div>
               <label className="block font-semibold mb-1">Date Opened</label>
               <input type="date" value={opened} onChange={e => setOpened(e.target.value)} className="w-full px-4 py-2 border rounded" />
             </div>
