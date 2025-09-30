@@ -7,7 +7,10 @@ const ActivitySchema = new mongoose.Schema({
     enum: [
       'Phone Call',
       'Email',
-      'Client Meeting',
+      'Client Meeting (Face to Face)',
+      'Client Meeting (Online)',
+      'Client Meeting (Home Visit)',
+      'Client Meeting (Telephone)',
       'Internal Discussion',
       'Document Upload',
       'Case Update',
