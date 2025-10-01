@@ -67,11 +67,11 @@ const SalesCommunication = () => {
     setLoading(true);
     try {
       console.log('Loading data...');
-      const [contactsData, templatesData, statsData, emailStatsData] = await Promise.all([
+      
+      // Load critical data first (contacts and templates)
+      const [contactsData, templatesData] = await Promise.all([
         getAllContacts(),
-        getEmailTemplates(),
-        getContactStats(),
-        getEmailStats()
+        getEmailTemplates()
       ]);
       
       console.log('Contacts loaded:', contactsData);
@@ -79,8 +79,24 @@ const SalesCommunication = () => {
       
       setContacts(contactsData || []);
       setEmailTemplates(templatesData || []);
-      setContactStats(statsData);
-      setEmailStats(emailStatsData);
+      
+      // Load stats separately (non-critical, can fail gracefully)
+      try {
+        const statsData = await getContactStats();
+        setContactStats(statsData);
+      } catch (error) {
+        console.warn('Could not load contact stats:', error);
+        setContactStats({ totalContacts: 0, activeContacts: 0, contactsNeedingFollowUp: 0 });
+      }
+      
+      try {
+        const emailStatsData = await getEmailStats();
+        setEmailStats(emailStatsData);
+      } catch (error) {
+        console.warn('Could not load email stats:', error);
+        setEmailStats({ totalSent: 0 });
+      }
+      
     } catch (error) {
       console.error('Error loading data:', error);
       console.error('Error details:', error.response?.data || error.message);
