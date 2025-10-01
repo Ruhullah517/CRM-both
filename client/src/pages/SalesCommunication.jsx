@@ -66,6 +66,7 @@ const SalesCommunication = () => {
   const loadData = async () => {
     setLoading(true);
     try {
+      console.log('Loading data...');
       const [contactsData, templatesData, statsData, emailStatsData] = await Promise.all([
         getAllContacts(),
         getEmailTemplates(),
@@ -73,12 +74,17 @@ const SalesCommunication = () => {
         getEmailStats()
       ]);
       
+      console.log('Contacts loaded:', contactsData);
+      console.log('Number of contacts:', contactsData?.length);
+      
       setContacts(contactsData || []);
       setEmailTemplates(templatesData || []);
       setContactStats(statsData);
       setEmailStats(emailStatsData);
     } catch (error) {
       console.error('Error loading data:', error);
+      console.error('Error details:', error.response?.data || error.message);
+      alert('Error loading contacts: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -86,6 +92,9 @@ const SalesCommunication = () => {
 
   const applyFilters = () => {
     let filtered = [...contacts];
+    
+    console.log('Applying filters to', contacts.length, 'contacts');
+    console.log('Filters:', { searchTerm, filterTag, filterType, filterSource });
     
     // Search filter
     if (searchTerm) {
@@ -117,6 +126,7 @@ const SalesCommunication = () => {
       );
     }
     
+    console.log('Filtered contacts:', filtered.length);
     setFilteredContacts(filtered);
   };
 
@@ -257,11 +267,16 @@ const SalesCommunication = () => {
   const handleSaveContact = async () => {
     setLoading(true);
     try {
+      console.log('Saving contact:', contactForm);
+      
+      let result;
       if (editingContact) {
-        await updateContact(editingContact._id, contactForm);
+        result = await updateContact(editingContact._id, contactForm);
       } else {
-        await createContact(contactForm);
+        result = await createContact(contactForm);
       }
+      
+      console.log('Save result:', result);
       
       // Clear filters to show the newly created/edited contact
       setSearchTerm('');
@@ -274,6 +289,7 @@ const SalesCommunication = () => {
       alert(`Contact ${editingContact ? 'updated' : 'created'} successfully!`);
     } catch (error) {
       console.error('Error saving contact:', error);
+      console.error('Error details:', error.response?.data || error.message);
       alert('Error saving contact: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
