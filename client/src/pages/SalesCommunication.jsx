@@ -263,6 +263,12 @@ const SalesCommunication = () => {
         await createContact(contactForm);
       }
       
+      // Clear filters to show the newly created/edited contact
+      setSearchTerm('');
+      setFilterTag('all');
+      setFilterType('all');
+      setFilterSource('all');
+      
       await loadData();
       setShowContactModal(false);
       alert(`Contact ${editingContact ? 'updated' : 'created'} successfully!`);
