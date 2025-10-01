@@ -36,6 +36,7 @@ import Reports from '../pages/Reports';
 import InitialAssessment from '../pages/InitialAssessment';
 import FullAssessment from '../pages/FullAssessment';
 import CaseClosure from '../pages/CaseClosure';
+import SalesCommunication from '../pages/SalesCommunication';
 
 
 import PublicFeedback from '../pages/PublicFeedback';
@@ -71,6 +72,7 @@ export default function AppRouter() {
               <Route path="/contracts" element={<Contracts />} />
               <Route path="/email-management" element={<EmailManagement />} />
               <Route path="/contact-management" element={<ContactManagement />} />
+              <Route path="/sales-communication" element={<SalesCommunication />} />
               <Route path="/reports" element={<Reports />} />
             </Route>
 

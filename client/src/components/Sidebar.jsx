@@ -48,6 +48,7 @@ const navItems = [
   { name: 'User Management', path: '/users', roles: ['admin'], icon: UserGroupIcon, section: 'staff' },
 
   // Communication Section
+  { name: 'Sales & Communication', path: '/sales-communication', roles: ['admin', 'staff', 'manager'], icon: BriefcaseIcon, section: 'communication' },
   { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },
   { name: 'Email Management', path: '/email-management', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },
   { name: 'Email Automations', path: '/email-automations', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },

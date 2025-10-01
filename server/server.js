@@ -52,6 +52,7 @@ app.use('/api/feedback', require('./routes/feedback'));
 app.use('/api/exports', require('./routes/exports'));
 app.use('/api/recruitment', require('./routes/recruitment'));
 app.use('/api/integrations', require('./routes/integrations'));
+app.use('/api/leads', require('./routes/leads')); // Public API for website lead capture
 
 
 app.listen(port, () => {
