@@ -12,7 +12,15 @@ function createTransporter() {
 
     // Try multiple configurations for better compatibility
     const configs = [
-        // Configuration 1: SSL on port 465 (most common)
+        // Configuration 1: Gmail service (recommended by Nodemailer docs)
+        {
+            service: 'gmail',
+            auth: { user, pass },
+            connectionTimeout: 30000,
+            greetingTimeout: 15000,
+            socketTimeout: 30000,
+        },
+        // Configuration 2: SSL on port 465 (fallback)
         {
             host: 'smtp.gmail.com',
             port: 465,
@@ -22,7 +30,7 @@ function createTransporter() {
             greetingTimeout: 15000,
             socketTimeout: 30000,
         },
-        // Configuration 2: TLS on port 587 (alternative)
+        // Configuration 3: TLS on port 587 (alternative)
         {
             host: 'smtp.gmail.com',
             port: 587,
@@ -32,29 +40,13 @@ function createTransporter() {
             connectionTimeout: 30000,
             greetingTimeout: 15000,
             socketTimeout: 30000,
-        },
-        // Configuration 3: Gmail with different TLS settings
-        {
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            auth: { user, pass },
-            tls: { minVersion: 'TLSv1.2' },
-            connectionTimeout: 30000,
-            greetingTimeout: 15000,
-            socketTimeout: 30000,
         }
     ];
 
     // Use the first configuration for now
     const transporter = nodemailer.createTransport(configs[0]);
 
-    console.log('Mailer: Using SMTP configuration:', {
-        host: configs[0].host,
-        port: configs[0].port,
-        secure: configs[0].secure,
-        user: user
-    });
+    console.log('Mailer: Using Gmail service configuration');
 
     return transporter;
 }
@@ -81,11 +73,20 @@ async function sendMail(options) {
         hasHtml: !!options.html
     });
 
-    const user = 'ruhullah517@gmail.com';
-    const pass = 'syya ehhp eioy gpwf';
+    const user = 'blackfostercarersalliance@gmail.com';
+    const pass = 'fhxp oqqm zksb dngn';
     
     // Try different configurations if one fails
     const configs = [
+        // Configuration 1: Gmail service (recommended by Nodemailer docs)
+        {
+            service: 'gmail',
+            auth: { user, pass },
+            connectionTimeout: 30000,
+            greetingTimeout: 15000,
+            socketTimeout: 30000,
+        },
+        // Configuration 2: SSL on port 465 (fallback)
         {
             host: 'smtp.gmail.com',
             port: 465,
@@ -95,6 +96,7 @@ async function sendMail(options) {
             greetingTimeout: 15000,
             socketTimeout: 30000,
         },
+        // Configuration 3: TLS on port 587 (alternative)
         {
             host: 'smtp.gmail.com',
             port: 587,
