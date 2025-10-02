@@ -112,7 +112,7 @@ async function sendMail(options) {
     for (let i = 0; i < configs.length; i++) {
         try {
             console.log(`Mailer: Trying configuration ${i + 1}/${configs.length}...`);
-            const transporter = nodemailer.createTransporter(configs[i]);
+            const transporter = nodemailer.createTransport(configs[i]);
             
             const result = await transporter.sendMail({ ...options, from: fromAddress });
             console.log('Mailer: Email sent successfully with config', i + 1, ':', result.messageId);
