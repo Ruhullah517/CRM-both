@@ -15,8 +15,8 @@ import {
   BuildingOfficeIcon
 } from '@heroicons/react/24/outline';
 import { getAllContacts, createContact, updateContact, bulkUpdateContacts, getContactStats } from '../services/contacts';
-import { getEmailTemplates, sendBulkEmail } from '../services/emailTemplates';
-import { sendEmailToContactsByTags, getEmailHistory, getEmailStats } from '../services/emails';
+import { getEmailTemplates } from '../services/emailTemplates';
+import { sendBulkEmail, sendEmailToContactsByTags, getEmailHistory, getEmailStats } from '../services/emails';
 
 const SalesCommunication = () => {
   const { user } = useAuth();
