@@ -12,23 +12,21 @@ function createTransporter() {
 
     // Try multiple configurations for better compatibility
     const configs = [
-        // Configuration 1: TLS on port 587 (most compatible with cloud hosting)
         {
             host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
+            port: 465,
+            secure: true, // SSL directly
             auth: { user, pass },
-            tls: { rejectUnauthorized: false },
+            tls: { minVersion: 'TLSv1.2' },
             connectionTimeout: 60000,
             greetingTimeout: 30000,
             socketTimeout: 60000,
         },
-       
     ];
 
     // Use the first configuration for now
     const transporter = nodemailer.createTransport(configs[0]);
-    
+
     console.log('Mailer: Using SMTP configuration:', {
         host: configs[0].host,
         port: configs[0].port,
@@ -54,14 +52,14 @@ function getFromAddress() {
 async function sendMail(options) {
     const transporter = getTransporter();
     const fromAddress = options.from || getFromAddress();
-    
+
     console.log('Mailer: Sending email with options:', {
         from: fromAddress,
         to: options.to,
         subject: options.subject,
         hasHtml: !!options.html
     });
-    
+
     try {
         const result = await transporter.sendMail({ ...options, from: fromAddress });
         console.log('Mailer: Email sent successfully:', result.messageId);
