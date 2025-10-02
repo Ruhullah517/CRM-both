@@ -209,6 +209,13 @@ const SalesCommunication = () => {
           }
         }));
       
+      console.log('Sending email with:', {
+        templateId: selectedTemplate,
+        recipients: recipients,
+        subjectOverride: emailSubject || null,
+        bodyOverride: emailBody || null
+      });
+      
       await sendBulkEmail(selectedTemplate, recipients, emailSubject || null, emailBody || null);
       
       alert(`Email sent to ${recipients.length} contacts!`);
@@ -219,6 +226,7 @@ const SalesCommunication = () => {
       setEmailBody('');
     } catch (error) {
       console.error('Error sending emails:', error);
+      console.error('Error details:', error.response?.data || error.message);
       alert('Error sending emails: ' + (error.response?.data?.message || error.message));
     } finally {
       setSendingEmail(false);
@@ -233,6 +241,13 @@ const SalesCommunication = () => {
     
     setSendingEmail(true);
     try {
+      console.log('Sending email by tags with:', {
+        templateId: selectedTemplate,
+        tags: tags,
+        subjectOverride: emailSubject || null,
+        bodyOverride: emailBody || null
+      });
+      
       await sendEmailToContactsByTags(selectedTemplate, tags, emailSubject || null, emailBody || null);
       
       alert(`Emails sent successfully to contacts with tags: ${tags.join(', ')}`);
@@ -242,6 +257,7 @@ const SalesCommunication = () => {
       setEmailBody('');
     } catch (error) {
       console.error('Error sending emails:', error);
+      console.error('Error details:', error.response?.data || error.message);
       alert('Error sending emails: ' + (error.response?.data?.message || error.message));
     } finally {
       setSendingEmail(false);
