@@ -81,8 +81,19 @@ async function sendBulkEmail(req, res) {
       // Send email
       let status = 'sent', error = null;
       try {
-        await sendMail(mailOptions);
+        console.log('Sending email to:', email);
+        console.log('Email subject:', subject);
+        console.log('Mail options:', {
+          from: mailOptions.from,
+          to: mailOptions.to,
+          subject: mailOptions.subject,
+          bodyLength: mailOptions.html?.length || 0
+        });
+        
+        const result = await sendMail(mailOptions);
+        console.log('Email sent successfully:', result.messageId);
       } catch (err) {
+        console.error('Email sending failed:', err);
         status = 'failed';
         error = err.message;
       }

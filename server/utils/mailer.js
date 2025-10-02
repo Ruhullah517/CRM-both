@@ -38,7 +38,22 @@ function getFromAddress() {
 async function sendMail(options) {
     const transporter = getTransporter();
     const fromAddress = options.from || getFromAddress();
-    return transporter.sendMail({ ...options, from: fromAddress });
+    
+    console.log('Mailer: Sending email with options:', {
+        from: fromAddress,
+        to: options.to,
+        subject: options.subject,
+        hasHtml: !!options.html
+    });
+    
+    try {
+        const result = await transporter.sendMail({ ...options, from: fromAddress });
+        console.log('Mailer: Email sent successfully:', result.messageId);
+        return result;
+    } catch (error) {
+        console.error('Mailer: Email sending failed:', error);
+        throw error;
+    }
 }
 
 module.exports = {
