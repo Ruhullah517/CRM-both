@@ -7,8 +7,8 @@ const nodemailer = require('nodemailer');
 let cachedTransporter = null;
 
 function createTransporter() {
-    const user = 'blackfostercarersalliance@gmail.com';
-    const pass = 'vvho ubhi akem wzsq'; // Gmail App Password
+    const user = 'ruhullah517@gmail.com';
+    const pass = 'syya ehhp eioy gpwf'; // Gmail App Password
 
     // Try multiple configurations for better compatibility
     const configs = [
@@ -23,16 +23,7 @@ function createTransporter() {
             greetingTimeout: 30000,
             socketTimeout: 60000,
         },
-        // Configuration 2: SSL on port 465 (fallback)
-        {
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            auth: { user, pass },
-            connectionTimeout: 60000,
-            greetingTimeout: 30000,
-            socketTimeout: 60000,
-        }
+       
     ];
 
     // Use the first configuration for now
