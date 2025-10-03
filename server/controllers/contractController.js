@@ -180,80 +180,70 @@ const generateContract = async (req, res) => {
     const renderHtmlContent = (htmlContent, startY) => {
       let currentY = startY;
       const lineHeight = fontSize + 4;
+      let currentX = 40;
+      const maxWidth = width - 80; // 40px margin on each side
       
-      // Simple HTML parser for basic formatting
-      const parseHtml = (html) => {
-        const lines = [];
-        let currentLine = '';
-        let inTag = false;
-        let currentTag = '';
+      // Better HTML parser that handles inline formatting
+      const parseHtmlToText = (html) => {
+        // Remove HTML tags but preserve line breaks
+        let text = html
+          .replace(/<br\s*\/?>/gi, '\n')
+          .replace(/<\/p>/gi, '\n\n')
+          .replace(/<\/div>/gi, '\n')
+          .replace(/<[^>]*>/g, '') // Remove all other HTML tags
+          .replace(/&nbsp;/g, ' ')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"');
         
-        for (let i = 0; i < html.length; i++) {
-          const char = html[i];
-          
-          if (char === '<') {
-            inTag = true;
-            if (currentLine.trim()) {
-              lines.push({ text: currentLine.trim(), tag: currentTag });
-              currentLine = '';
-            }
-            currentTag = '';
-          } else if (char === '>') {
-            inTag = false;
-          } else if (inTag) {
-            currentTag += char;
-          } else {
-            currentLine += char;
-          }
-        }
-        
-        if (currentLine.trim()) {
-          lines.push({ text: currentLine.trim(), tag: currentTag });
-        }
-        
-        return lines;
+        return text;
       };
       
-      const parsedLines = parseHtml(htmlContent);
+      // Get clean text content
+      const cleanText = parseHtmlToText(filledContent);
       
-      parsedLines.forEach(line => {
-        if (currentY > 40) { // Prevent text from going off the page
-          let fontToUse = font;
-          let sizeToUse = fontSize;
+      // Split into lines and render
+      const lines = cleanText.split('\n');
+      
+      lines.forEach(line => {
+        if (currentY > 40 && line.trim()) { // Prevent text from going off the page
+          // Handle long lines by wrapping them
+          const words = line.split(' ');
+          let currentLine = '';
           
-          // Apply formatting based on HTML tags
-          if (line.tag.includes('strong') || line.tag.includes('b')) {
-            fontToUse = boldFont;
-          } else if (line.tag.includes('em') || line.tag.includes('i')) {
-            fontToUse = italicFont;
-          }
-          
-          // Handle font sizes
-          if (line.tag.includes('font-size')) {
-            const sizeMatch = line.tag.match(/font-size[:\s]*(\d+)px/);
-            if (sizeMatch) {
-              sizeToUse = parseInt(sizeMatch[1]);
+          words.forEach(word => {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+            
+            if (textWidth > maxWidth && currentLine) {
+              // Draw current line and start new line
+              page.drawText(currentLine, { 
+                x: currentX, 
+                y: currentY, 
+                size: fontSize, 
+                font: font 
+              });
+              currentY -= lineHeight;
+              currentLine = word;
+            } else {
+              currentLine = testLine;
             }
-          }
-          
-          // Handle alignment
-          let x = 40;
-          if (line.tag.includes('text-align: center')) {
-            const textWidth = fontToUse.widthOfTextAtSize(line.text, sizeToUse);
-            x = (width - textWidth) / 2;
-          } else if (line.tag.includes('text-align: right')) {
-            const textWidth = fontToUse.widthOfTextAtSize(line.text, sizeToUse);
-            x = width - textWidth - 40;
-          }
-          
-          page.drawText(line.text, { 
-            x, 
-            y: currentY, 
-            size: sizeToUse, 
-            font: fontToUse 
           });
           
-          currentY -= lineHeight;
+          // Draw the last line
+          if (currentLine) {
+            page.drawText(currentLine, { 
+              x: currentX, 
+              y: currentY, 
+              size: fontSize, 
+              font: font 
+            });
+            currentY -= lineHeight;
+          }
+        } else if (line.trim() === '') {
+          // Empty line - add some space
+          currentY -= lineHeight / 2;
         }
       });
       
