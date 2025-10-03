@@ -4,6 +4,7 @@ const { PDFDocument, StandardFonts } = require('pdf-lib');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
+const docusignService = require('../utils/docusign');
 
 // List all generated contracts
 const getAllGeneratedContracts = async (req, res) => {
@@ -97,8 +98,7 @@ const generateContract = async (req, res) => {
     page.drawLine({
       start: { x: 40, y: height - 120 },
       end: { x: width - 40, y: height - 120 },
-      thickness: 1,
-      color: { r: 0, g: 0, b: 0 }
+      thickness: 1
     });
 
     // Split content into lines for PDF rendering
@@ -164,39 +164,65 @@ const generateContract = async (req, res) => {
   }
 };
 
-// Send contract for e-signature via Adobe Sign
+// Send contract for e-signature via DocuSign
 const sendForSignature = async (req, res) => {
   try {
     const { id } = req.params;
-    const { accessToken, recipientEmail } = req.body;
+    const { recipientEmail, recipientName } = req.body;
     const contract = await GeneratedContract.findById(id);
+    
     if (!contract) return res.status(404).json({ msg: 'Contract not found' });
     if (!contract.generatedDocUrl) return res.status(400).json({ msg: 'Generated PDF not found' });
-    if (!accessToken || !recipientEmail) return res.status(400).json({ msg: 'Missing accessToken or recipientEmail' });
+    if (!recipientEmail) return res.status(400).json({ msg: 'Recipient email is required' });
 
     // Build absolute path to PDF
     let filePath = contract.generatedDocUrl;
     if (filePath.startsWith('/')) filePath = filePath.slice(1);
     const absPath = path.resolve(__dirname, '../..', filePath);
 
-    // Call local Adobe integration route to send agreement
-    const baseUrl = process.env.BACKEND_BASE_URL || `http://localhost:${process.env.PORT || 5000}`;
-    const response = await axios.post(`${baseUrl}/api/adobe/send-agreement`, {
-      accessToken,
+    // Read PDF file and convert to base64
+    const pdfBuffer = fs.readFileSync(absPath);
+    const pdfBase64 = pdfBuffer.toString('base64');
+
+    // Prepare contract data for DocuSign
+    const contractData = {
+      name: contract.name || 'BFCA Contract',
       recipientEmail,
-      contractPath: absPath,
-      contractName: contract.name || 'BFCA Contract'
+      recipientName: recipientName || recipientEmail,
+      pdfBase64
+    };
+
+    // Send to DocuSign
+    const docusignResult = await docusignService.sendEnvelope(contractData);
+
+    // Update contract with DocuSign information
+    contract.externalProvider = 'docusign';
+    contract.externalAgreementId = docusignResult.envelopeId;
+    contract.externalEnvelopeId = docusignResult.envelopeId;
+    contract.recipientEmail = recipientEmail;
+    contract.recipientName = recipientName || recipientEmail;
+    contract.status = 'sent';
+    contract.sentAt = new Date();
+    contract.docusignStatus = docusignResult.status;
+    contract.expiresAt = new Date(Date.now() + (30 * 24 * 60 * 60 * 1000)); // 30 days from now
+    contract.updatedAt = new Date();
+
+    await contract.save();
+
+    res.json({ 
+      msg: 'Contract sent for signature via DocuSign', 
+      envelopeId: docusignResult.envelopeId, 
+      status: docusignResult.status,
+      recipientEmail,
+      expiresAt: contract.expiresAt
     });
 
-    const { agreementId, status } = response.data || {};
-    contract.status = 'sent';
-    contract.externalProvider = 'adobe';
-    contract.externalAgreementId = agreementId || contract.externalAgreementId;
-    await contract.save();
-    res.json({ msg: 'Signature request sent', agreementId, providerStatus: status });
   } catch (error) {
-    console.error('sendForSignature error:', error.response?.data || error.message);
-    res.status(500).json({ msg: 'Failed to send for signature', error: error.response?.data || error.message });
+    console.error('sendForSignature error:', error.message);
+    res.status(500).json({ 
+      msg: 'Failed to send contract for signature', 
+      error: error.message 
+    });
   }
 };
 
@@ -222,6 +248,116 @@ const downloadContract = async (req, res) => {
   }
 };
 
+// Get contract signature status
+const getContractStatus = async (req, res) => {
+  try {
+    const contract = await GeneratedContract.findById(req.params.id);
+    if (!contract) return res.status(404).json({ msg: 'Contract not found' });
+
+    if (contract.externalProvider === 'docusign' && contract.externalEnvelopeId) {
+      try {
+        const status = await docusignService.getEnvelopeStatus(contract.externalEnvelopeId);
+        
+        // Update contract status if it changed
+        if (status.status !== contract.docusignStatus) {
+          contract.docusignStatus = status.status;
+          contract.updatedAt = new Date();
+          
+          // Map DocuSign status to our status
+          if (status.status === 'completed') {
+            contract.status = 'signed';
+            contract.signedAt = new Date();
+          } else if (status.status === 'declined') {
+            contract.status = 'declined';
+          } else if (status.status === 'voided') {
+            contract.status = 'cancelled';
+          } else if (status.status === 'expired') {
+            contract.status = 'expired';
+          }
+          
+          await contract.save();
+        }
+
+        res.json({
+          contractId: contract._id,
+          status: contract.status,
+          docusignStatus: contract.docusignStatus,
+          recipientEmail: contract.recipientEmail,
+          sentAt: contract.sentAt,
+          signedAt: contract.signedAt,
+          expiresAt: contract.expiresAt
+        });
+      } catch (error) {
+        console.error('Error getting DocuSign status:', error.message);
+        res.json({
+          contractId: contract._id,
+          status: contract.status,
+          docusignStatus: contract.docusignStatus,
+          error: 'Failed to get latest status from DocuSign'
+        });
+      }
+    } else {
+      res.json({
+        contractId: contract._id,
+        status: contract.status,
+        docusignStatus: contract.docusignStatus,
+        recipientEmail: contract.recipientEmail,
+        sentAt: contract.sentAt,
+        signedAt: contract.signedAt,
+        expiresAt: contract.expiresAt
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// DocuSign webhook handler
+const handleDocuSignWebhook = async (req, res) => {
+  try {
+    const eventData = req.body;
+    const processedEvent = await docusignService.processWebhookEvent(eventData);
+    
+    // Find contract by envelope ID
+    const contract = await GeneratedContract.findOne({ 
+      externalEnvelopeId: processedEvent.envelopeId 
+    });
+    
+    if (contract) {
+      // Update contract status
+      contract.docusignStatus = processedEvent.status;
+      contract.updatedAt = new Date();
+      
+      // Add event to history
+      contract.docusignEvents.push({
+        event: processedEvent.event,
+        timestamp: processedEvent.timestamp,
+        data: eventData
+      });
+      
+      // Update main status based on DocuSign status
+      if (processedEvent.status === 'completed') {
+        contract.status = 'signed';
+        contract.signedAt = new Date();
+      } else if (processedEvent.status === 'declined') {
+        contract.status = 'declined';
+      } else if (processedEvent.status === 'voided') {
+        contract.status = 'cancelled';
+      } else if (processedEvent.status === 'expired') {
+        contract.status = 'expired';
+      }
+      
+      await contract.save();
+    }
+    
+    res.status(200).json({ msg: 'Webhook processed successfully' });
+  } catch (error) {
+    console.error('DocuSign webhook error:', error);
+    res.status(500).json({ msg: 'Webhook processing failed' });
+  }
+};
+
 // Delete a generated contract
 const deleteGeneratedContract = async (req, res) => {
   try {
@@ -239,5 +375,7 @@ module.exports = {
   generateContract,
   sendForSignature,
   downloadContract,
+  getContractStatus,
+  handleDocuSignWebhook,
   deleteGeneratedContract,
 }; 

@@ -20,6 +20,7 @@ import {
   XMarkIcon,
   BriefcaseIcon,
   BoltIcon,
+  DocumentDuplicateIcon,
 } from '@heroicons/react/24/outline';
 import img3 from '../../public/img3.png';
 const navItems = [
@@ -50,6 +51,7 @@ const navItems = [
 
   // Communication Section
   { name: '📊 Sales & Communication', path: '/sales-communication', roles: ['admin', 'staff', 'manager'], icon: BriefcaseIcon, section: 'communication', primary: true },
+  { name: '📄 Contract Generation', path: '/contract-generation', roles: ['admin', 'staff', 'manager'], icon: DocumentDuplicateIcon, section: 'communication' },
   { name: '⚙️ Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'communication' },
   { name: '⚙️ Email Automations', path: '/email-automations', roles: ['admin', 'staff'], icon: BoltIcon, section: 'communication' },
   // Legacy pages - can be removed if not needed
