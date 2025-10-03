@@ -4,11 +4,10 @@ import {
   ItalicIcon, 
   UnderlineIcon,
   ListBulletIcon,
-  ListNumberIcon,
-  AlignLeftIcon,
-  AlignCenterIcon,
-  AlignRightIcon,
-  AlignJustifyIcon
+  Bars3Icon,
+  Bars3CenterLeftIcon,
+  Bars3BottomLeftIcon,
+  Bars3BottomRightIcon
 } from '@heroicons/react/24/outline';
 
 const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
@@ -106,16 +105,16 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
           {/* Alignment */}
           <div className="flex border-r border-gray-300 pr-2 mr-2">
             <ToolbarButton onClick={() => execCommand('justifyLeft')} title="Align Left">
-              <AlignLeftIcon className="w-4 h-4" />
+              <Bars3BottomLeftIcon className="w-4 h-4" />
             </ToolbarButton>
             <ToolbarButton onClick={() => execCommand('justifyCenter')} title="Align Center">
-              <AlignCenterIcon className="w-4 h-4" />
+              <Bars3CenterLeftIcon className="w-4 h-4" />
             </ToolbarButton>
             <ToolbarButton onClick={() => execCommand('justifyRight')} title="Align Right">
-              <AlignRightIcon className="w-4 h-4" />
+              <Bars3BottomRightIcon className="w-4 h-4" />
             </ToolbarButton>
             <ToolbarButton onClick={() => execCommand('justifyFull')} title="Justify">
-              <AlignJustifyIcon className="w-4 h-4" />
+              <Bars3Icon className="w-4 h-4" />
             </ToolbarButton>
           </div>
 
@@ -125,7 +124,7 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
               <ListBulletIcon className="w-4 h-4" />
             </ToolbarButton>
             <ToolbarButton onClick={() => execCommand('insertOrderedList')} title="Numbered List">
-              <ListNumberIcon className="w-4 h-4" />
+              <span className="text-xs font-bold">1.</span>
             </ToolbarButton>
           </div>
 
