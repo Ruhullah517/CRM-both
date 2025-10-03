@@ -273,7 +273,7 @@ const generateContract = async (req, res) => {
       
       // Render each line
       lines.forEach(lineSegments => {
-        if (currentY > 40) {
+        if (currentY > 40 && lineSegments.length > 0) {
           let lineText = lineSegments.map(s => s.text).join('');
           
           // Handle line wrapping
@@ -281,27 +281,33 @@ const generateContract = async (req, res) => {
           let currentLine = '';
           let currentX = 40;
           
-          // Check alignment for the first segment
-          const firstSegment = lineSegments[0];
-          if (firstSegment.align === 'center') {
-            const textWidth = font.widthOfTextAtSize(lineText, firstSegment.size);
+          // Check alignment for the first segment with proper defaults
+          const firstSegment = lineSegments[0] || { align: 'left', size: fontSize, bold: false, italic: false };
+          const align = firstSegment.align || 'left';
+          const size = firstSegment.size || fontSize;
+          const isBold = firstSegment.bold || false;
+          const isItalic = firstSegment.italic || false;
+          
+          if (align === 'center') {
+            const textWidth = font.widthOfTextAtSize(lineText, size);
             currentX = (width - textWidth) / 2;
-          } else if (firstSegment.align === 'right') {
-            const textWidth = font.widthOfTextAtSize(lineText, firstSegment.size);
+          } else if (align === 'right') {
+            const textWidth = font.widthOfTextAtSize(lineText, size);
             currentX = width - textWidth - 40;
           }
           
           words.forEach(word => {
             const testLine = currentLine + (currentLine ? ' ' : '') + word;
-            const textWidth = font.widthOfTextAtSize(testLine, firstSegment.size);
+            const textWidth = font.widthOfTextAtSize(testLine, size);
             
             if (textWidth > maxWidth && currentLine) {
               // Draw current line
+              const fontToUse = isBold ? boldFont : (isItalic ? italicFont : font);
               page.drawText(currentLine, { 
                 x: currentX, 
                 y: currentY, 
-                size: firstSegment.size, 
-                font: firstSegment.bold ? boldFont : (firstSegment.italic ? italicFont : font)
+                size: size, 
+                font: fontToUse
               });
               currentY -= lineHeight;
               currentLine = word;
@@ -313,11 +319,12 @@ const generateContract = async (req, res) => {
           
           // Draw the last line
           if (currentLine) {
+            const fontToUse = isBold ? boldFont : (isItalic ? italicFont : font);
             page.drawText(currentLine, { 
               x: currentX, 
               y: currentY, 
-              size: firstSegment.size, 
-              font: firstSegment.bold ? boldFont : (firstSegment.italic ? italicFont : font)
+              size: size, 
+              font: fontToUse
             });
             currentY -= lineHeight;
           }
