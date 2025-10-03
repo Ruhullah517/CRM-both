@@ -10,7 +10,7 @@ const GeneratedContractSchema = new mongoose.Schema({
   signedDocUrl: { type: String }, // path to signed PDF (after signature)
   status: { 
     type: String, 
-    enum: ['draft', 'sent', 'delivered', 'signed', 'completed', 'declined', 'cancelled', 'expired'], 
+    enum: ['draft', 'pending', 'sent', 'delivered', 'signed', 'completed', 'declined', 'cancelled', 'expired'], 
     default: 'draft' 
   },
   externalProvider: { type: String, enum: ['adobe', 'docusign', null], default: null },

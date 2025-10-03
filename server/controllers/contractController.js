@@ -33,6 +33,10 @@ const getGeneratedContract = async (req, res) => {
 const generateContract = async (req, res) => {
   const { name, templateId, roleType, generatedBy, filledData, status } = req.body;
   
+  // Valid status values
+  const validStatuses = ['draft', 'pending', 'sent', 'delivered', 'signed', 'completed', 'declined', 'cancelled', 'expired'];
+  const contractStatus = validStatuses.includes(status) ? status : 'draft';
+  
   try {
     // Validate required fields
     if (!templateId) {
@@ -136,7 +140,7 @@ const generateContract = async (req, res) => {
           generatedBy,
           filledData,
           generatedDocUrl,
-          status: status || 'draft',
+          status: contractStatus,
         },
         { new: true }
       );
@@ -150,7 +154,7 @@ const generateContract = async (req, res) => {
         generatedBy,
         filledData,
         generatedDocUrl,
-        status: status || 'draft',
+        status: contractStatus,
       });
       await contract.save();
       res.status(201).json(contract);
