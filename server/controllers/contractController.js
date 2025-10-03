@@ -127,7 +127,10 @@ const generateContract = async (req, res) => {
     const fileName = `contract_${Date.now()}.pdf`;
     const filePath = path.join(dirPath, fileName);
     fs.writeFileSync(filePath, pdfBytes);
-    const generatedDocUrl = `/uploads/contracts/${fileName}`;
+    
+    // Use the correct server URL for the generated document URL
+    const serverUrl = process.env.SERVER_URL || 'https://crm-backend-0v14.onrender.com';
+    const generatedDocUrl = `${serverUrl}/uploads/contracts/${fileName}`;
     
     console.log('PDF saved to:', filePath);
     console.log('Generated doc URL:', generatedDocUrl);
@@ -185,6 +188,11 @@ const sendForSignature = async (req, res) => {
 
     // Build absolute path to PDF
     let filePath = contract.generatedDocUrl;
+    if (filePath.startsWith('http')) {
+      // If it's an absolute URL, extract the file path
+      const url = new URL(filePath);
+      filePath = url.pathname;
+    }
     if (filePath.startsWith('/')) filePath = filePath.slice(1);
     const absPath = path.resolve(__dirname, '../..', filePath);
 
@@ -243,8 +251,15 @@ const downloadContract = async (req, res) => {
     console.log('Contract found:', contract.name);
     console.log('Generated doc URL:', contract.generatedDocUrl);
     
-    // Remove leading slash if present
+    // Handle both relative and absolute URLs
     let filePath = contract.generatedDocUrl;
+    if (filePath.startsWith('http')) {
+      // If it's an absolute URL, extract the file path
+      const url = new URL(filePath);
+      filePath = url.pathname;
+    }
+    
+    // Remove leading slash if present
     if (filePath.startsWith('/')) filePath = filePath.slice(1);
     const absPath = path.resolve(__dirname, '../..', filePath);
     
