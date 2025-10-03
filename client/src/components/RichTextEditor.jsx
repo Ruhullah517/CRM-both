@@ -31,6 +31,48 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
     handleInput();
   };
 
+  const setAlignment = (alignment) => {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const selectedText = range.toString();
+      
+      if (selectedText) {
+        // If text is selected, wrap it in a div with alignment
+        const div = document.createElement('div');
+        div.style.textAlign = alignment;
+        div.textContent = selectedText;
+        range.deleteContents();
+        range.insertNode(div);
+      } else {
+        // If no text selected, set alignment for the current paragraph
+        const currentElement = range.commonAncestorContainer;
+        let element = currentElement.nodeType === Node.TEXT_NODE ? currentElement.parentElement : currentElement;
+        
+        // Find the nearest block element
+        while (element && !['DIV', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(element.tagName)) {
+          element = element.parentElement;
+        }
+        
+        if (element) {
+          element.style.textAlign = alignment;
+        } else {
+          // Create a new div with alignment
+          const div = document.createElement('div');
+          div.style.textAlign = alignment;
+          div.innerHTML = '<br>';
+          range.insertNode(div);
+          range.setStartAfter(div);
+          range.collapse(true);
+          selection.removeAllRanges();
+          selection.addRange(range);
+        }
+      }
+    }
+    editorRef.current.focus();
+    handleInput();
+  };
+
 
   const ToolbarButton = ({ onClick, children, title, isActive = false }) => (
     <button
@@ -89,16 +131,16 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
 
           {/* Alignment */}
           <div className="flex border-r border-gray-300 pr-2 mr-2">
-            <ToolbarButton onClick={() => execCommand('justifyLeft')} title="Align Left">
+            <ToolbarButton onClick={() => setAlignment('left')} title="Align Left">
               <Bars3BottomLeftIcon className="w-4 h-4" />
             </ToolbarButton>
-            <ToolbarButton onClick={() => execCommand('justifyCenter')} title="Align Center">
+            <ToolbarButton onClick={() => setAlignment('center')} title="Align Center">
               <Bars3CenterLeftIcon className="w-4 h-4" />
             </ToolbarButton>
-            <ToolbarButton onClick={() => execCommand('justifyRight')} title="Align Right">
+            <ToolbarButton onClick={() => setAlignment('right')} title="Align Right">
               <Bars3BottomRightIcon className="w-4 h-4" />
             </ToolbarButton>
-            <ToolbarButton onClick={() => execCommand('justifyFull')} title="Justify">
+            <ToolbarButton onClick={() => setAlignment('justify')} title="Justify">
               <Bars3Icon className="w-4 h-4" />
             </ToolbarButton>
           </div>

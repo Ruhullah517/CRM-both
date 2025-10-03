@@ -269,21 +269,24 @@ export default function ContractTemplates() {
               {/* Live Preview */}
               <div className="flex-1 flex flex-col">
                 <div className="font-semibold mb-2 text-lg">Live Preview (with example values)</div>
-                <div className="bg-white border p-4 rounded text-sm whitespace-pre-wrap max-h-60 sm:max-h-96 overflow-y-auto flex-1">
-                  {form.content.replace(/{{(.*?)}}/g, (match, p1) => {
-                    // Example values for preview
-                    const examples = {
-                      client_name: 'Jane Doe', client_organization: 'Acme Corp', client_email: 'jane@acme.com', client_phone: '01234 567890', agreement_date: '2024-07-01',
-                      training_title: 'Understanding and Supporting Black Foster Carers', training_format: 'In-person', training_location: 'Client Premises', training_date: '2024-07-15', training_duration: 'Full Day',
-                      max_participants_online: '15', max_participants_in_person: '25', course_fee: '£1,000', deposit_amount: '£500', final_balance_due_date: '2024-07-10', payment_reference: 'Jane Doe 2024-07-15',
-                      client_sign_name: 'Jane Doe', client_sign_position: 'Manager', client_sign_date: '2024-07-01', bfca_sign_date: '2024-07-01',
-                      facilitator_name: 'John Smith', facilitator_address: '123 Main St', effective_date: '2024-07-01', half_day_rate: '£300', full_day_rate: '£500', session_details: 'Full Day', participant_numbers: '20', pre_approved_expenses: '£50', invoice_due_date: '2024-07-20', nda_attached: 'Yes', termination_notice_period: '30 days', bfca_sign_name: 'Rachel Cole', bfca_sign_position: 'CEO', facilitator_sign_name: 'John Smith', facilitator_sign_position: 'Trainer', facilitator_sign_date: '2024-07-01',
-                      mentor_name: 'Sarah Mentor', mentor_email: 'mentor@example.com', mentor_phone: '01234 111222', start_date: '2024-08-01', end_date: '2024-08-31', session_topic: 'Mentoring Skills', session_date: '2024-08-10', session_time: '10:00 AM',
-                      delivery_staff_name: 'Delivery Bob', delivery_date: '2024-09-01', delivery_address: '123 Delivery St', delivery_time: '2:00 PM', package_details: 'Box of materials'
-                    };
-                    return examples[p1.trim()] || match;
-                  })}
-                </div>
+                <div 
+                  className="bg-white border p-4 rounded text-sm max-h-60 sm:max-h-96 overflow-y-auto flex-1"
+                  dangerouslySetInnerHTML={{
+                    __html: form.content.replace(/{{(.*?)}}/g, (match, p1) => {
+                      // Example values for preview
+                      const examples = {
+                        client_name: 'Jane Doe', client_organization: 'Acme Corp', client_email: 'jane@acme.com', client_phone: '01234 567890', agreement_date: '2024-07-01',
+                        training_title: 'Understanding and Supporting Black Foster Carers', training_format: 'In-person', training_location: 'Client Premises', training_date: '2024-07-15', training_duration: 'Full Day',
+                        max_participants_online: '15', max_participants_in_person: '25', course_fee: '£1,000', deposit_amount: '£500', final_balance_due_date: '2024-07-10', payment_reference: 'Jane Doe 2024-07-15',
+                        client_sign_name: 'Jane Doe', client_sign_position: 'Manager', client_sign_date: '2024-07-01', bfca_sign_date: '2024-07-01',
+                        facilitator_name: 'John Smith', facilitator_address: '123 Main St', effective_date: '2024-07-01', half_day_rate: '£300', full_day_rate: '£500', session_details: 'Full Day', participant_numbers: '20', pre_approved_expenses: '£50', invoice_due_date: '2024-07-20', nda_attached: 'Yes', termination_notice_period: '30 days', bfca_sign_name: 'Rachel Cole', bfca_sign_position: 'CEO', facilitator_sign_name: 'John Smith', facilitator_sign_position: 'Trainer', facilitator_sign_date: '2024-07-01',
+                        mentor_name: 'Sarah Mentor', mentor_email: 'mentor@example.com', mentor_phone: '01234 111222', start_date: '2024-08-01', end_date: '2024-08-31', session_topic: 'Mentoring Skills', session_date: '2024-08-10', session_time: '10:00 AM',
+                        delivery_staff_name: 'Delivery Bob', delivery_date: '2024-09-01', delivery_address: '123 Delivery St', delivery_time: '2:00 PM', package_details: 'Box of materials'
+                      };
+                      return examples[p1.trim()] || match;
+                    })
+                  }}
+                />
               </div>
             </div>
           </div>

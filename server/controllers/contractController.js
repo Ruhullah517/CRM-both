@@ -62,10 +62,21 @@ const generateContract = async (req, res) => {
       });
     }
 
-    // Convert HTML to plain text for PDF generation
+    // Convert HTML to plain text for PDF generation while preserving some formatting
     const plainTextContent = convert(filledContent, {
       wordwrap: 80,
-      preserveNewlines: true
+      preserveNewlines: true,
+      selectors: [
+        { selector: 'strong, b', options: { uppercase: false } },
+        { selector: 'em, i', options: { uppercase: false } },
+        { selector: 'u', options: { uppercase: false } },
+        { selector: 'br', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
+        { selector: 'p', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
+        { selector: 'div', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
+        { selector: 'ul', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
+        { selector: 'ol', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
+        { selector: 'li', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } }
+      ]
     });
 
     // Generate PDF
@@ -73,6 +84,8 @@ const generateContract = async (req, res) => {
     const page = pdfDoc.addPage();
     const { width, height } = page.getSize();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
     const fontSize = 12;
     
     // Add logo to top right
@@ -174,16 +187,92 @@ const generateContract = async (req, res) => {
       thickness: 1
     });
 
-    // Split content into lines for PDF rendering
-    const lines = plainTextContent.split('\n');
-    let y = height - 140;
+    // Parse HTML content and render with formatting
+    const renderHtmlContent = (htmlContent, startY) => {
+      let currentY = startY;
+      const lineHeight = fontSize + 4;
+      
+      // Simple HTML parser for basic formatting
+      const parseHtml = (html) => {
+        const lines = [];
+        let currentLine = '';
+        let inTag = false;
+        let currentTag = '';
+        
+        for (let i = 0; i < html.length; i++) {
+          const char = html[i];
+          
+          if (char === '<') {
+            inTag = true;
+            if (currentLine.trim()) {
+              lines.push({ text: currentLine.trim(), tag: currentTag });
+              currentLine = '';
+            }
+            currentTag = '';
+          } else if (char === '>') {
+            inTag = false;
+          } else if (inTag) {
+            currentTag += char;
+          } else {
+            currentLine += char;
+          }
+        }
+        
+        if (currentLine.trim()) {
+          lines.push({ text: currentLine.trim(), tag: currentTag });
+        }
+        
+        return lines;
+      };
+      
+      const parsedLines = parseHtml(htmlContent);
+      
+      parsedLines.forEach(line => {
+        if (currentY > 40) { // Prevent text from going off the page
+          let fontToUse = font;
+          let sizeToUse = fontSize;
+          
+          // Apply formatting based on HTML tags
+          if (line.tag.includes('strong') || line.tag.includes('b')) {
+            fontToUse = boldFont;
+          } else if (line.tag.includes('em') || line.tag.includes('i')) {
+            fontToUse = italicFont;
+          }
+          
+          // Handle font sizes
+          if (line.tag.includes('font-size')) {
+            const sizeMatch = line.tag.match(/font-size[:\s]*(\d+)px/);
+            if (sizeMatch) {
+              sizeToUse = parseInt(sizeMatch[1]);
+            }
+          }
+          
+          // Handle alignment
+          let x = 40;
+          if (line.tag.includes('text-align: center')) {
+            const textWidth = fontToUse.widthOfTextAtSize(line.text, sizeToUse);
+            x = (width - textWidth) / 2;
+          } else if (line.tag.includes('text-align: right')) {
+            const textWidth = fontToUse.widthOfTextAtSize(line.text, sizeToUse);
+            x = width - textWidth - 40;
+          }
+          
+          page.drawText(line.text, { 
+            x, 
+            y: currentY, 
+            size: sizeToUse, 
+            font: fontToUse 
+          });
+          
+          currentY -= lineHeight;
+        }
+      });
+      
+      return currentY;
+    };
     
-    lines.forEach(line => {
-      if (y > 40) { // Prevent text from going off the page
-        page.drawText(line, { x: 40, y, size: fontSize, font });
-        y -= fontSize + 4;
-      }
-    });
+    // Render the HTML content
+    const finalY = renderHtmlContent(filledContent, height - 140);
     
     const pdfBytes = await pdfDoc.save();
     

@@ -364,8 +364,8 @@ const ContractForm = ({ contract, onBack, onSave, saving }) => {
         )}
         {/* Preview */}
         {showPreview && (
-          <div className="bg-gray-100 p-3 rounded text-sm whitespace-pre-wrap max-h-60 overflow-y-auto mb-2">
-            {renderFilledTemplate()}
+          <div className="bg-gray-100 p-3 rounded text-sm max-h-60 overflow-y-auto mb-2">
+            <div dangerouslySetInnerHTML={{ __html: renderFilledTemplate() }} />
             {!allPlaceholdersFilled() && <div className="text-yellow-700 text-xs mt-2">Some fields are missing. Please fill all placeholders for a complete contract.</div>}
           </div>
         )}
