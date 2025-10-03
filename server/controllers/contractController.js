@@ -183,11 +183,22 @@ const generateContract = async (req, res) => {
       let currentX = 40;
       const maxWidth = width - 80; // 40px margin on each side
       
-      // Advanced HTML parser that preserves formatting
+      // Advanced HTML parser that preserves formatting and handles entities
       const parseHtmlWithFormatting = (html) => {
         const segments = [];
-        let currentText = '';
         let currentFormat = { bold: false, italic: false, size: fontSize, align: 'left' };
+        
+        // First, decode HTML entities
+        const decodeHtmlEntities = (text) => {
+          return text
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&quot;/g, '"')
+            .replace(/&#39;/g, "'")
+            .replace(/&apos;/g, "'");
+        };
         
         // Simple regex-based parser for inline formatting
         const regex = /<(\/?)([^>]+)>/g;
@@ -197,7 +208,7 @@ const generateContract = async (req, res) => {
         while ((match = regex.exec(html)) !== null) {
           // Add text before the tag
           if (match.index > lastIndex) {
-            const text = html.substring(lastIndex, match.index);
+            const text = decodeHtmlEntities(html.substring(lastIndex, match.index));
             if (text.trim()) {
               segments.push({ text, ...currentFormat });
             }
@@ -234,7 +245,7 @@ const generateContract = async (req, res) => {
         
         // Add remaining text
         if (lastIndex < html.length) {
-          const text = html.substring(lastIndex);
+          const text = decodeHtmlEntities(html.substring(lastIndex));
           if (text.trim()) {
             segments.push({ text, ...currentFormat });
           }
