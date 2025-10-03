@@ -169,7 +169,7 @@ const ContractDetail = ({ contract, onBack, onEdit, onDelete, loading, backendBa
       {contract.generatedDocUrl && (
         <div className="my-4">
           <iframe
-            src={backendBaseUrl + contract.generatedDocUrl}
+            src={contract.generatedDocUrl}
             title="Contract PDF Preview"
             width="100%"
             height="500px"

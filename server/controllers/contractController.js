@@ -70,20 +70,63 @@ const generateContract = async (req, res) => {
     
     // Add logo to top right
     try {
-      const logoPath = path.join(__dirname, '../uploads/logo.png');
-      if (fs.existsSync(logoPath)) {
-        const logoBytes = fs.readFileSync(logoPath);
-        const logoImage = await pdfDoc.embedPng(logoBytes);
-        const logoSize = 60; // Logo size
-        page.drawImage(logoImage, {
-          x: width - logoSize - 40, // 40px from right edge
-          y: height - logoSize - 20, // 20px from top
-          width: logoSize,
-          height: logoSize,
-        });
+      // Try multiple logo paths
+      const logoPaths = [
+        path.join(__dirname, '../uploads/logo.png'),
+        path.join(__dirname, '../uploads/logo.PNG'),
+        path.join(__dirname, '../../client/public/logo.PNG'),
+        path.join(__dirname, '../../client/public/logo.png')
+      ];
+      
+      let logoFound = false;
+      for (const logoPath of logoPaths) {
+        console.log('Checking logo at:', logoPath);
+        if (fs.existsSync(logoPath)) {
+          console.log('Found logo at:', logoPath);
+          const logoBytes = fs.readFileSync(logoPath);
+          console.log('Logo file size:', logoBytes.length, 'bytes');
+          
+          // Try to determine if it's PNG or JPG
+          let logoImage;
+          if (logoPath.toLowerCase().endsWith('.png')) {
+            logoImage = await pdfDoc.embedPng(logoBytes);
+          } else if (logoPath.toLowerCase().endsWith('.jpg') || logoPath.toLowerCase().endsWith('.jpeg')) {
+            logoImage = await pdfDoc.embedJpg(logoBytes);
+          } else {
+            // Try PNG first, then JPG
+            try {
+              logoImage = await pdfDoc.embedPng(logoBytes);
+            } catch (pngError) {
+              console.log('PNG failed, trying JPG:', pngError.message);
+              logoImage = await pdfDoc.embedJpg(logoBytes);
+            }
+          }
+          
+          const logoSize = 60; // Logo size
+          console.log('Logo embedded successfully, drawing at:', {
+            x: width - logoSize - 40,
+            y: height - logoSize - 20,
+            width: logoSize,
+            height: logoSize
+          });
+          
+          page.drawImage(logoImage, {
+            x: width - logoSize - 40, // 40px from right edge
+            y: height - logoSize - 20, // 20px from top
+            width: logoSize,
+            height: logoSize,
+          });
+          console.log('Logo drawn successfully');
+          logoFound = true;
+          break;
+        }
+      }
+      
+      if (!logoFound) {
+        console.log('No logo file found in any of the expected locations');
       }
     } catch (error) {
-      console.log('Could not load logo:', error.message);
+      console.error('Error loading/embedding logo:', error);
     }
     
     // Add BFCA header
