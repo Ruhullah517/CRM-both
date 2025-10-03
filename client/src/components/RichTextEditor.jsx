@@ -31,26 +31,6 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
     handleInput();
   };
 
-  const insertPlaceholder = (placeholder) => {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      range.deleteContents();
-      const span = document.createElement('span');
-      span.className = 'placeholder-tag';
-      span.style.backgroundColor = '#f3f4f6';
-      span.style.padding = '2px 6px';
-      span.style.borderRadius = '4px';
-      span.style.fontFamily = 'monospace';
-      span.style.fontSize = '0.9em';
-      span.textContent = `{{${placeholder}}}`;
-      range.insertNode(span);
-      range.collapse(false);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-    handleInput();
-  };
 
   const ToolbarButton = ({ onClick, children, title, isActive = false }) => (
     <button
@@ -65,16 +45,6 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
     </button>
   );
 
-  const FontSizeButton = ({ size, label }) => (
-    <button
-      type="button"
-      onClick={() => execCommand('fontSize', '7')}
-      title={`Font size: ${label}`}
-      className="px-3 py-2 text-sm rounded hover:bg-gray-200 transition-colors"
-    >
-      {label}
-    </button>
-  );
 
   return (
     <div className={`border rounded-lg ${isFocused ? 'border-blue-500 ring-1 ring-blue-500' : 'border-gray-300'}`}>
@@ -96,10 +66,25 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
 
           {/* Font Size */}
           <div className="flex border-r border-gray-300 pr-2 mr-2">
-            <FontSizeButton size="1" label="S" />
-            <FontSizeButton size="3" label="M" />
-            <FontSizeButton size="5" label="L" />
-            <FontSizeButton size="7" label="XL" />
+            <select
+              onChange={(e) => {
+                if (e.target.value) {
+                  execCommand('fontSize', e.target.value);
+                  e.target.value = '';
+                }
+              }}
+              className="text-xs px-2 py-1 border rounded hover:bg-gray-200"
+              title="Font Size"
+            >
+              <option value="">Size</option>
+              <option value="1">8px</option>
+              <option value="2">10px</option>
+              <option value="3">12px</option>
+              <option value="4">14px</option>
+              <option value="5">16px</option>
+              <option value="6">18px</option>
+              <option value="7">20px</option>
+            </select>
           </div>
 
           {/* Alignment */}
@@ -128,31 +113,6 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
             </ToolbarButton>
           </div>
 
-          {/* Placeholders */}
-          <div className="flex gap-1">
-            <select
-              onChange={(e) => {
-                if (e.target.value) {
-                  insertPlaceholder(e.target.value);
-                  e.target.value = '';
-                }
-              }}
-              className="text-xs px-2 py-1 border rounded hover:bg-gray-200"
-              title="Insert Placeholder"
-            >
-              <option value="">Insert Placeholder</option>
-              <option value="client_name">Client Name</option>
-              <option value="company_name">Company Name</option>
-              <option value="training_date">Training Date</option>
-              <option value="mentor_name">Mentor Name</option>
-              <option value="contract_date">Contract Date</option>
-              <option value="amount">Amount</option>
-              <option value="duration">Duration</option>
-              <option value="location">Location</option>
-              <option value="email">Email</option>
-              <option value="phone">Phone</option>
-            </select>
-          </div>
         </div>
       </div>
 
@@ -173,14 +133,6 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
           content: attr(data-placeholder);
           color: #9ca3af;
           pointer-events: none;
-        }
-        .placeholder-tag {
-          background-color: #f3f4f6;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-family: monospace;
-          font-size: 0.9em;
-          color: #374151;
         }
       `}</style>
     </div>
