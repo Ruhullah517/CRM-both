@@ -104,7 +104,7 @@ const generateContract = async (req, res) => {
           
           const logoSize = 60; // Logo size
           console.log('Logo embedded successfully, drawing at:', {
-            x: width - logoSize - 40,
+            x: width - logoSize - 20,
             y: height - logoSize - 20,
             width: logoSize,
             height: logoSize
