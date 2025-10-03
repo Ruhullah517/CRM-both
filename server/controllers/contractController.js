@@ -5,6 +5,7 @@ const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const docusignService = require('../utils/docusign');
+const { convert } = require('html-to-text');
 
 // List all generated contracts
 const getAllGeneratedContracts = async (req, res) => {
@@ -60,6 +61,24 @@ const generateContract = async (req, res) => {
         filledContent = filledContent.replace(new RegExp(`{{\\s*${ph}\\s*}}`, 'g'), val || `[${ph}]`);
       });
     }
+
+    // Convert HTML to plain text for PDF generation
+    const plainTextContent = convert(filledContent, {
+      wordwrap: 80,
+      preserveNewlines: true,
+      selectors: [
+        { selector: 'strong', format: 'bold' },
+        { selector: 'b', format: 'bold' },
+        { selector: 'em', format: 'italic' },
+        { selector: 'i', format: 'italic' },
+        { selector: 'u', format: 'underline' },
+        { selector: 'br', format: 'lineBreak' },
+        { selector: 'p', format: 'paragraph' },
+        { selector: 'ul', format: 'unorderedList' },
+        { selector: 'ol', format: 'orderedList' },
+        { selector: 'li', format: 'listItem' }
+      ]
+    });
 
     // Generate PDF
     const pdfDoc = await PDFDocument.create();
@@ -168,7 +187,7 @@ const generateContract = async (req, res) => {
     });
 
     // Split content into lines for PDF rendering
-    const lines = filledContent.split('\n');
+    const lines = plainTextContent.split('\n');
     let y = height - 140;
     
     lines.forEach(line => {

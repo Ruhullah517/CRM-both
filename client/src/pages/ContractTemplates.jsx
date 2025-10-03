@@ -7,6 +7,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { getContractTemplates, createContractTemplate, updateContractTemplate, deleteContractTemplate } from '../services/contractTemplates';
 import Loader from '../components/Loader';
+import RichTextEditor from '../components/RichTextEditor';
 
 const types = ['company', 'freelancer', 'mentor', 'delivery'];
 const recommendedPlaceholders = [
@@ -230,14 +231,11 @@ export default function ContractTemplates() {
                 </div>
                 <div>
                   <label className="block font-semibold mb-1">Template Content <span className="text-red-500">*</span></label>
-                  <textarea
-                    id="template-content"
-                    name="content"
+                  <RichTextEditor
                     value={form.content}
-                    onChange={handleFormChange}
+                    onChange={(content) => handleFormChange({ target: { name: 'content', value: content } })}
                     placeholder="Write your contract here. Use placeholders like {{client_name}}, {{training_date}}, etc."
-                    className="w-full px-4 py-2 border rounded min-h-[140px] sm:min-h-[180px]"
-                    required
+                    className="min-h-[180px]"
                   />
                   <div className="text-xs text-gray-500 mt-1">
                     Use <span className="font-mono bg-gray-100 px-1">{'{{placeholder}}'}</span> for dynamic fields. Example: <span className="font-mono bg-gray-100 px-1">{'Dear {{client_name}},'}</span>
