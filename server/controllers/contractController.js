@@ -271,63 +271,76 @@ const generateContract = async (req, res) => {
         lines.push(currentLine);
       }
       
-      // Render each line
+      // Render each line with proper mixed formatting
       lines.forEach(lineSegments => {
         if (currentY > 40 && lineSegments.length > 0) {
-          let lineText = lineSegments.map(s => s.text).join('');
-          
-          // Handle line wrapping
-          const words = lineText.split(' ');
-          let currentLine = '';
           let currentX = 40;
           
           // Check alignment for the first segment with proper defaults
           const firstSegment = lineSegments[0] || { align: 'left', size: fontSize, bold: false, italic: false };
           const align = firstSegment.align || 'left';
-          const size = firstSegment.size || fontSize;
-          const isBold = firstSegment.bold || false;
-          const isItalic = firstSegment.italic || false;
           
+          // Calculate total line width for alignment
+          let totalLineWidth = 0;
+          lineSegments.forEach(segment => {
+            const segmentSize = segment.size || fontSize;
+            const segmentFont = segment.bold ? boldFont : (segment.italic ? italicFont : font);
+            totalLineWidth += segmentFont.widthOfTextAtSize(segment.text, segmentSize);
+          });
+          
+          // Set initial X position based on alignment
           if (align === 'center') {
-            const textWidth = font.widthOfTextAtSize(lineText, size);
-            currentX = (width - textWidth) / 2;
+            currentX = (width - totalLineWidth) / 2;
           } else if (align === 'right') {
-            const textWidth = font.widthOfTextAtSize(lineText, size);
-            currentX = width - textWidth - 40;
+            currentX = width - totalLineWidth - 40;
           }
           
-          words.forEach(word => {
-            const testLine = currentLine + (currentLine ? ' ' : '') + word;
-            const textWidth = font.widthOfTextAtSize(testLine, size);
-            
-            if (textWidth > maxWidth && currentLine) {
-              // Draw current line
-              const fontToUse = isBold ? boldFont : (isItalic ? italicFont : font);
-              page.drawText(currentLine, { 
-                x: currentX, 
-                y: currentY, 
-                size: size, 
-                font: fontToUse
+          // Render each segment with its own formatting
+          lineSegments.forEach(segment => {
+            if (currentY > 40) {
+              const segmentSize = segment.size || fontSize;
+              const segmentFont = segment.bold ? boldFont : (segment.italic ? italicFont : font);
+              
+              // Handle word wrapping for this segment
+              const words = segment.text.split(' ');
+              let currentLine = '';
+              
+              words.forEach(word => {
+                const testLine = currentLine + (currentLine ? ' ' : '') + word;
+                const textWidth = segmentFont.widthOfTextAtSize(testLine, segmentSize);
+                
+                if (textWidth > maxWidth && currentLine) {
+                  // Draw current line
+                  page.drawText(currentLine, { 
+                    x: currentX, 
+                    y: currentY, 
+                    size: segmentSize, 
+                    font: segmentFont
+                  });
+                  currentY -= lineHeight;
+                  currentLine = word;
+                  currentX = 40; // Reset to left for wrapped lines
+                } else {
+                  currentLine = testLine;
+                }
               });
-              currentY -= lineHeight;
-              currentLine = word;
-              currentX = 40; // Reset alignment for wrapped lines
-            } else {
-              currentLine = testLine;
+              
+              // Draw the last part of this segment
+              if (currentLine) {
+                page.drawText(currentLine, { 
+                  x: currentX, 
+                  y: currentY, 
+                  size: segmentSize, 
+                  font: segmentFont
+                });
+                // Update X position for next segment
+                currentX += segmentFont.widthOfTextAtSize(currentLine, segmentSize);
+              }
             }
           });
           
-          // Draw the last line
-          if (currentLine) {
-            const fontToUse = isBold ? boldFont : (isItalic ? italicFont : font);
-            page.drawText(currentLine, { 
-              x: currentX, 
-              y: currentY, 
-              size: size, 
-              font: fontToUse
-            });
-            currentY -= lineHeight;
-          }
+          // Move to next line after all segments
+          currentY -= lineHeight;
         }
       });
       
