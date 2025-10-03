@@ -136,7 +136,7 @@ const generateContract = async (req, res) => {
           generatedBy,
           filledData,
           generatedDocUrl,
-          status: status || 'pending',
+          status: status || 'draft',
         },
         { new: true }
       );
@@ -150,7 +150,7 @@ const generateContract = async (req, res) => {
         generatedBy,
         filledData,
         generatedDocUrl,
-        status: status || 'pending',
+        status: status || 'draft',
       });
       await contract.save();
       res.status(201).json(contract);
