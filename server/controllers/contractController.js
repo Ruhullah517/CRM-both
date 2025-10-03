@@ -68,6 +68,24 @@ const generateContract = async (req, res) => {
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontSize = 12;
     
+    // Add logo to top right
+    try {
+      const logoPath = path.join(__dirname, '../uploads/logo.png');
+      if (fs.existsSync(logoPath)) {
+        const logoBytes = fs.readFileSync(logoPath);
+        const logoImage = await pdfDoc.embedPng(logoBytes);
+        const logoSize = 60; // Logo size
+        page.drawImage(logoImage, {
+          x: width - logoSize - 40, // 40px from right edge
+          y: height - logoSize - 20, // 20px from top
+          width: logoSize,
+          height: logoSize,
+        });
+      }
+    } catch (error) {
+      console.log('Could not load logo:', error.message);
+    }
+    
     // Add BFCA header
     const headerFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     page.drawText('BLACK FOSTER CARERS ALLIANCE', { 
