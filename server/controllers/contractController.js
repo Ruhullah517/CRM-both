@@ -128,6 +128,10 @@ const generateContract = async (req, res) => {
     const filePath = path.join(dirPath, fileName);
     fs.writeFileSync(filePath, pdfBytes);
     const generatedDocUrl = `/uploads/contracts/${fileName}`;
+    
+    console.log('PDF saved to:', filePath);
+    console.log('Generated doc URL:', generatedDocUrl);
+    console.log('File exists after save:', fs.existsSync(filePath));
 
     if (req.body._id) {
       // Update existing contract
@@ -235,11 +239,23 @@ const downloadContract = async (req, res) => {
   try {
     const contract = await GeneratedContract.findById(req.params.id);
     if (!contract || !contract.generatedDocUrl) return res.status(404).json({ msg: 'Contract or PDF not found' });
+    
+    console.log('Contract found:', contract.name);
+    console.log('Generated doc URL:', contract.generatedDocUrl);
+    
     // Remove leading slash if present
     let filePath = contract.generatedDocUrl;
     if (filePath.startsWith('/')) filePath = filePath.slice(1);
     const absPath = path.resolve(__dirname, '../..', filePath);
-    if (!fs.existsSync(absPath)) return res.status(404).json({ msg: 'PDF file not found on server' });
+    
+    console.log('Resolved file path:', absPath);
+    console.log('File exists:', fs.existsSync(absPath));
+    
+    if (!fs.existsSync(absPath)) {
+      console.error('PDF file not found at:', absPath);
+      return res.status(404).json({ msg: 'PDF file not found on server' });
+    }
+    
     res.download(absPath, err => {
       if (err) {
         console.error('Download error:', err);
@@ -247,7 +263,7 @@ const downloadContract = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error(error);
+    console.error('Download contract error:', error);
     res.status(500).send('Server error');
   }
 };
