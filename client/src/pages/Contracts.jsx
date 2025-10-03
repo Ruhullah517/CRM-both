@@ -71,7 +71,7 @@ const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
                 <td className="px-4 py-2">
                   {c.generatedDocUrl && (
                     <a
-                      href={backendBaseUrl + c.generatedDocUrl}
+                      href={c.generatedDocUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-blue-700 hover:underline"
@@ -124,7 +124,7 @@ const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
               <span className="font-semibold">PDF:</span>{" "}
               {c.generatedDocUrl ? (
                 <a
-                  href={backendBaseUrl + c.generatedDocUrl}
+                  href={c.generatedDocUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-700 hover:underline"
