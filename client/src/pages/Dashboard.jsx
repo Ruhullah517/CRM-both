@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getCases } from '../services/cases';
-import { getGeneratedContracts } from '../services/contracts';
+import { getContracts } from '../services/contracts';
 import { getFreelancers } from '../services/freelancers';
 import { getEnquiries } from '../services/enquiries';
 import { getMentors } from '../services/mentors';
@@ -46,7 +46,7 @@ export default function Dashboard() {
             console.error('Error fetching cases:', err);
             return [];
           }),
-          getGeneratedContracts().catch(err => {
+          getContracts().catch(err => {
             console.error('Error fetching contracts:', err);
             return [];
           }),

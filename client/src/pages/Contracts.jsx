@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getGeneratedContracts, generateContract, downloadContract, deleteContract } from '../services/contracts';
+import { getContracts, generateContract, downloadContract, deleteContract } from '../services/contracts';
 import { getContractTemplates } from '../services/contractTemplates';
 import Loader from '../components/Loader';
 
@@ -20,7 +20,7 @@ const ContractList = ({ onSelect, onAdd, contracts, onDelete, onDownload }) => {
         .toLowerCase()
         .includes(search.toLowerCase())
   );
-  const backendBaseUrl = "https://backendcrm.blackfostercarersalliance.co.uk";
+  const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
   // statusColors should be defined in the file already
 
   return (
@@ -403,7 +403,7 @@ const Contracts = () => {
   async function fetchContracts() {
     setLoading(true);
     try {
-      const data = await getGeneratedContracts();
+      const data = await getContracts();
       setContracts(data);
     } catch (err) {
       setError('Failed to load contracts');
