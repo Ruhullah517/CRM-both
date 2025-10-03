@@ -102,19 +102,20 @@ const generateContract = async (req, res) => {
             }
           }
           
-          const logoSize = 60; // Logo size
+          const logoHeight = 60; // Logo height
+          const logoWidth = 80; // Logo width (wider)
           console.log('Logo embedded successfully, drawing at:', {
-            x: width - logoSize - 20,
-            y: height - logoSize - 20,
-            width: logoSize,
-            height: logoSize
+            x: width - logoWidth - 20,
+            y: height - logoHeight - 20,
+            width: logoWidth,
+            height: logoHeight
           });
           
           page.drawImage(logoImage, {
-            x: width - logoSize - 40, // 40px from right edge
-            y: height - logoSize - 20, // 20px from top
-            width: logoSize,
-            height: logoSize,
+            x: width - logoWidth - 20, // 20px from right edge
+            y: height - logoHeight - 20, // 20px from top
+            width: logoWidth,
+            height: logoHeight,
           });
           console.log('Logo drawn successfully');
           logoFound = true;
