@@ -183,49 +183,129 @@ const generateContract = async (req, res) => {
       let currentX = 40;
       const maxWidth = width - 80; // 40px margin on each side
       
-      // Better HTML parser that handles inline formatting
-      const parseHtmlToText = (html) => {
-        // Remove HTML tags but preserve line breaks
-        let text = html
-          .replace(/<br\s*\/?>/gi, '\n')
-          .replace(/<\/p>/gi, '\n\n')
-          .replace(/<\/div>/gi, '\n')
-          .replace(/<[^>]*>/g, '') // Remove all other HTML tags
-          .replace(/&nbsp;/g, ' ')
-          .replace(/&amp;/g, '&')
-          .replace(/&lt;/g, '<')
-          .replace(/&gt;/g, '>')
-          .replace(/&quot;/g, '"');
+      // Advanced HTML parser that preserves formatting
+      const parseHtmlWithFormatting = (html) => {
+        const segments = [];
+        let currentText = '';
+        let currentFormat = { bold: false, italic: false, size: fontSize, align: 'left' };
         
-        return text;
+        // Simple regex-based parser for inline formatting
+        const regex = /<(\/?)([^>]+)>/g;
+        let lastIndex = 0;
+        let match;
+        
+        while ((match = regex.exec(html)) !== null) {
+          // Add text before the tag
+          if (match.index > lastIndex) {
+            const text = html.substring(lastIndex, match.index);
+            if (text.trim()) {
+              segments.push({ text, ...currentFormat });
+            }
+          }
+          
+          const isClosing = match[1] === '/';
+          const tagName = match[2].split(' ')[0].toLowerCase();
+          
+          // Handle formatting tags
+          if (tagName === 'strong' || tagName === 'b') {
+            currentFormat.bold = !isClosing;
+          } else if (tagName === 'em' || tagName === 'i') {
+            currentFormat.italic = !isClosing;
+          } else if (tagName === 'br') {
+            segments.push({ text: '\n', ...currentFormat });
+          } else if (tagName === 'p' && isClosing) {
+            segments.push({ text: '\n\n', ...currentFormat });
+          } else if (tagName === 'div' && isClosing) {
+            segments.push({ text: '\n', ...currentFormat });
+          } else if (tagName.includes('font-size')) {
+            const sizeMatch = match[2].match(/font-size[:\s]*(\d+)px/);
+            if (sizeMatch) {
+              currentFormat.size = parseInt(sizeMatch[1]);
+            }
+          } else if (tagName.includes('text-align')) {
+            const alignMatch = match[2].match(/text-align[:\s]*(center|right|left|justify)/);
+            if (alignMatch) {
+              currentFormat.align = alignMatch[1];
+            }
+          }
+          
+          lastIndex = regex.lastIndex;
+        }
+        
+        // Add remaining text
+        if (lastIndex < html.length) {
+          const text = html.substring(lastIndex);
+          if (text.trim()) {
+            segments.push({ text, ...currentFormat });
+          }
+        }
+        
+        return segments;
       };
       
-      // Get clean text content
-      const cleanText = parseHtmlToText(filledContent);
+      // Parse the HTML content
+      const segments = parseHtmlWithFormatting(filledContent);
       
-      // Split into lines and render
-      const lines = cleanText.split('\n');
+      // Group segments into lines
+      const lines = [];
+      let currentLine = [];
       
-      lines.forEach(line => {
-        if (currentY > 40 && line.trim()) { // Prevent text from going off the page
-          // Handle long lines by wrapping them
-          const words = line.split(' ');
+      segments.forEach(segment => {
+        if (segment.text.includes('\n')) {
+          const parts = segment.text.split('\n');
+          parts.forEach((part, index) => {
+            if (part) {
+              currentLine.push({ ...segment, text: part });
+            }
+            if (index < parts.length - 1) {
+              lines.push([...currentLine]);
+              currentLine = [];
+            }
+          });
+        } else {
+          currentLine.push(segment);
+        }
+      });
+      
+      if (currentLine.length > 0) {
+        lines.push(currentLine);
+      }
+      
+      // Render each line
+      lines.forEach(lineSegments => {
+        if (currentY > 40) {
+          let lineText = lineSegments.map(s => s.text).join('');
+          
+          // Handle line wrapping
+          const words = lineText.split(' ');
           let currentLine = '';
+          let currentX = 40;
+          
+          // Check alignment for the first segment
+          const firstSegment = lineSegments[0];
+          if (firstSegment.align === 'center') {
+            const textWidth = font.widthOfTextAtSize(lineText, firstSegment.size);
+            currentX = (width - textWidth) / 2;
+          } else if (firstSegment.align === 'right') {
+            const textWidth = font.widthOfTextAtSize(lineText, firstSegment.size);
+            currentX = width - textWidth - 40;
+          }
           
           words.forEach(word => {
             const testLine = currentLine + (currentLine ? ' ' : '') + word;
-            const textWidth = font.widthOfTextAtSize(testLine, fontSize);
+            const textWidth = font.widthOfTextAtSize(testLine, firstSegment.size);
             
             if (textWidth > maxWidth && currentLine) {
-              // Draw current line and start new line
+              // Draw current line
               page.drawText(currentLine, { 
                 x: currentX, 
                 y: currentY, 
-                size: fontSize, 
-                font: font 
+                size: firstSegment.size, 
+                font: firstSegment.bold ? boldFont : (firstSegment.italic ? italicFont : font)
               });
               currentY -= lineHeight;
               currentLine = word;
+              currentX = 40; // Reset alignment for wrapped lines
             } else {
               currentLine = testLine;
             }
@@ -236,14 +316,11 @@ const generateContract = async (req, res) => {
             page.drawText(currentLine, { 
               x: currentX, 
               y: currentY, 
-              size: fontSize, 
-              font: font 
+              size: firstSegment.size, 
+              font: firstSegment.bold ? boldFont : (firstSegment.italic ? italicFont : font)
             });
             currentY -= lineHeight;
           }
-        } else if (line.trim() === '') {
-          // Empty line - add some space
-          currentY -= lineHeight / 2;
         }
       });
       
