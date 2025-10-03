@@ -62,21 +62,10 @@ const generateContract = async (req, res) => {
       });
     }
 
-    // Convert HTML to plain text for PDF generation while preserving some formatting
+    // Convert HTML to plain text for PDF generation
     const plainTextContent = convert(filledContent, {
       wordwrap: 80,
-      preserveNewlines: true,
-      selectors: [
-        { selector: 'strong, b', options: { uppercase: false } },
-        { selector: 'em, i', options: { uppercase: false } },
-        { selector: 'u', options: { uppercase: false } },
-        { selector: 'br', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
-        { selector: 'p', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
-        { selector: 'div', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
-        { selector: 'ul', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
-        { selector: 'ol', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } },
-        { selector: 'li', options: { leadingLineBreaks: 1, trailingLineBreaks: 1 } }
-      ]
+      preserveNewlines: true
     });
 
     // Generate PDF
