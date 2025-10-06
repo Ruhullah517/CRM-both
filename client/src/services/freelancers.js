@@ -64,7 +64,7 @@ export const deleteFreelancer = async (id) => {
 };
 
 // HR Module functions
-export const updateAvailability = async (id, availabilityData) => {
+export const updateFreelancerAvailability = async (id, availabilityData) => {
   const response = await api.put(`/freelancers/${id}/availability`, availabilityData);
   return response.data;
 };

@@ -18,7 +18,7 @@ const freelancerUploads = require('../middleware/freelancerUploads');
 const { authenticate, authorize } = require('../middleware/auth');
 
 router.get('/', authenticate, authorize('admin', 'manager', 'staff'), getAllFreelancers);
-router.get('/expiring-compliance', authenticate, authorize('admin', 'manager', 'staff'), getExpiringCompliance);
+router.get('/compliance/expiring', authenticate, authorize('admin', 'manager', 'staff'), getExpiringCompliance);
 router.get('/:id', authenticate, authorize('admin', 'manager', 'staff'), getFreelancerById);
 router.post('/', authenticate, authorize('admin', 'manager', 'staff'), freelancerUploads, createFreelancer);
 router.post('/send-form-link', authenticate, authorize('admin', 'manager', 'staff'), sendFreelancerFormLink);

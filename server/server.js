@@ -6,6 +6,7 @@ const db = require('./config/db');
 const path = require('path');
 const reportsRouter = require('./routes/reports');
 const adobeRoutes = require('./routes/adobe');
+const { initializeCronJobs } = require('./services/cronJobs');
 
 
 const app = express();
@@ -57,6 +58,9 @@ app.use('/api/leads', require('./routes/leads')); // Public API for website lead
 
 app.listen(port, () => {
   console.log(`Server is running on http://localhost:${port}`);
+  
+  // Initialize cron jobs for HR module
+  initializeCronJobs();
 });
 
 // Handle unhandled promise rejections

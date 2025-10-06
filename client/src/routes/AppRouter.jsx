@@ -38,6 +38,8 @@ import FullAssessment from '../pages/FullAssessment';
 import CaseClosure from '../pages/CaseClosure';
 import SalesCommunication from '../pages/SalesCommunication';
 import ContractGeneration from '../pages/ContractGeneration';
+import HRModule from '../pages/HRModule';
+import FreelancerSelfService from '../pages/FreelancerSelfService';
 
 
 import PublicFeedback from '../pages/PublicFeedback';
@@ -75,6 +77,7 @@ export default function AppRouter() {
               <Route path="/contact-management" element={<ContactManagement />} />
               <Route path="/sales-communication" element={<SalesCommunication />} />
             <Route path="/contract-generation" element={<ContractGeneration />} />
+              <Route path="/hr-module" element={<HRModule />} />
               <Route path="/reports" element={<Reports />} />
             </Route>
 
@@ -94,7 +97,7 @@ export default function AppRouter() {
 
             {/* Freelancer-specific routes */}
             <Route element={<PrivateRoute roles={["freelancer"]} />}>
-              <Route path="/my-profile" element={<Profile />} />
+              <Route path="/my-profile" element={<FreelancerSelfService />} />
               <Route path="/my-cases" element={<MyCases />} />
             </Route>
 
