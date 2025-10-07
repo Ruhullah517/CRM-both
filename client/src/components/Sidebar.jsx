@@ -46,7 +46,6 @@ const navItems = [
 
   // Staff & Resources Section
   { name: '👥 HR Module', path: '/hr-module', roles: ['admin', 'staff', 'manager'], icon: UserGroupIcon, section: 'staff', primary: true },
-  { name: 'Freelancers', path: '/freelancers', roles: ['admin', 'staff', 'freelancer'], icon: UserCircleIcon, section: 'staff' },
   { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon, section: 'staff' },
   { name: 'User Management', path: '/users', roles: ['admin'], icon: UserGroupIcon, section: 'staff' },
 
