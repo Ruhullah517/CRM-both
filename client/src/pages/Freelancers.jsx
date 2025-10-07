@@ -1039,7 +1039,28 @@ const Freelancers = () => {
   if (view === "add") return <FreelancerForm onBack={() => setView("list")} onSave={handleSaveFreelancer} loading={saving} />;
   return (
     <>
-      {error && <div className="mb-4 text-red-600">{error}</div>}
+      {/* Breadcrumb Navigation */}
+      <div className="max-w-5xl mx-auto p-4 pt-6">
+        <button
+          onClick={() => window.location.href = '/hr-module'}
+          className="inline-flex items-center text-sm text-gray-600 hover:text-[#2EAB2C] transition-colors"
+        >
+          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to HR Module
+        </button>
+        <div className="mt-2 flex items-center text-sm text-gray-500">
+          <span className="hover:text-[#2EAB2C] cursor-pointer" onClick={() => window.location.href = '/hr-module'}>HR Module</span>
+          <svg className="w-4 h-4 mx-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+          <span className="text-gray-900 font-medium">Freelancer Management</span>
+        </div>
+      </div>
+
+      {error && <div className="mb-4 text-red-600 max-w-5xl mx-auto px-4">{error}</div>}
+      
       {/* --- Send Form Online Button --- */}
       <div className="max-w-5xl mx-auto p-4 flex justify-end">
         <button

@@ -108,10 +108,32 @@ const HRModule = () => {
     </div>
   );
 
-  const DashboardTab = () => (
-    <div className="space-y-6">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+   const DashboardTab = () => (
+     <div className="space-y-6">
+       {/* Welcome Message */}
+       <div className="bg-gradient-to-r from-[#2EAB2C] to-green-600 rounded-lg shadow-lg p-6 text-white">
+         <h2 className="text-2xl font-bold mb-2">Welcome to the HR Module</h2>
+         <p className="text-green-50">
+           Your central hub for managing freelance staff, tracking compliance, and monitoring work assignments.
+         </p>
+         <div className="mt-4 flex gap-4">
+           <button
+             onClick={() => setActiveTab('freelancers')}
+             className="px-4 py-2 bg-white text-[#2EAB2C] rounded-md hover:bg-green-50 transition-colors text-sm font-medium"
+           >
+             Manage Freelancers
+           </button>
+           <button
+             onClick={() => setActiveTab('work-tracking')}
+             className="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-800 transition-colors text-sm font-medium"
+           >
+             Track Hours
+           </button>
+         </div>
+       </div>
+
+       {/* Stats Overview */}
+       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Freelancers"
           value={stats.totalFreelancers}
@@ -254,38 +276,91 @@ const HRModule = () => {
       f.role?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-          <input
-            type="text"
-            placeholder="Search freelancers..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md w-full sm:w-64"
-          />
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setShowSendFormModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-            >
-              <EnvelopeIcon className="h-4 w-4 mr-2" />
-              Send Form Online
-            </button>
-            <button
-              onClick={() => window.open('/freelancers', '_self')}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#2EAB2C] hover:bg-green-700"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Freelancer
-            </button>
-          </div>
+     return (
+       <div className="space-y-6">
+         {/* Info Banner */}
+         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+           <div className="flex items-start">
+             <div className="flex-shrink-0">
+               <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+               </svg>
+             </div>
+             <div className="ml-3 flex-1">
+               <h3 className="text-sm font-medium text-blue-800">Quick Actions Here, Detailed Work in Full Form</h3>
+               <p className="mt-1 text-sm text-blue-700">
+                 Use this tab for quick operations (search, delete, send forms). Click "Add" or "Edit" to open the full freelancer form for detailed information entry.
+               </p>
+             </div>
+           </div>
+         </div>
+
+         <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+           <div className="flex items-center gap-2 w-full sm:w-auto">
+             <input
+               type="text"
+               placeholder="Search freelancers..."
+               value={searchTerm}
+               onChange={(e) => setSearchTerm(e.target.value)}
+               className="px-4 py-2 border border-gray-300 rounded-md w-full sm:w-64"
+             />
+             <span className="text-sm text-gray-600 whitespace-nowrap">
+               {filteredFreelancers.length} of {freelancers.length}
+             </span>
+           </div>
+           <div className="flex space-x-2">
+             <button
+               onClick={() => setShowSendFormModal(true)}
+               className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+               title="Email a form link to a prospective freelancer"
+             >
+               <EnvelopeIcon className="h-4 w-4 mr-2" />
+               Send Form Online
+             </button>
+             <button
+               onClick={() => window.location.href = '/freelancers'}
+               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#2EAB2C] hover:bg-green-700"
+               title="Opens full form to add new freelancer"
+             >
+               <PlusIcon className="h-4 w-4 mr-2" />
+               Add New Freelancer
+             </button>
+           </div>
         </div>
 
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {filteredFreelancers.map((freelancer) => (
-              <li key={freelancer._id}>
+         {filteredFreelancers.length === 0 ? (
+           <div className="bg-white shadow rounded-md p-12 text-center">
+             <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
+             <h3 className="mt-2 text-sm font-medium text-gray-900">
+               {searchTerm ? 'No freelancers found' : 'No freelancers yet'}
+             </h3>
+             <p className="mt-1 text-sm text-gray-500">
+               {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding a new freelancer or sending a form online'}
+             </p>
+             {!searchTerm && (
+               <div className="mt-6 flex justify-center gap-3">
+                 <button
+                   onClick={() => setShowSendFormModal(true)}
+                   className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                 >
+                   <EnvelopeIcon className="h-4 w-4 mr-2" />
+                   Send Form Online
+                 </button>
+                 <button
+                   onClick={() => window.location.href = '/freelancers'}
+                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#2EAB2C] hover:bg-green-700"
+                 >
+                   <PlusIcon className="h-4 w-4 mr-2" />
+                   Add New Freelancer
+                 </button>
+               </div>
+             )}
+           </div>
+         ) : (
+           <div className="bg-white shadow overflow-hidden sm:rounded-md">
+             <ul className="divide-y divide-gray-200">
+               {filteredFreelancers.map((freelancer) => (
+                 <li key={freelancer._id} className="hover:bg-gray-50 transition-colors">
                 <div className="px-4 py-4 flex items-center justify-between">
                   <div className="flex items-center">
                     <div className="flex-shrink-0">
@@ -326,38 +401,42 @@ const HRModule = () => {
                         {freelancer.status}
                       </span>
                     </div>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => window.open('/freelancers', '_self')}
-                        className="text-[#2EAB2C] hover:text-green-700"
-                        title="View Details"
-                      >
-                        <EyeIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => window.open('/freelancers', '_self')}
-                        className="text-blue-600 hover:text-blue-700"
-                        title="Edit"
-                      >
-                        <PencilSquareIcon className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteFreelancer(freelancer._id)}
-                        className="text-red-600 hover:text-red-700"
-                        title="Delete"
-                      >
-                        <XCircleIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                     <div className="flex space-x-2">
+                       <button
+                         onClick={() => window.location.href = '/freelancers'}
+                         className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                         title="View full profile with all details"
+                       >
+                         <EyeIcon className="h-4 w-4 mr-1" />
+                         View
+                       </button>
+                       <button
+                         onClick={() => window.location.href = '/freelancers'}
+                         className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                         title="Edit freelancer information"
+                       >
+                         <PencilSquareIcon className="h-4 w-4 mr-1" />
+                         Edit
+                       </button>
+                       <button
+                         onClick={() => handleDeleteFreelancer(freelancer._id)}
+                         className="inline-flex items-center px-3 py-1.5 border border-red-300 text-xs font-medium rounded-md text-red-700 bg-white hover:bg-red-50 transition-colors"
+                         title="Delete freelancer permanently"
+                       >
+                         <XCircleIcon className="h-4 w-4 mr-1" />
+                         Delete
+                       </button>
+                     </div>
                   </div>
                 </div>
               </li>
             ))}
           </ul>
-        </div>
+         </div>
+         )}
 
-        {/* Send Form Online Modal */}
-        {showSendFormModal && (
+         {/* Send Form Online Modal */}
+         {showSendFormModal && (
           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
             <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
               <div className="mt-3">
@@ -408,14 +487,20 @@ const HRModule = () => {
     );
   };
 
-  const ComplianceTab = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900">Compliance Tracking</h3>
-        <div className="text-sm text-gray-500">
-          {expiringCompliance.length} documents expiring in next 30 days
-        </div>
-      </div>
+   const ComplianceTab = () => (
+     <div className="space-y-6">
+       <div className="flex justify-between items-center">
+         <div>
+           <h3 className="text-lg font-medium text-gray-900">Compliance Tracking</h3>
+           <p className="mt-1 text-sm text-gray-500">
+             Monitor expiring documents and stay compliant with automatic alerts
+           </p>
+         </div>
+         <div className="text-right">
+           <div className="text-2xl font-bold text-gray-900">{expiringCompliance.length}</div>
+           <div className="text-sm text-gray-500">Expiring Soon</div>
+         </div>
+       </div>
 
       {expiringCompliance.length > 0 ? (
         <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -460,14 +545,20 @@ const HRModule = () => {
     </div>
   );
 
-  const ContractsTab = () => (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-medium text-gray-900">Contract Management</h3>
-        <div className="text-sm text-gray-500">
-          {stats.expiringContracts} contracts need renewal
-        </div>
-      </div>
+   const ContractsTab = () => (
+     <div className="space-y-6">
+       <div className="flex justify-between items-center">
+         <div>
+           <h3 className="text-lg font-medium text-gray-900">Contract Management</h3>
+           <p className="mt-1 text-sm text-gray-500">
+             Monitor contract renewal dates and receive automatic alerts
+           </p>
+         </div>
+         <div className="text-right">
+           <div className="text-2xl font-bold text-gray-900">{stats.expiringContracts}</div>
+           <div className="text-sm text-gray-500">Need Renewal</div>
+         </div>
+       </div>
 
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <ul className="divide-y divide-gray-200">
@@ -555,18 +646,24 @@ const HRModule = () => {
       };
     });
 
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h3 className="text-lg font-medium text-gray-900">Work Tracking & Hours</h3>
-          <button
-            onClick={() => setShowAddWorkModal(true)}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#2EAB2C] hover:bg-green-700"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Add Work Entry
-          </button>
-        </div>
+     return (
+       <div className="space-y-6">
+         <div className="flex justify-between items-center">
+           <div>
+             <h3 className="text-lg font-medium text-gray-900">Work Tracking & Hours</h3>
+             <p className="mt-1 text-sm text-gray-500">
+               Track work assignments, hours, and calculate earnings automatically
+             </p>
+           </div>
+           <button
+             onClick={() => setShowAddWorkModal(true)}
+             className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#2EAB2C] hover:bg-green-700"
+             title="Add a new work entry for a freelancer"
+           >
+             <PlusIcon className="h-4 w-4 mr-2" />
+             Add Work Entry
+           </button>
+         </div>
 
         {/* Work Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
