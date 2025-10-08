@@ -149,6 +149,17 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState(null);
 
+  // Helper function to display document type in friendly format
+  const getDocumentTypeLabel = (type) => {
+    const typeLabels = {
+      'dbs': 'DBS Certificate',
+      'qualification': 'Qualification',
+      'insurance': 'Insurance',
+      'other': 'Other'
+    };
+    return typeLabels[type] || type;
+  };
+
   // Form states
   const [availabilityForm, setAvailabilityForm] = useState({
     hourlyRate: freelancer.hourlyRate || 0,
@@ -164,7 +175,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
 
   const [complianceForm, setComplianceForm] = useState({
     name: '',
-    type: 'DBS Certificate',
+    type: 'dbs',
     expiryDate: '',
     file: null
   });
@@ -221,7 +232,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
       setShowComplianceModal(false);
       setComplianceForm({
         name: '',
-        type: 'DBS Certificate',
+        type: 'dbs',
         expiryDate: '',
         file: null
       });
@@ -396,7 +407,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
                         <h4 className="font-semibold">{doc.name}</h4>
-                        <p className="text-sm text-gray-600">Type: {doc.type}</p>
+                        <p className="text-sm text-gray-600">Type: {getDocumentTypeLabel(doc.type)}</p>
                         {doc.expiryDate && (
                           <p className="text-sm text-gray-600">
                             Expires: {formatDate(doc.expiryDate)}
@@ -671,11 +682,10 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
                     onChange={(e) => setComplianceForm({...complianceForm, type: e.target.value})}
                     className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
                   >
-                    <option value="DBS Certificate">DBS Certificate</option>
-                    <option value="Qualification">Qualification</option>
-                    <option value="Insurance">Insurance</option>
-                    <option value="Training Certificate">Training Certificate</option>
-                    <option value="Other">Other</option>
+                    <option value="dbs">DBS Certificate</option>
+                    <option value="qualification">Qualification</option>
+                    <option value="insurance">Insurance</option>
+                    <option value="other">Other</option>
                   </select>
                 </div>
                 <div>

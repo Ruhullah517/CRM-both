@@ -434,7 +434,8 @@ const deleteComplianceDocument = async (req, res) => {
     freelancer.complianceDocuments.splice(documentIndex, 1);
     freelancer.updated_at = new Date();
     
-    await freelancer.save();
+    // Save without validation to avoid enum issues with existing data
+    await freelancer.save({ validateBeforeSave: false });
     res.json(freelancer);
   } catch (error) {
     console.error(error);
