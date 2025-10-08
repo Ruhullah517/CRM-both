@@ -150,6 +150,8 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
 
   // Form states
   const [availabilityForm, setAvailabilityForm] = useState({
+    hourlyRate: freelancer.hourlyRate || 0,
+    dailyRate: freelancer.dailyRate || 0,
     availability: freelancer.availability || 'available',
     availabilityNotes: freelancer.availabilityNotes || ''
   });
@@ -327,7 +329,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
                   onClick={() => setShowAvailabilityModal(true)}
                   className="mt-2 px-3 py-1 bg-[#2EAB2C] text-white rounded text-sm hover:bg-green-800"
                 >
-                  Update Availability
+                  Update Rates & Availability
                 </button>
               </div>
             </div>
@@ -451,9 +453,33 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Update Availability</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Update Rates & Availability</h3>
               {modalError && <div className="text-red-600 text-sm mb-3">{modalError}</div>}
               <form onSubmit={handleUpdateAvailability} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Hourly Rate (£)</label>
+                    <input
+                      type="number"
+                      value={availabilityForm.hourlyRate}
+                      onChange={(e) => setAvailabilityForm({...availabilityForm, hourlyRate: e.target.value})}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Daily Rate (£)</label>
+                    <input
+                      type="number"
+                      value={availabilityForm.dailyRate}
+                      onChange={(e) => setAvailabilityForm({...availabilityForm, dailyRate: e.target.value})}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Availability Status</label>
                   <select
@@ -839,14 +865,6 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
       ? freelancer.paymentPreferences[0] || ''
       : (freelancer?.paymentPreferences || ''),
     paymentOther: freelancer?.paymentOther || '',
-
-    // HR Module fields
-    hourlyRate: freelancer?.hourlyRate || 0,
-    dailyRate: freelancer?.dailyRate || 0,
-    availability: freelancer?.availability || 'available',
-    availabilityNotes: freelancer?.availabilityNotes || '',
-    contractRenewalDate: freelancer?.contractRenewalDate || '',
-    contractStatus: freelancer?.contractStatus || 'active',
   });
 
   // Options for select/multiselect fields
@@ -1372,70 +1390,6 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
           )}
         </div>
 
-        {/* Section 8: HR Module Information */}
-        <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
-          <h3 className="text-xl font-bold mb-4 text-[#2EAB2C] flex items-center gap-2"><span className="inline-block w-2 h-2 bg-[#2EAB2C] rounded-full"></span>HR Information</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <input 
-              name="hourlyRate" 
-              type="number" 
-              placeholder="Hourly Rate (£)" 
-              value={form.hourlyRate} 
-              onChange={handleChange} 
-              className="w-full px-4 py-2 border rounded" 
-            />
-            <input 
-              name="dailyRate" 
-              type="number" 
-              placeholder="Daily Rate (£)" 
-              value={form.dailyRate} 
-              onChange={handleChange} 
-              className="w-full px-4 py-2 border rounded" 
-            />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block mb-2 font-semibold">Availability</label>
-              <select
-                name="availability"
-                value={form.availability}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded"
-              >
-                <option value="available">Available</option>
-                <option value="busy">Busy</option>
-                <option value="unavailable">Unavailable</option>
-              </select>
-            </div>
-          </div>
-          <textarea 
-            name="availabilityNotes" 
-            placeholder="Availability Notes" 
-            value={form.availabilityNotes} 
-            onChange={handleChange} 
-            className="w-full px-4 py-2 border rounded mb-4" 
-          />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <input 
-              name="contractRenewalDate" 
-              type="date" 
-              placeholder="Contract Renewal Date" 
-              value={formatDateForInput(form.contractRenewalDate)} 
-              onChange={handleChange} 
-              className="w-full px-4 py-2 border rounded" 
-            />
-            <select
-              name="contractStatus"
-              value={form.contractStatus}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded"
-            >
-              <option value="active">Active</option>
-              <option value="expired">Expired</option>
-              <option value="pending_renewal">Pending Renewal</option>
-            </select>
-          </div>
-        </div>
         <button
           type="submit"
           className="w-full bg-gradient-to-r from-[#2EAB2C] to-green-600 text-white py-3 rounded-xl shadow-lg hover:from-green-700 hover:to-green-800 font-extrabold text-lg tracking-wide transition-all duration-200"

@@ -371,10 +371,10 @@ const submitFreelancerPublicForm = async (req, res) => {
 // Update freelancer availability
 const updateAvailability = async (req, res) => {
   try {
-    const { availability, availabilityNotes } = req.body;
+    const { hourlyRate, dailyRate, availability, availabilityNotes } = req.body;
     const freelancer = await Freelancer.findByIdAndUpdate(
       req.params.id,
-      { availability, availabilityNotes, updated_at: new Date() },
+      { hourlyRate, dailyRate, availability, availabilityNotes, updated_at: new Date() },
       { new: true }
     );
     if (!freelancer) return res.status(404).json({ msg: 'Freelancer not found' });
