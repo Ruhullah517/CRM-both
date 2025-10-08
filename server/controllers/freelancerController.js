@@ -418,6 +418,30 @@ const addComplianceDocument = async (req, res) => {
   }
 };
 
+// Delete compliance document
+const deleteComplianceDocument = async (req, res) => {
+  try {
+    const { id, documentIndex } = req.params;
+    
+    const freelancer = await Freelancer.findById(id);
+    if (!freelancer) return res.status(404).json({ msg: 'Freelancer not found' });
+    
+    if (!freelancer.complianceDocuments || freelancer.complianceDocuments.length <= documentIndex) {
+      return res.status(404).json({ msg: 'Document not found' });
+    }
+    
+    // Remove the document at the specified index
+    freelancer.complianceDocuments.splice(documentIndex, 1);
+    freelancer.updated_at = new Date();
+    
+    await freelancer.save();
+    res.json(freelancer);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 // Add work history entry
 const addWorkHistory = async (req, res) => {
   try {
@@ -516,6 +540,7 @@ module.exports = {
   deleteFreelancer,
   updateAvailability,
   addComplianceDocument,
+  deleteComplianceDocument,
   addWorkHistory,
   getExpiringCompliance,
   updateContractRenewal,

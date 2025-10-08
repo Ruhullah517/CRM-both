@@ -10,6 +10,7 @@ const {
   submitFreelancerPublicForm,
   updateAvailability,
   addComplianceDocument,
+  deleteComplianceDocument,
   addWorkHistory,
   getExpiringCompliance,
   updateContractRenewal,
@@ -27,6 +28,7 @@ router.put('/:id', authenticate, authorize('admin', 'manager', 'staff'), freelan
 router.put('/:id/availability', authenticate, authorize('admin', 'manager', 'staff'), updateAvailability);
 router.put('/:id/contract-renewal', authenticate, authorize('admin', 'manager', 'staff'), updateContractRenewal);
 router.post('/:id/compliance-documents', authenticate, authorize('admin', 'manager', 'staff'), freelancerUploads, addComplianceDocument);
+router.delete('/:id/compliance-documents/:documentIndex', authenticate, authorize('admin', 'manager', 'staff'), deleteComplianceDocument);
 router.post('/:id/work-history', authenticate, authorize('admin', 'manager', 'staff'), addWorkHistory);
 router.delete('/:id', authenticate, authorize('admin', 'manager'), deleteFreelancer);
 

@@ -17,6 +17,7 @@ import {
   deleteFreelancer,
   updateFreelancerAvailability,
   addComplianceDocument,
+  deleteComplianceDocument,
   addWorkHistory,
   getExpiringCompliance,
   updateContractRenewal,
@@ -231,6 +232,19 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
     setSaving(false);
   };
 
+  const handleDeleteCompliance = async (documentIndex) => {
+    if (!window.confirm('Are you sure you want to delete this document?')) return;
+    
+    setSaving(true);
+    try {
+      await deleteComplianceDocument(freelancer._id, documentIndex);
+      window.location.reload(); // Reload to show updated data
+    } catch (err) {
+      alert('Failed to delete document');
+    }
+    setSaving(false);
+  };
+
   const handleAddWorkHistory = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -432,6 +446,12 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
                             Upload Renewal
                           </button>
                         )}
+                        <button
+                          onClick={() => handleDeleteCompliance(index)}
+                          className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded hover:bg-red-200"
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
                   </div>

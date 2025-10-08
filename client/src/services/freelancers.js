@@ -86,6 +86,11 @@ export const addComplianceDocument = async (id, documentData) => {
   return response.data;
 };
 
+export const deleteComplianceDocument = async (id, documentIndex) => {
+  const response = await api.delete(`/freelancers/${id}/compliance-documents/${documentIndex}`);
+  return response.data;
+};
+
 export const addWorkHistory = async (id, workHistoryData) => {
   const response = await api.post(`/freelancers/${id}/work-history`, workHistoryData);
   return response.data;
