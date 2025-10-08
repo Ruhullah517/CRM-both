@@ -601,10 +601,11 @@ const HRModule = () => {
     </div>
   );
 
-  const WorkTrackingTab = () => {
+   const WorkTrackingTab = () => {
     const [showAddWorkModal, setShowAddWorkModal] = useState(false);
     const [selectedFreelancer, setSelectedFreelancer] = useState(null);
     const [workForm, setWorkForm] = useState({
+      freelancerId: '',
       assignment: '',
       startDate: '',
       endDate: '',
@@ -616,9 +617,25 @@ const HRModule = () => {
     const handleAddWork = async (e) => {
       e.preventDefault();
       try {
-        await addWorkHistory(selectedFreelancer._id, workForm);
+        const freelancerId = workForm.freelancerId || selectedFreelancer?._id;
+        if (!freelancerId) {
+          setError('Please select a freelancer');
+          return;
+        }
+        
+        await addWorkHistory(freelancerId, {
+          assignment: workForm.assignment,
+          startDate: workForm.startDate,
+          endDate: workForm.endDate,
+          hours: workForm.hours,
+          rate: workForm.rate,
+          notes: workForm.notes
+        });
+        
         setShowAddWorkModal(false);
+        setSelectedFreelancer(null);
         setWorkForm({
+          freelancerId: '',
           assignment: '',
           startDate: '',
           endDate: '',
@@ -630,6 +647,35 @@ const HRModule = () => {
       } catch (err) {
         setError('Failed to add work history');
       }
+    };
+
+    const handleOpenWorkModal = (freelancer = null) => {
+      if (freelancer) {
+        // Opened from row - pre-select freelancer and rate
+        setSelectedFreelancer(freelancer);
+        setWorkForm({
+          freelancerId: freelancer._id,
+          assignment: '',
+          startDate: '',
+          endDate: '',
+          hours: '',
+          rate: freelancer.hourlyRate || '',
+          notes: ''
+        });
+      } else {
+        // Opened from top button - let user select
+        setSelectedFreelancer(null);
+        setWorkForm({
+          freelancerId: '',
+          assignment: '',
+          startDate: '',
+          endDate: '',
+          hours: '',
+          rate: '',
+          notes: ''
+        });
+      }
+      setShowAddWorkModal(true);
     };
 
     // Calculate total hours and earnings for each freelancer
@@ -656,9 +702,9 @@ const HRModule = () => {
              </p>
            </div>
            <button
-             onClick={() => setShowAddWorkModal(true)}
+             onClick={() => handleOpenWorkModal(null)}
              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-[#2EAB2C] hover:bg-green-700"
-             title="Add a new work entry for a freelancer"
+             title="Add a new work entry for any freelancer"
            >
              <PlusIcon className="h-4 w-4 mr-2" />
              Add Work Entry
@@ -748,15 +794,13 @@ const HRModule = () => {
                       <div className="text-sm font-medium text-gray-900">{freelancer.activeAssignments}</div>
                       <div className="text-xs text-gray-500">Active Jobs</div>
                     </div>
-                    <button
-                      onClick={() => {
-                        setSelectedFreelancer(freelancer);
-                        setShowAddWorkModal(true);
-                      }}
-                      className="text-[#2EAB2C] hover:text-green-700"
-                    >
-                      <PlusIcon className="h-4 w-4" />
-                    </button>
+                     <button
+                       onClick={() => handleOpenWorkModal(freelancer)}
+                       className="text-[#2EAB2C] hover:text-green-700"
+                       title="Add work entry for this freelancer"
+                     >
+                       <PlusIcon className="h-4 w-4" />
+                     </button>
                   </div>
                 </div>
               </li>
@@ -764,25 +808,53 @@ const HRModule = () => {
           </ul>
         </div>
 
-        {/* Add Work Modal */}
-        {showAddWorkModal && (
-          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-              <div className="mt-3">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Add Work Entry {selectedFreelancer && `for ${selectedFreelancer.fullName}`}
-                </h3>
-                <form onSubmit={handleAddWork} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">Assignment</label>
-                    <input
-                      type="text"
-                      value={workForm.assignment}
-                      onChange={(e) => setWorkForm({...workForm, assignment: e.target.value})}
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
-                      required
-                    />
-                  </div>
+         {/* Add Work Modal */}
+         {showAddWorkModal && (
+           <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+             <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+               <div className="mt-3">
+                 <h3 className="text-lg font-medium text-gray-900 mb-4">
+                   {selectedFreelancer ? `Add Work Entry for ${selectedFreelancer.fullName}` : 'Add Work Entry'}
+                 </h3>
+                 <form onSubmit={handleAddWork} className="space-y-4">
+                   {/* Freelancer Selection (only shown when opened from top button) */}
+                   {!selectedFreelancer && (
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700">Select Freelancer *</label>
+                       <select
+                         value={workForm.freelancerId}
+                         onChange={(e) => {
+                           const selected = freelancers.find(f => f._id === e.target.value);
+                           setWorkForm({
+                             ...workForm, 
+                             freelancerId: e.target.value,
+                             rate: selected?.hourlyRate || ''
+                           });
+                         }}
+                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                         required
+                       >
+                         <option value="">-- Choose Freelancer --</option>
+                         {freelancers.map((f) => (
+                           <option key={f._id} value={f._id}>
+                             {f.fullName} ({f.role})
+                           </option>
+                         ))}
+                       </select>
+                     </div>
+                   )}
+                   
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700">Assignment Name *</label>
+                     <input
+                       type="text"
+                       value={workForm.assignment}
+                       onChange={(e) => setWorkForm({...workForm, assignment: e.target.value})}
+                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                       placeholder="e.g., Form F Assessment - Case #123"
+                       required
+                     />
+                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Start Date</label>
@@ -804,30 +876,49 @@ const HRModule = () => {
                       />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Hours</label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={workForm.hours}
-                        onChange={(e) => setWorkForm({...workForm, hours: e.target.value})}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">Rate (£/hr)</label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={workForm.rate}
-                        onChange={(e) => setWorkForm({...workForm, rate: e.target.value})}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
-                        required
-                      />
-                    </div>
-                  </div>
+                   <div className="grid grid-cols-2 gap-4">
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700">Hours *</label>
+                       <input
+                         type="number"
+                         step="0.5"
+                         value={workForm.hours}
+                         onChange={(e) => setWorkForm({...workForm, hours: e.target.value})}
+                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                         placeholder="e.g., 8"
+                         required
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700">Rate (£/hr) *</label>
+                       <input
+                         type="number"
+                         step="0.01"
+                         value={workForm.rate}
+                         onChange={(e) => setWorkForm({...workForm, rate: e.target.value})}
+                         className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                         placeholder="e.g., 45.00"
+                         required
+                       />
+                       {workForm.rate && (
+                         <p className="mt-1 text-xs text-gray-500">
+                           Rate auto-filled from freelancer profile
+                         </p>
+                       )}
+                     </div>
+                   </div>
+                   
+                   {/* Total Amount Display */}
+                   {workForm.hours && workForm.rate && (
+                     <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                       <div className="flex justify-between items-center">
+                         <span className="text-sm font-medium text-gray-700">Total Amount:</span>
+                         <span className="text-lg font-bold text-[#2EAB2C]">
+                           £{(parseFloat(workForm.hours) * parseFloat(workForm.rate)).toFixed(2)}
+                         </span>
+                       </div>
+                     </div>
+                   )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Notes</label>
                     <textarea
@@ -837,21 +928,24 @@ const HRModule = () => {
                       className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
                     />
                   </div>
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={() => setShowAddWorkModal(false)}
-                      className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2EAB2C] hover:bg-green-700"
-                    >
-                      Add Work Entry
-                    </button>
-                  </div>
+                   <div className="flex justify-end space-x-3">
+                     <button
+                       type="button"
+                       onClick={() => {
+                         setShowAddWorkModal(false);
+                         setSelectedFreelancer(null);
+                       }}
+                       className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                     >
+                       Cancel
+                     </button>
+                     <button
+                       type="submit"
+                       className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2EAB2C] hover:bg-green-700"
+                     >
+                       Add Work Entry
+                     </button>
+                   </div>
                 </form>
               </div>
             </div>
