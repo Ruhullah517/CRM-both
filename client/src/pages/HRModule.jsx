@@ -21,6 +21,7 @@ import {
   addComplianceDocument,
   addWorkHistory,
   deleteFreelancer,
+  updateFreelancerStatus,
 } from '../services/freelancers';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
@@ -88,6 +89,15 @@ const HRModule = () => {
       loadData(); // Refresh data
     } catch (err) {
       setError('Failed to update availability');
+    }
+  };
+
+  const handleUpdateStatus = async (freelancerId, status) => {
+    try {
+      await updateFreelancerStatus(freelancerId, status);
+      loadData(); // Refresh data
+    } catch (err) {
+      setError('Failed to update status');
     }
   };
 
@@ -391,15 +401,35 @@ const HRModule = () => {
                       }`}>
                         {freelancer.availability}
                       </span>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        freelancer.status === 'approved' 
-                          ? 'bg-green-100 text-green-800'
-                          : freelancer.status === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {freelancer.status}
-                      </span>
+                      <div className="flex items-center space-x-1">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          freelancer.status === 'approved' 
+                            ? 'bg-green-100 text-green-800'
+                            : freelancer.status === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {freelancer.status}
+                        </span>
+                        {freelancer.status === 'pending' && (
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => handleUpdateStatus(freelancer._id, 'approved')}
+                              className="text-green-600 hover:text-green-800"
+                              title="Approve freelancer"
+                            >
+                              <CheckCircleIcon className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={() => handleUpdateStatus(freelancer._id, 'rejected')}
+                              className="text-red-600 hover:text-red-800"
+                              title="Reject freelancer"
+                            >
+                              <XCircleIcon className="h-4 w-4" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                      <div className="flex space-x-2">
                        <button

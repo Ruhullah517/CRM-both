@@ -100,3 +100,8 @@ export const updateContractRenewal = async (id, renewalData) => {
   const response = await api.put(`/freelancers/${id}/contract-renewal`, renewalData);
   return response.data;
 };
+
+export const updateFreelancerStatus = async (id, status) => {
+  const response = await api.put(`/recruitment/freelancer-applications/${id}/status`, { status });
+  return response.data;
+};
