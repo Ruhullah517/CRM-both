@@ -6,6 +6,9 @@ import {
   UserCircleIcon,
   XMarkIcon,
   PaperClipIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { 
   getFreelancers, 
@@ -16,7 +19,8 @@ import {
   addComplianceDocument,
   addWorkHistory,
   getExpiringCompliance,
-  updateContractRenewal
+  updateContractRenewal,
+  updateFreelancerStatus
 } from '../services/freelancers';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
@@ -755,6 +759,7 @@ function formatDateForInput(date) {
 }
 
 const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
+  const [approving, setApproving] = useState(false);
   const [form, setForm] = useState({
     _id: freelancer?._id || undefined,
     // Section 1: Personal Information
@@ -842,7 +847,6 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
     availabilityNotes: freelancer?.availabilityNotes || '',
     contractRenewalDate: freelancer?.contractRenewalDate || '',
     contractStatus: freelancer?.contractStatus || 'active',
-    status: freelancer?.status || 'pending',
   });
 
   // Options for select/multiselect fields
@@ -889,10 +893,123 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
     onSave(form); // Send the full form, including file objects
   }
 
+  const handleApprovalStatusChange = async (newStatus) => {
+    if (!freelancer?._id) return;
+    
+    const confirmMessage = newStatus === 'approved' 
+      ? 'Are you sure you want to approve this freelancer? They will become active in the system.'
+      : 'Are you sure you want to reject this freelancer application?';
+      
+    if (!window.confirm(confirmMessage)) return;
+    
+    setApproving(true);
+    try {
+      await updateFreelancerStatus(freelancer._id, newStatus);
+      alert(newStatus === 'approved' ? 'Freelancer approved successfully!' : 'Freelancer rejected.');
+      window.location.reload(); // Reload to show updated status
+    } catch (error) {
+      alert('Failed to update status. Please try again.');
+      console.error(error);
+    } finally {
+      setApproving(false);
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-4 bg-gradient-to-br from-green-50 to-white rounded-2xl shadow-lg mt-8">
       <button onClick={onBack} className="mb-6 text-[#2EAB2C] hover:underline font-semibold">&larr; Back</button>
       <h2 className="text-3xl font-extrabold mb-8 text-center text-[#2EAB2C] tracking-tight drop-shadow">{freelancer ? "Edit" : "Add"} Freelancer</h2>
+      
+      {/* Approval Status Banner - Only show for existing freelancers */}
+      {freelancer && (
+        <div className={`mb-6 rounded-lg border-l-4 p-4 ${
+          freelancer.status === 'pending' 
+            ? 'bg-yellow-50 border-yellow-400' 
+            : freelancer.status === 'approved'
+            ? 'bg-green-50 border-green-400'
+            : 'bg-red-50 border-red-400'
+        }`}>
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              {freelancer.status === 'pending' && (
+                <ExclamationTriangleIcon className="h-6 w-6 text-yellow-600" />
+              )}
+              {freelancer.status === 'approved' && (
+                <CheckCircleIcon className="h-6 w-6 text-green-600" />
+              )}
+              {freelancer.status === 'rejected' && (
+                <XCircleIcon className="h-6 w-6 text-red-600" />
+              )}
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className={`text-sm font-semibold ${
+                freelancer.status === 'pending' 
+                  ? 'text-yellow-800' 
+                  : freelancer.status === 'approved'
+                  ? 'text-green-800'
+                  : 'text-red-800'
+              }`}>
+                {freelancer.status === 'pending' && 'Approval Pending'}
+                {freelancer.status === 'approved' && 'Approved & Active'}
+                {freelancer.status === 'rejected' && 'Application Rejected'}
+              </h3>
+              <div className={`mt-1 text-sm ${
+                freelancer.status === 'pending' 
+                  ? 'text-yellow-700' 
+                  : freelancer.status === 'approved'
+                  ? 'text-green-700'
+                  : 'text-red-700'
+              }`}>
+                {freelancer.status === 'pending' && (
+                  <p>This freelancer is awaiting approval. Review their information below and approve or reject their application.</p>
+                )}
+                {freelancer.status === 'approved' && (
+                  <p>This freelancer has been approved and is active in the system. They will appear in the "Active Freelancers" dashboard count.</p>
+                )}
+                {freelancer.status === 'rejected' && (
+                  <p>This application was rejected. You can approve them if this was done in error.</p>
+                )}
+              </div>
+              {freelancer.status === 'pending' && (
+                <div className="mt-4 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleApprovalStatusChange('approved')}
+                    disabled={approving}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                  >
+                    <CheckCircleIcon className="h-5 w-5 mr-2" />
+                    {approving ? 'Approving...' : 'Approve Freelancer'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApprovalStatusChange('rejected')}
+                    disabled={approving}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  >
+                    <XCircleIcon className="h-5 w-5 mr-2" />
+                    {approving ? 'Rejecting...' : 'Reject Application'}
+                  </button>
+                </div>
+              )}
+              {freelancer.status === 'rejected' && (
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={() => handleApprovalStatusChange('approved')}
+                    disabled={approving}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                  >
+                    <CheckCircleIcon className="h-5 w-5 mr-2" />
+                    {approving ? 'Approving...' : 'Approve Freelancer'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      
       <form className="space-y-8" onSubmit={handleSubmit}>
         {/* Section 1: Personal Information */}
         <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
@@ -1288,19 +1405,6 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
                 <option value="available">Available</option>
                 <option value="busy">Busy</option>
                 <option value="unavailable">Unavailable</option>
-              </select>
-            </div>
-            <div>
-              <label className="block mb-2 font-semibold">Approval Status</label>
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded"
-              >
-                <option value="pending">Pending Review</option>
-                <option value="approved">Approved (Active)</option>
-                <option value="rejected">Rejected</option>
               </select>
             </div>
           </div>
