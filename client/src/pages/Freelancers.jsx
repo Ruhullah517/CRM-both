@@ -364,34 +364,79 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
     </div>
           {freelancer.complianceDocuments && freelancer.complianceDocuments.length > 0 ? (
             <div className="grid gap-4">
-              {freelancer.complianceDocuments.map((doc, index) => (
-                <div key={index} className="border rounded p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h4 className="font-semibold">{doc.name}</h4>
-                      <p className="text-sm text-gray-600">Type: {doc.type}</p>
-                      {doc.expiryDate && (
-                        <p className="text-sm text-gray-600">
-                          Expires: {formatDate(doc.expiryDate)}
-                          {new Date(doc.expiryDate) < new Date() && (
-                            <span className="ml-2 text-red-600 font-semibold">(EXPIRED)</span>
-                          )}
-                        </p>
-                      )}
+              {freelancer.complianceDocuments.map((doc, index) => {
+                const expiryDate = doc.expiryDate ? new Date(doc.expiryDate) : null;
+                const today = new Date();
+                const thirtyDaysFromNow = new Date();
+                thirtyDaysFromNow.setDate(today.getDate() + 30);
+                
+                const isExpired = expiryDate && expiryDate < today;
+                const isExpiringSoon = expiryDate && !isExpired && expiryDate <= thirtyDaysFromNow;
+                
+                return (
+                  <div key={index} className={`border rounded p-4 ${
+                    isExpired ? 'bg-red-50 border-red-300' : 
+                    isExpiringSoon ? 'bg-yellow-50 border-yellow-300' : 
+                    'bg-white'
+                  }`}>
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h4 className="font-semibold">{doc.name}</h4>
+                        <p className="text-sm text-gray-600">Type: {doc.type}</p>
+                        {doc.expiryDate && (
+                          <p className="text-sm text-gray-600">
+                            Expires: {formatDate(doc.expiryDate)}
+                            {isExpired && (
+                              <span className="ml-2 text-red-600 font-semibold">(EXPIRED)</span>
+                            )}
+                            {isExpiringSoon && (
+                              <span className="ml-2 text-yellow-600 font-semibold">(EXPIRING SOON)</span>
+                            )}
+                          </p>
+                        )}
+                        {isExpired && (
+                          <p className="text-sm text-red-600 mt-2 font-medium">
+                            ⚠️ This document has expired. Please upload a renewed version.
+                          </p>
+                        )}
+                        {isExpiringSoon && (
+                          <p className="text-sm text-yellow-700 mt-2 font-medium">
+                            ⚠️ This document will expire soon. Consider uploading a renewed version.
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2 ml-4">
+                        {doc.fileUrl && (
+                          <a 
+                            href={backendBaseUrl + doc.fileUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                          >
+                            View File
+                          </a>
+                        )}
+                        {(isExpired || isExpiringSoon) && (
+                          <button
+                            onClick={() => {
+                              setComplianceForm({
+                                name: doc.name,
+                                type: doc.type,
+                                expiryDate: '',
+                                file: null
+                              });
+                              setShowComplianceModal(true);
+                            }}
+                            className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                          >
+                            Upload Renewal
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {doc.fileUrl && (
-                      <a 
-                        href={backendBaseUrl + doc.fileUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-blue-700 hover:underline"
-                      >
-                        View File
-                      </a>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <p className="text-gray-600">No compliance documents uploaded yet.</p>
