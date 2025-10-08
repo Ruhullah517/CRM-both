@@ -842,6 +842,7 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
     availabilityNotes: freelancer?.availabilityNotes || '',
     contractRenewalDate: freelancer?.contractRenewalDate || '',
     contractStatus: freelancer?.contractStatus || 'active',
+    status: freelancer?.status || 'pending',
   });
 
   // Options for select/multiselect fields
@@ -1275,18 +1276,33 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
               className="w-full px-4 py-2 border rounded" 
             />
           </div>
-          <div className="mb-4">
-            <label className="block mb-2 font-semibold">Availability</label>
-            <select
-              name="availability"
-              value={form.availability}
-              onChange={handleChange}
-              className="w-full px-4 py-2 border rounded"
-            >
-              <option value="available">Available</option>
-              <option value="busy">Busy</option>
-              <option value="unavailable">Unavailable</option>
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block mb-2 font-semibold">Availability</label>
+              <select
+                name="availability"
+                value={form.availability}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded"
+              >
+                <option value="available">Available</option>
+                <option value="busy">Busy</option>
+                <option value="unavailable">Unavailable</option>
+              </select>
+            </div>
+            <div>
+              <label className="block mb-2 font-semibold">Approval Status</label>
+              <select
+                name="status"
+                value={form.status}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded"
+              >
+                <option value="pending">Pending Review</option>
+                <option value="approved">Approved (Active)</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
           </div>
           <textarea 
             name="availabilityNotes" 
