@@ -75,10 +75,10 @@ export const addComplianceDocument = async (id, documentData) => {
   formData.append('type', documentData.type);
   formData.append('expiryDate', documentData.expiryDate);
   if (documentData.file) {
-    formData.append('file', documentData.file);
+    formData.append('complianceFile', documentData.file);
   }
 
-  const response = await api.post(`/freelancers/${id}/compliance`, formData, {
+  const response = await api.post(`/freelancers/${id}/compliance-documents`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
