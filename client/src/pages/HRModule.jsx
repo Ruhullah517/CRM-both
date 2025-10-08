@@ -604,6 +604,7 @@ const HRModule = () => {
    const WorkTrackingTab = () => {
     const [showAddWorkModal, setShowAddWorkModal] = useState(false);
     const [selectedFreelancer, setSelectedFreelancer] = useState(null);
+    const [submittingWork, setSubmittingWork] = useState(false);
     const [workForm, setWorkForm] = useState({
       freelancerId: '',
       assignment: '',
@@ -616,10 +617,12 @@ const HRModule = () => {
 
     const handleAddWork = async (e) => {
       e.preventDefault();
+      setSubmittingWork(true);
       try {
         const freelancerId = workForm.freelancerId || selectedFreelancer?._id;
         if (!freelancerId) {
           setError('Please select a freelancer');
+          setSubmittingWork(false);
           return;
         }
         
@@ -643,9 +646,11 @@ const HRModule = () => {
           rate: '',
           notes: ''
         });
+        setSubmittingWork(false);
         loadData();
       } catch (err) {
         setError('Failed to add work history');
+        setSubmittingWork(false);
       }
     };
 
@@ -941,9 +946,10 @@ const HRModule = () => {
                      </button>
                      <button
                        type="submit"
-                       className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2EAB2C] hover:bg-green-700"
+                       disabled={submittingWork}
+                       className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2EAB2C] hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                      >
-                       Add Work Entry
+                       {submittingWork ? 'Adding...' : 'Add Work Entry'}
                      </button>
                    </div>
                 </form>

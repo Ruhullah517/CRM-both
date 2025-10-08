@@ -141,11 +141,110 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
   const [showComplianceModal, setShowComplianceModal] = useState(false);
   const [showWorkHistoryModal, setShowWorkHistoryModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [modalError, setModalError] = useState(null);
+
+  // Form states
+  const [availabilityForm, setAvailabilityForm] = useState({
+    availability: freelancer.availability || 'available',
+    availabilityNotes: freelancer.availabilityNotes || ''
+  });
+
+  const [contractForm, setContractForm] = useState({
+    contractRenewalDate: freelancer.contractRenewalDate ? formatDateForInput(freelancer.contractRenewalDate) : '',
+    contractStatus: freelancer.contractStatus || 'active'
+  });
+
+  const [complianceForm, setComplianceForm] = useState({
+    name: '',
+    type: 'DBS Certificate',
+    expiryDate: '',
+    file: null
+  });
+
+  const [workHistoryForm, setWorkHistoryForm] = useState({
+    assignment: '',
+    startDate: '',
+    endDate: '',
+    hours: '',
+    rate: freelancer.hourlyRate || '',
+    notes: ''
+  });
 
   const availabilityColors = {
     available: 'bg-green-100 text-green-800',
     busy: 'bg-yellow-100 text-yellow-800',
     unavailable: 'bg-red-100 text-red-800'
+  };
+
+  const handleUpdateAvailability = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setModalError(null);
+    try {
+      await updateFreelancerAvailability(freelancer._id, availabilityForm);
+      setShowAvailabilityModal(false);
+      window.location.reload(); // Reload to show updated data
+    } catch (err) {
+      setModalError('Failed to update availability');
+    }
+    setSaving(false);
+  };
+
+  const handleUpdateContract = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setModalError(null);
+    try {
+      await updateContractRenewal(freelancer._id, contractForm);
+      setShowContractModal(false);
+      window.location.reload();
+    } catch (err) {
+      setModalError('Failed to update contract');
+    }
+    setSaving(false);
+  };
+
+  const handleAddCompliance = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setModalError(null);
+    try {
+      await addComplianceDocument(freelancer._id, complianceForm);
+      setShowComplianceModal(false);
+      setComplianceForm({
+        name: '',
+        type: 'DBS Certificate',
+        expiryDate: '',
+        file: null
+      });
+      window.location.reload();
+    } catch (err) {
+      setModalError('Failed to add compliance document');
+    }
+    setSaving(false);
+  };
+
+  const handleAddWorkHistory = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setModalError(null);
+    try {
+      await addWorkHistory(freelancer._id, workHistoryForm);
+      setShowWorkHistoryModal(false);
+      setWorkHistoryForm({
+        assignment: '',
+        startDate: '',
+        endDate: '',
+        hours: '',
+        rate: freelancer.hourlyRate || '',
+        notes: ''
+      });
+      window.location.reload();
+    } catch (err) {
+      setModalError('Failed to add work history');
+    }
+    setSaving(false);
   };
 
   return (
@@ -342,6 +441,305 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
       <button onClick={onEdit} className="px-4 py-2 rounded bg-[#2EAB2C] text-white font-semibold hover:bg-green-800">Update</button>
       <button onClick={() => onDelete(freelancer)} className="px-4 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">Delete</button>
     </div>
+
+      {/* Update Availability Modal */}
+      {showAvailabilityModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Update Availability</h3>
+              {modalError && <div className="text-red-600 text-sm mb-3">{modalError}</div>}
+              <form onSubmit={handleUpdateAvailability} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Availability Status</label>
+                  <select
+                    value={availabilityForm.availability}
+                    onChange={(e) => setAvailabilityForm({...availabilityForm, availability: e.target.value})}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                  >
+                    <option value="available">Available</option>
+                    <option value="busy">Busy</option>
+                    <option value="unavailable">Unavailable</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Notes</label>
+                  <textarea
+                    value={availabilityForm.availabilityNotes}
+                    onChange={(e) => setAvailabilityForm({...availabilityForm, availabilityNotes: e.target.value})}
+                    rows={3}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAvailabilityModal(false);
+                      setModalError(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2EAB2C] hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Update'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Contract Modal */}
+      {showContractModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Update Contract Information</h3>
+              {modalError && <div className="text-red-600 text-sm mb-3">{modalError}</div>}
+              <form onSubmit={handleUpdateContract} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contract Status</label>
+                  <select
+                    value={contractForm.contractStatus}
+                    onChange={(e) => setContractForm({...contractForm, contractStatus: e.target.value})}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                  >
+                    <option value="active">Active</option>
+                    <option value="expired">Expired</option>
+                    <option value="pending_renewal">Pending Renewal</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Renewal Date</label>
+                  <input
+                    type="date"
+                    value={contractForm.contractRenewalDate}
+                    onChange={(e) => setContractForm({...contractForm, contractRenewalDate: e.target.value})}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowContractModal(false);
+                      setModalError(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2EAB2C] hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Update'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Compliance Document Modal */}
+      {showComplianceModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Add Compliance Document</h3>
+              {modalError && <div className="text-red-600 text-sm mb-3">{modalError}</div>}
+              <form onSubmit={handleAddCompliance} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Document Name</label>
+                  <input
+                    type="text"
+                    value={complianceForm.name}
+                    onChange={(e) => setComplianceForm({...complianceForm, name: e.target.value})}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                    placeholder="e.g., DBS Certificate 2024"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Document Type</label>
+                  <select
+                    value={complianceForm.type}
+                    onChange={(e) => setComplianceForm({...complianceForm, type: e.target.value})}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                  >
+                    <option value="DBS Certificate">DBS Certificate</option>
+                    <option value="Qualification">Qualification</option>
+                    <option value="Insurance">Insurance</option>
+                    <option value="Training Certificate">Training Certificate</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Expiry Date</label>
+                  <input
+                    type="date"
+                    value={complianceForm.expiryDate}
+                    onChange={(e) => setComplianceForm({...complianceForm, expiryDate: e.target.value})}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Upload File</label>
+                  <input
+                    type="file"
+                    onChange={(e) => setComplianceForm({...complianceForm, file: e.target.files[0]})}
+                    className="mt-1 block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-semibold
+                      file:bg-[#2EAB2C] file:text-white
+                      hover:file:bg-green-700"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowComplianceModal(false);
+                      setModalError(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2EAB2C] hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Adding...' : 'Add Document'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Work History Modal */}
+      {showWorkHistoryModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Add Work Entry</h3>
+              {modalError && <div className="text-red-600 text-sm mb-3">{modalError}</div>}
+              <form onSubmit={handleAddWorkHistory} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Assignment Name</label>
+                  <input
+                    type="text"
+                    value={workHistoryForm.assignment}
+                    onChange={(e) => setWorkHistoryForm({...workHistoryForm, assignment: e.target.value})}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                    placeholder="e.g., Form F Assessment - Case #123"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                    <input
+                      type="date"
+                      value={workHistoryForm.startDate}
+                      onChange={(e) => setWorkHistoryForm({...workHistoryForm, startDate: e.target.value})}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">End Date</label>
+                    <input
+                      type="date"
+                      value={workHistoryForm.endDate}
+                      onChange={(e) => setWorkHistoryForm({...workHistoryForm, endDate: e.target.value})}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Hours</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      value={workHistoryForm.hours}
+                      onChange={(e) => setWorkHistoryForm({...workHistoryForm, hours: e.target.value})}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                      placeholder="e.g., 8"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Rate (£/hr)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={workHistoryForm.rate}
+                      onChange={(e) => setWorkHistoryForm({...workHistoryForm, rate: e.target.value})}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                      placeholder="e.g., 45.00"
+                      required
+                    />
+                  </div>
+                </div>
+                {workHistoryForm.hours && workHistoryForm.rate && (
+                  <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-700">Total Amount:</span>
+                      <span className="text-lg font-bold text-[#2EAB2C]">
+                        £{(parseFloat(workHistoryForm.hours) * parseFloat(workHistoryForm.rate)).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Notes</label>
+                  <textarea
+                    value={workHistoryForm.notes}
+                    onChange={(e) => setWorkHistoryForm({...workHistoryForm, notes: e.target.value})}
+                    rows={3}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowWorkHistoryModal(false);
+                      setModalError(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2EAB2C] hover:bg-green-700 disabled:opacity-50"
+                  >
+                    {saving ? 'Adding...' : 'Add Entry'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
   </div>
 );
 };
