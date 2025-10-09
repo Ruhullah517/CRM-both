@@ -1534,37 +1534,39 @@ const TrainingEventForm = ({ event, users, freelancers, onSubmit, onCancel }) =>
                   </button>
                 </div>
                 
-                {/* Invoice Management Section */}
-                <div className="mt-6">
-                  <h3 className="font-semibold mb-3 text-gray-900">Invoice Management</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">Auto-Create Invoices</p>
-                        <p className="text-xs text-gray-600">Generate invoices for all confirmed bookings</p>
+                {/* Invoice Management Section - Only show if training is paid and has bookings */}
+                {event.price > 0 && event.bookings && event.bookings.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="font-semibold mb-3 text-gray-900">Invoice Management</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                          <p className="text-sm font-medium text-gray-900">Auto-Create Invoices</p>
+                          <p className="text-xs text-gray-600">Generate invoices for all confirmed bookings</p>
+                        </div>
+                        <button
+                          onClick={() => handleAutoCreateInvoices(event._id)}
+                          className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 flex items-center gap-1"
+                          disabled={creatingInvoices}
+                        >
+                          <DocumentCheckIcon className="w-4 h-4" />
+                          {creatingInvoices ? 'Creating...' : 'Create All'}
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleAutoCreateInvoices(event._id)}
-                        className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 flex items-center gap-1"
-                        disabled={creatingInvoices}
-                      >
-                        <DocumentCheckIcon className="w-4 h-4" />
-                        {creatingInvoices ? 'Creating...' : 'Create All'}
-                      </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-2 text-xs">
-                      <div className="bg-blue-50 p-2 rounded">
-                        <p className="font-medium text-blue-900">With Invoices</p>
-                        <p className="text-blue-700">{event.bookings?.filter(b => b.payment?.invoiceId).length || 0}</p>
-                      </div>
-                      <div className="bg-yellow-50 p-2 rounded">
-                        <p className="font-medium text-yellow-900">Pending Invoices</p>
-                        <p className="text-yellow-700">{event.bookings?.filter(b => !b.payment?.invoiceId && b.status === 'confirmed').length || 0}</p>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-blue-50 p-2 rounded">
+                          <p className="font-medium text-blue-900">With Invoices</p>
+                          <p className="text-blue-700">{event.bookings?.filter(b => b.payment?.invoiceId).length || 0}</p>
+                        </div>
+                        <div className="bg-yellow-50 p-2 rounded">
+                          <p className="font-medium text-yellow-900">Pending Invoices</p>
+                          <p className="text-yellow-700">{event.bookings?.filter(b => !b.payment?.invoiceId && b.status === 'confirmed').length || 0}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
                          </div>
            </div>
