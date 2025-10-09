@@ -5,6 +5,9 @@ export const getFreelancers = async () => {
   return response.data;
 };
 
+// Alias for getAllFreelancers
+export const getAllFreelancers = getFreelancers;
+
 export const getFreelancerById = async (id) => {
   const response = await api.get(`/freelancers/${id}`);
   return response.data;
