@@ -285,7 +285,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
       
       {/* Tabs */}
       <div className="flex border-b mb-6">
-        {['overview', 'hr', 'compliance', 'work-history'].map(tab => (
+        {['overview', 'hr', 'compliance', 'work-history', 'assignments'].map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -516,6 +516,111 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
           ) : (
             <p className="text-gray-600">No work history recorded yet.</p>
           )}
+        </div>
+      )}
+
+      {/* Assignments Tab */}
+      {activeTab === 'assignments' && (
+        <div className="space-y-6">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-blue-800">Current Assignments</h3>
+                <p className="mt-1 text-sm text-blue-700">
+                  This shows active assessments and training sessions assigned to {freelancer.fullName}. 
+                  To assign to new jobs, go to the Recruitment or Training modules.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Assessment Assignments */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Assessment Assignments
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Assessments where {freelancer.fullName} is assigned as the assessor
+            </p>
+            <div className="bg-gray-50 rounded p-4 text-center text-gray-500">
+              <p className="text-sm">
+                To view assigned assessments, check the Recruitment Pipeline module.
+              </p>
+              <a 
+                href="/recruitment" 
+                className="inline-block mt-2 text-[#2EAB2C] hover:text-green-700 font-medium"
+              >
+                Go to Recruitment →
+              </a>
+            </div>
+          </div>
+
+          {/* Training Assignments */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              Training Sessions
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Note: Training sessions are typically assigned to User accounts, not Freelancer profiles.
+            </p>
+            <div className="bg-gray-50 rounded p-4 text-center text-gray-500">
+              <p className="text-sm">
+                To assign to training events, check the Training Events module.
+              </p>
+              <a 
+                href="/training" 
+                className="inline-block mt-2 text-[#2EAB2C] hover:text-green-700 font-medium"
+              >
+                Go to Training →
+              </a>
+            </div>
+          </div>
+
+          {/* Work History Summary */}
+          <div className="bg-white shadow rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Recent Work
+            </h3>
+            {freelancer.workHistory && freelancer.workHistory.length > 0 ? (
+              <div className="space-y-3">
+                {freelancer.workHistory
+                  .filter(work => work.status === 'in_progress')
+                  .slice(0, 3)
+                  .map((work, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">{work.assignment}</p>
+                        <p className="text-sm text-gray-600">
+                          Started: {formatDate(work.startDate)} • {work.hours} hours logged
+                        </p>
+                      </div>
+                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                        In Progress
+                      </span>
+                    </div>
+                  ))}
+                {freelancer.workHistory.filter(work => work.status === 'in_progress').length === 0 && (
+                  <p className="text-gray-500 text-sm">No active work assignments at the moment.</p>
+                )}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-sm">No work history recorded yet.</p>
+            )}
+          </div>
         </div>
       )}
 
