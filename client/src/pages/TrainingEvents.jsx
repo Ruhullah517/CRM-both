@@ -854,6 +854,8 @@ const TrainingEvents = () => {
            event={selectedEvent}
            feedback={eventFeedback}
            loadingFeedback={loadingFeedback}
+           creatingInvoices={creatingInvoices}
+           handleAutoCreateInvoices={handleAutoCreateInvoices}
            onClose={() => setSelectedEvent(null)}
          />
        )}
@@ -1443,7 +1445,7 @@ const TrainingEventForm = ({ event, users, freelancers, onSubmit, onCancel }) =>
   );
 };
 
-  const EventDetailsModal = ({ event, feedback, loadingFeedback, onClose }) => {
+  const EventDetailsModal = ({ event, feedback, loadingFeedback, creatingInvoices, handleAutoCreateInvoices, onClose }) => {
     const [activeTab, setActiveTab] = useState('details');
 
   const getRatingStars = (rating) => {
