@@ -11,6 +11,7 @@ import {
   completeStageDeadline
 } from '../services/recruitment';
 import { exportEnquiries } from '../services/exports';
+import { getAllFreelancers } from '../services/freelancers';
 import {
   UserCircleIcon,
   ArrowLeftIcon,
@@ -42,6 +43,7 @@ export default function RecruitmentPipeline() {
   const [statusForm, setStatusForm] = useState({ status: 'Active', reason: '', pausedUntil: '' });
   const [deadlineForm, setDeadlineForm] = useState({ dueAt: '', createReminder: false });
   const [miniSaving, setMiniSaving] = useState(false);
+  const [freelancers, setFreelancers] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -57,6 +59,18 @@ export default function RecruitmentPipeline() {
         setCandidates(mapped);
       } finally {
         setLoading(false);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getAllFreelancers();
+        const approvedFreelancers = data.filter(f => f.status === 'approved');
+        setFreelancers(approvedFreelancers);
+      } catch (error) {
+        console.error('Error fetching freelancers:', error);
       }
     })();
   }, []);
@@ -202,8 +216,36 @@ export default function RecruitmentPipeline() {
               <div className="border rounded p-3">
                 <div className="font-semibold text-sm mb-2">Assign mentor/assessor</div>
                 <div className="grid grid-cols-1 gap-2">
-                  <input className="border rounded px-2 py-1 text-sm" placeholder="Mentor ID" value={assignForm.mentorId} onChange={(e)=>setAssignForm(f=>({...f, mentorId: e.target.value}))} />
-                  <input className="border rounded px-2 py-1 text-sm" placeholder="Assessor ID" value={assignForm.assessorId} onChange={(e)=>setAssignForm(f=>({...f, assessorId: e.target.value}))} />
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Mentor (Freelancer)</label>
+                    <select 
+                      className="w-full border rounded px-2 py-1 text-sm" 
+                      value={assignForm.mentorId} 
+                      onChange={(e)=>setAssignForm(f=>({...f, mentorId: e.target.value}))}
+                    >
+                      <option value="">Select Mentor</option>
+                      {freelancers.filter(f => f.roles && f.roles.includes('mentor')).map(freelancer => (
+                        <option key={freelancer._id} value={freelancer._id}>
+                          {freelancer.fullName} - {freelancer.availability === 'available' ? '✓ Available' : 'Busy'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-gray-600 mb-1">Assessor (Freelancer)</label>
+                    <select 
+                      className="w-full border rounded px-2 py-1 text-sm" 
+                      value={assignForm.assessorId} 
+                      onChange={(e)=>setAssignForm(f=>({...f, assessorId: e.target.value}))}
+                    >
+                      <option value="">Select Assessor</option>
+                      {freelancers.filter(f => f.roles && f.roles.includes('assessor')).map(freelancer => (
+                        <option key={freelancer._id} value={freelancer._id}>
+                          {freelancer.fullName} - {freelancer.availability === 'available' ? '✓ Available' : 'Busy'}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <input className="border rounded px-2 py-1 text-sm" placeholder="Mentor notes (optional)" value={assignForm.mentorNotes} onChange={(e)=>setAssignForm(f=>({...f, mentorNotes: e.target.value}))} />
                   <input className="border rounded px-2 py-1 text-sm" placeholder="Assessor notes (optional)" value={assignForm.assessorNotes} onChange={(e)=>setAssignForm(f=>({...f, assessorNotes: e.target.value}))} />
                   <div className="flex justify-end">

@@ -21,7 +21,8 @@ import {
   addWorkHistory,
   getExpiringCompliance,
   updateContractRenewal,
-  updateFreelancerStatus
+  updateFreelancerStatus,
+  createUserAccountForFreelancer
 } from '../services/freelancers';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
@@ -146,8 +147,10 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
   const [showComplianceModal, setShowComplianceModal] = useState(false);
   const [showWorkHistoryModal, setShowWorkHistoryModal] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState(null);
+  const [creatingUser, setCreatingUser] = useState(false);
 
   // Helper function to display document type in friendly format
   const getDocumentTypeLabel = (type) => {
@@ -256,6 +259,23 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
     setSaving(false);
   };
 
+  const handleCreateUserAccount = async () => {
+    if (!window.confirm(`Create a User account for ${freelancer.fullName}?\n\nThis will:\n• Generate login credentials\n• Send credentials to ${freelancer.email}\n• Allow them to access the CRM portal\n\nProceed?`)) return;
+    
+    setCreatingUser(true);
+    try {
+      const result = await createUserAccountForFreelancer(freelancer._id);
+      alert(`User account created successfully!\n\nLogin Credentials:\nEmail: ${result.credentials.email}\nPassword: ${result.credentials.password}\n\n(Credentials have also been sent to the freelancer's email)`);
+      window.location.reload();
+    } catch (error) {
+      const errorMsg = error.response?.data?.error || error.message || 'Failed to create user account';
+      alert(`Error: ${errorMsg}`);
+      console.error('User creation error:', error);
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
   const handleAddWorkHistory = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -335,6 +355,37 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
       {/* HR Tab */}
       {activeTab === 'hr' && (
         <div className="space-y-6">
+          {/* CRM Login Access Section */}
+          {freelancer.status === 'approved' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="text-lg font-semibold mb-3 text-blue-900 flex items-center gap-2">
+                <UserCircleIcon className="h-5 w-5" />
+                CRM Portal Access
+              </h3>
+              <p className="text-sm text-blue-700 mb-3">
+                User account status for {freelancer.fullName} to login to the CRM portal
+              </p>
+              <div className="flex items-center justify-between bg-white rounded p-4">
+                <div>
+                  <p className="font-semibold text-gray-900">Login Email: {freelancer.email}</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    If a user account exists, they can login at <a href="/" className="text-blue-600 underline">CRM Login</a>
+                  </p>
+                </div>
+                <button 
+                  onClick={handleCreateUserAccount}
+                  disabled={creatingUser}
+                  className="px-4 py-2 bg-[#2EAB2C] text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                >
+                  {creatingUser ? 'Creating...' : '🔑 Generate Login'}
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                💡 Tip: Click "Generate Login" to create/resend credentials. If account already exists, you'll be notified.
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-gray-50 p-4 rounded">
               <h3 className="text-lg font-semibold mb-3 text-[#2EAB2C]">Rates & Availability</h3>
@@ -522,103 +573,165 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
       {/* Assignments Tab */}
       {activeTab === 'assignments' && (
         <div className="space-y-6">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <div className="ml-3 flex-1">
-                <h3 className="text-sm font-medium text-blue-800">Current Assignments</h3>
-                <p className="mt-1 text-sm text-blue-700">
-                  This shows active assessments and training sessions assigned to {freelancer.fullName}. 
-                  To assign to new jobs, go to the Recruitment or Training modules.
-                </p>
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-[#2EAB2C] rounded-lg p-6 mb-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900 mb-2">How to Assign Jobs to {freelancer.fullName}</h3>
+                <div className="space-y-3 text-sm text-gray-700">
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-[#2EAB2C] text-lg">1.</span>
+                    <div>
+                      <p className="font-semibold">For Assessment Jobs:</p>
+                      <p>Go to <a href="/recruitment" className="text-[#2EAB2C] underline hover:text-green-700">Recruitment Pipeline</a> → Select an Enquiry → Full Assessment Section → Choose this freelancer as the Assessor</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-[#2EAB2C] text-lg">2.</span>
+                    <div>
+                      <p className="font-semibold">For Training Sessions:</p>
+                      <p>Go to <a href="/training" className="text-[#2EAB2C] underline hover:text-green-700">Training Events</a> → Create/Edit Event → Assign Trainer (Note: Requires User account)</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <span className="font-bold text-[#2EAB2C] text-lg">3.</span>
+                    <div>
+                      <p className="font-semibold">For General Work/Projects:</p>
+                      <p>Use the "Work History" tab above to manually log assignments and track hours</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Assessment Assignments */}
-          <div className="bg-white shadow rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <svg className="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              Assessment Assignments
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Assessments where {freelancer.fullName} is assigned as the assessor
-            </p>
-            <div className="bg-gray-50 rounded p-4 text-center text-gray-500">
-              <p className="text-sm">
-                To view assigned assessments, check the Recruitment Pipeline module.
+          {/* Quick Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white shadow-lg rounded-lg p-6 border-l-4 border-green-500 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-green-100 rounded-full">
+                  <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Assign to Assessment</h3>
+                  <p className="text-sm text-gray-600">Full Form F or Initial Assessments</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Assign {freelancer.fullName} to evaluate foster carer applications in the recruitment pipeline.
               </p>
               <a 
-                href="/recruitment" 
-                className="inline-block mt-2 text-[#2EAB2C] hover:text-green-700 font-medium"
+                href="/recruitment"
+                className="block w-full text-center px-4 py-2 bg-[#2EAB2C] text-white rounded-md hover:bg-green-700 font-medium transition-colors"
               >
-                Go to Recruitment →
+                Go to Recruitment Pipeline →
+              </a>
+            </div>
+
+            <div className="bg-white shadow-lg rounded-lg p-6 border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900">Assign to Training</h3>
+                  <p className="text-sm text-gray-600">Training events and workshops</p>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mb-4">
+                Assign {freelancer.fullName} as a trainer for upcoming training events and sessions.
+              </p>
+              <a 
+                href="/training"
+                className="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors"
+              >
+                Go to Training Events →
               </a>
             </div>
           </div>
 
-          {/* Training Assignments */}
+          {/* Current Status */}
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <svg className="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              <svg className="h-5 w-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Training Sessions
+              Current Status
             </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Note: Training sessions are typically assigned to User accounts, not Freelancer profiles.
-            </p>
-            <div className="bg-gray-50 rounded p-4 text-center text-gray-500">
-              <p className="text-sm">
-                To assign to training events, check the Training Events module.
-              </p>
-              <a 
-                href="/training" 
-                className="inline-block mt-2 text-[#2EAB2C] hover:text-green-700 font-medium"
-              >
-                Go to Training →
-              </a>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Availability</p>
+                <div className="flex items-center gap-2">
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    freelancer.availability === 'available' ? 'bg-green-100 text-green-800' :
+                    freelancer.availability === 'busy' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {freelancer.availability || 'available'}
+                  </span>
+                </div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Hourly Rate</p>
+                <p className="text-xl font-bold text-gray-900">£{freelancer.hourlyRate || 0}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Daily Rate</p>
+                <p className="text-xl font-bold text-gray-900">£{freelancer.dailyRate || 0}</p>
+              </div>
             </div>
           </div>
 
-          {/* Work History Summary */}
+          {/* Active Work Summary */}
           <div className="bg-white shadow rounded-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <svg className="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Recent Work
+              Active Work Assignments
             </h3>
             {freelancer.workHistory && freelancer.workHistory.length > 0 ? (
               <div className="space-y-3">
                 {freelancer.workHistory
                   .filter(work => work.status === 'in_progress')
-                  .slice(0, 3)
+                  .slice(0, 5)
                   .map((work, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{work.assignment}</p>
+                    <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-50 to-green-50 rounded-lg border border-yellow-200">
+                      <div className="flex-1">
+                        <p className="font-semibold text-gray-900">{work.assignment}</p>
                         <p className="text-sm text-gray-600">
-                          Started: {formatDate(work.startDate)} • {work.hours} hours logged
+                          Started: {formatDate(work.startDate)} • {work.hours} hours logged • £{work.rate}/hour
                         </p>
+                        {work.notes && (
+                          <p className="text-sm text-gray-500 mt-1">{work.notes}</p>
+                        )}
                       </div>
-                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                      <span className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium whitespace-nowrap ml-4">
                         In Progress
                       </span>
                     </div>
                   ))}
                 {freelancer.workHistory.filter(work => work.status === 'in_progress').length === 0 && (
-                  <p className="text-gray-500 text-sm">No active work assignments at the moment.</p>
+                  <div className="text-center py-8">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                    <p className="text-gray-500 mt-2">No active assignments at the moment</p>
+                    <p className="text-sm text-gray-400 mt-1">Use the buttons above to assign {freelancer.fullName} to a job</p>
+                  </div>
                 )}
               </div>
             ) : (
-              <p className="text-gray-500 text-sm">No work history recorded yet.</p>
+              <div className="text-center py-8">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <p className="text-gray-500 mt-2">No work history recorded yet</p>
+                <p className="text-sm text-gray-400 mt-1">Assignments will appear here once work is logged</p>
+              </div>
             )}
           </div>
         </div>
@@ -1095,15 +1208,30 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
     if (!freelancer?._id) return;
     
     const confirmMessage = newStatus === 'approved' 
-      ? 'Are you sure you want to approve this freelancer? They will become active in the system.'
+      ? 'Are you sure you want to approve this freelancer? This will:\n\n• Change their status to "Approved"\n• Automatically create a User account for them\n• Send them login credentials via email\n\nProceed?'
       : 'Are you sure you want to reject this freelancer application?';
       
     if (!window.confirm(confirmMessage)) return;
     
     setApproving(true);
     try {
+      // Update status first
       await updateFreelancerStatus(freelancer._id, newStatus);
-      alert(newStatus === 'approved' ? 'Freelancer approved successfully!' : 'Freelancer rejected.');
+      
+      // If approving, create user account automatically
+      if (newStatus === 'approved') {
+        try {
+          const result = await createUserAccountForFreelancer(freelancer._id);
+          alert(`Freelancer approved successfully!\n\nUser account created:\nEmail: ${result.credentials.email}\nPassword: ${result.credentials.password}\n\n(Credentials have been sent to the freelancer's email)`);
+        } catch (userError) {
+          // If user account creation fails (e.g., already exists), still show success for approval
+          console.error('User account creation error:', userError);
+          alert('Freelancer approved successfully!\nNote: User account may already exist or email could not be sent.');
+        }
+      } else {
+        alert('Freelancer status updated.');
+      }
+      
       window.location.reload(); // Reload to show updated status
     } catch (error) {
       alert('Failed to update status. Please try again.');

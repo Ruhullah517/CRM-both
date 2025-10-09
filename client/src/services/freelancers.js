@@ -110,3 +110,17 @@ export const updateFreelancerStatus = async (id, status) => {
   const response = await api.put(`/recruitment/freelancer-applications/${id}/status`, { status });
   return response.data;
 };
+
+export const createUserAccountForFreelancer = async (id) => {
+  const response = await api.post(`/freelancers/${id}/create-user-account`);
+  return response.data;
+};
+
+export const checkUserAccountExists = async (email) => {
+  try {
+    const response = await api.get(`/users?email=${email}`);
+    return response.data && response.data.length > 0;
+  } catch (error) {
+    return false;
+  }
+};

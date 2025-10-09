@@ -1,4 +1,6 @@
 const Freelancer = require('../models/Freelancer');
+const User = require('../models/User');
+const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const nodemailer = require('nodemailer');
 const { sendMail, getFromAddress } = require('../utils/mailer');
@@ -529,6 +531,145 @@ const updateContractRenewal = async (req, res) => {
   }
 };
 
+// Helper function to generate random password
+const generatePassword = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%';
+  let password = '';
+  for (let i = 0; i < 12; i++) {
+    password += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return password;
+};
+
+// Create user account for freelancer
+const createUserAccountForFreelancer = async (req, res) => {
+  try {
+    const freelancerId = req.params.id;
+    const freelancer = await Freelancer.findById(freelancerId);
+    
+    if (!freelancer) {
+      return res.status(404).json({ error: 'Freelancer not found' });
+    }
+
+    if (!freelancer.email) {
+      return res.status(400).json({ error: 'Freelancer must have an email address' });
+    }
+
+    // Check if user account already exists
+    const existingUser = await User.findOne({ 
+      $or: [
+        { email: freelancer.email },
+        { freelancerId: freelancerId }
+      ]
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ 
+        error: 'User account already exists for this freelancer',
+        userId: existingUser._id 
+      });
+    }
+
+    // Generate random password
+    const generatedPassword = generatePassword();
+    const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
+    // Create user account
+    const newUser = new User({
+      name: freelancer.fullName,
+      email: freelancer.email,
+      password: hashedPassword,
+      role: 'freelancer',
+      freelancerId: freelancerId,
+      created_at: new Date(),
+      updated_at: new Date()
+    });
+
+    await newUser.save();
+
+    // Send email with credentials
+    try {
+      const emailHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: linear-gradient(135deg, #2EAB2C 0%, #1a7d1a 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+            .credentials { background: white; padding: 20px; border-left: 4px solid #2EAB2C; margin: 20px 0; border-radius: 4px; }
+            .button { display: inline-block; padding: 12px 30px; background: #2EAB2C; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+            .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #666; }
+            .warning { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>🎉 Welcome to BFCA CRM!</h1>
+              <p>Your freelancer account has been approved</p>
+            </div>
+            <div class="content">
+              <p>Hello <strong>${freelancer.fullName}</strong>,</p>
+              <p>Great news! Your freelancer application has been approved and you now have access to the BFCA CRM system.</p>
+              
+              <div class="credentials">
+                <h3 style="margin-top: 0; color: #2EAB2C;">Your Login Credentials</h3>
+                <p><strong>Email:</strong> ${freelancer.email}</p>
+                <p><strong>Password:</strong> <code style="background: #f0f0f0; padding: 5px 10px; border-radius: 3px;">${generatedPassword}</code></p>
+              </div>
+
+              <div class="warning">
+                <strong>⚠️ Important:</strong> Please change your password after your first login for security.
+              </div>
+
+              <p><strong>What you can do in the portal:</strong></p>
+              <ul>
+                <li>Update your profile and contact information</li>
+                <li>Manage your availability status</li>
+                <li>Upload and renew compliance documents</li>
+                <li>View your work history and assignments</li>
+              </ul>
+
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}" class="button">Login to CRM</a>
+
+              <p style="margin-top: 30px;">If you have any questions, please contact our HR team.</p>
+              
+              <div class="footer">
+                <p>© ${new Date().getFullYear()} BFCA. All rights reserved.</p>
+              </div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      await sendMail(
+        freelancer.email,
+        'Welcome to BFCA CRM - Your Login Credentials',
+        emailHtml
+      );
+    } catch (emailError) {
+      console.error('Failed to send credentials email:', emailError);
+      // Don't fail the whole operation if email fails
+    }
+
+    res.json({ 
+      success: true, 
+      userId: newUser._id,
+      message: 'User account created successfully',
+      credentials: {
+        email: freelancer.email,
+        password: generatedPassword // Only send in response for admin to see
+      }
+    });
+  } catch (error) {
+    console.error('Error creating user account:', error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 
 
@@ -545,6 +686,7 @@ module.exports = {
   addWorkHistory,
   getExpiringCompliance,
   updateContractRenewal,
+  createUserAccountForFreelancer,
 };
 module.exports.sendFreelancerFormLink = sendFreelancerFormLink;
 module.exports.submitFreelancerPublicForm = submitFreelancerPublicForm; 

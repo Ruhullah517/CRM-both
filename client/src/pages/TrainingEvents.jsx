@@ -29,6 +29,7 @@ import {
   sendInvoice,
   generateInvoicePDF 
 } from '../services/invoices';
+import { getAllFreelancers } from '../services/freelancers';
 
 // Booking Status Form Component
 const BookingStatusForm = ({ booking, onSubmit, onCancel, loading }) => {
@@ -264,6 +265,7 @@ const TrainingEvents = () => {
   const [editingEvent, setEditingEvent] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [users, setUsers] = useState([]);
+  const [freelancers, setFreelancers] = useState([]);
   const [showBulkImport, setShowBulkImport] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importPreview, setImportPreview] = useState([]);
@@ -288,6 +290,7 @@ const TrainingEvents = () => {
   useEffect(() => {
     fetchEvents();
     fetchUsers();
+    fetchFreelancers();
   }, []);
 
   useEffect(() => {
@@ -313,6 +316,21 @@ const TrainingEvents = () => {
       setUsers(response.data);
     } catch (error) {
       console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchFreelancers = async () => {
+    try {
+      const data = await getAllFreelancers();
+      // Filter only approved freelancers with trainer role
+      const approvedFreelancers = data.filter(f => 
+        f.status === 'approved' && 
+        f.roles && 
+        f.roles.includes('trainer')
+      );
+      setFreelancers(approvedFreelancers);
+    } catch (error) {
+      console.error('Error fetching freelancers:', error);
     }
   };
 
@@ -821,6 +839,7 @@ const TrainingEvents = () => {
         <TrainingEventForm
           event={editingEvent}
           users={users}
+          freelancers={freelancers}
           onSubmit={editingEvent ? handleUpdateEvent : handleCreateEvent}
           onCancel={() => {
             setShowForm(false);
@@ -1201,7 +1220,7 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
   );
 };
 
-const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
+const TrainingEventForm = ({ event, users, freelancers, onSubmit, onCancel }) => {
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     title: event?.title || '',
@@ -1261,19 +1280,35 @@ const TrainingEventForm = ({ event, users, onSubmit, onCancel }) => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Trainer</label>
+                <label className="block text-sm font-medium mb-1">Assign Trainer (Freelancer)</label>
                 <select
                   value={form.trainer}
                   onChange={(e) => setForm({...form, trainer: e.target.value})}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">Select Trainer</option>
-                  {users.map(user => (
-                    <option key={user._id} value={user._id}>
-                      {user.name} ({user.email})
-                    </option>
-                  ))}
+                  <optgroup label="Approved Freelance Trainers">
+                    {freelancers && freelancers.length > 0 ? (
+                      freelancers.map(freelancer => (
+                        <option key={freelancer._id} value={freelancer._id}>
+                          {freelancer.fullName} ({freelancer.email}) - £{freelancer.hourlyRate || 'N/A'}/hr
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>No approved trainers available</option>
+                    )}
+                  </optgroup>
+                  <optgroup label="Staff Members">
+                    {users && users.map(user => (
+                      <option key={user._id} value={user._id}>
+                        {user.name} ({user.email}) - Staff
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Approved freelance trainers are listed first. Go to HR Module to approve more trainers.
+                </p>
               </div>
               
               <div>

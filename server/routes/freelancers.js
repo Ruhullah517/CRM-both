@@ -14,6 +14,7 @@ const {
   addWorkHistory,
   getExpiringCompliance,
   updateContractRenewal,
+  createUserAccountForFreelancer,
 } = require('../controllers/freelancerController');
 const freelancerUploads = require('../middleware/freelancerUploads');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -30,6 +31,7 @@ router.put('/:id/contract-renewal', authenticate, authorize('admin', 'manager', 
 router.post('/:id/compliance-documents', authenticate, authorize('admin', 'manager', 'staff'), freelancerUploads, addComplianceDocument);
 router.delete('/:id/compliance-documents/:documentIndex', authenticate, authorize('admin', 'manager', 'staff'), deleteComplianceDocument);
 router.post('/:id/work-history', authenticate, authorize('admin', 'manager', 'staff'), addWorkHistory);
+router.post('/:id/create-user-account', authenticate, authorize('admin', 'manager', 'staff'), createUserAccountForFreelancer);
 router.delete('/:id', authenticate, authorize('admin', 'manager'), deleteFreelancer);
 
 module.exports = router; 
