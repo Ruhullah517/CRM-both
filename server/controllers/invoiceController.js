@@ -1,5 +1,6 @@
 const Invoice = require('../models/Invoice');
 const TrainingBooking = require('../models/TrainingBooking');
+const TrainingEvent = require('../models/TrainingEvent');
 const Case = require('../models/Case');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
