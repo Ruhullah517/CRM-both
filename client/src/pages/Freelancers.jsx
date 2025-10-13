@@ -413,7 +413,39 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
               <h3 className="text-lg font-semibold mb-3 text-[#2EAB2C]">Contract Information</h3>
               <div className="space-y-2">
                 <div><span className="font-semibold">Status:</span> {freelancer.contractStatus || 'active'}</div>
-                <div><span className="font-semibold">Renewal Date:</span> {freelancer.contractRenewalDate ? formatDate(freelancer.contractRenewalDate) : 'Not set'}</div>
+                <div>
+                  <span className="font-semibold">Renewal Date:</span> 
+                  {freelancer.contractRenewalDate ? (
+                    (() => {
+                      const renewalDate = new Date(freelancer.contractRenewalDate);
+                      const today = new Date();
+                      const thirtyDaysFromNow = new Date();
+                      thirtyDaysFromNow.setDate(today.getDate() + 30);
+                      const sevenDaysFromNow = new Date();
+                      sevenDaysFromNow.setDate(today.getDate() + 7);
+                      
+                      const isExpired = renewalDate < today;
+                      const isUrgent = renewalDate >= today && renewalDate <= sevenDaysFromNow;
+                      const isExpiringSoon = renewalDate > sevenDaysFromNow && renewalDate <= thirtyDaysFromNow;
+                      
+                      return (
+                        <span className={`ml-2 px-2 py-1 rounded text-sm font-medium ${
+                          isExpired ? 'bg-red-100 text-red-800' :
+                          isUrgent ? 'bg-red-50 text-red-700 border border-red-300' :
+                          isExpiringSoon ? 'bg-yellow-50 text-yellow-700 border border-yellow-300' :
+                          ''
+                        }`}>
+                          {formatDate(freelancer.contractRenewalDate)}
+                          {isExpired && ' (EXPIRED)'}
+                          {isUrgent && ' (URGENT - Expiring Soon!)'}
+                          {isExpiringSoon && ' (Expiring in 30 days)'}
+                        </span>
+                      );
+                    })()
+                  ) : (
+                    ' Not set'
+                  )}
+                </div>
                 <button 
                   onClick={() => setShowContractModal(true)}
                   className="mt-2 px-3 py-1 bg-[#2EAB2C] text-white rounded text-sm hover:bg-green-800"
@@ -1145,6 +1177,15 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
       }
       return [];
     })(),
+    roles: (() => {
+      if (Array.isArray(freelancer?.roles)) {
+        return freelancer.roles;
+      }
+      if (typeof freelancer?.roles === 'string' && freelancer.roles.startsWith('[')) {
+        return JSON.parse(freelancer.roles);
+      }
+      return [];
+    })(),
 
     // Section 6: Additional Information
     qualificationsAndTraining: freelancer?.qualificationsAndTraining || '',
@@ -1639,6 +1680,43 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
                   {opt}
                 </label>
               ))}
+            </div>
+          </div>
+
+          {/* Roles Assignment (for assignment in system) */}
+          <div className="flex flex-wrap gap-2 mb-2 mt-6 pt-6 border-t border-gray-200">
+            <span className="block mb-2 font-bold text-base">
+              <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs font-semibold mr-2">ADMIN ONLY</span>
+              Assign System Roles <span className="text-sm font-normal text-gray-600">(determines what jobs they can be assigned to)</span>
+            </span>
+            <div className="flex flex-col gap-1 w-full">
+              <label className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                <input
+                  type="checkbox"
+                  checked={form.roles.includes('assessor')}
+                  onChange={() => handleArrayCheckboxChange('roles', 'assessor')}
+                  className="accent-green-600"
+                />
+                <strong>Assessor</strong> - Can be assigned to Full Form F Assessments
+              </label>
+              <label className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                <input
+                  type="checkbox"
+                  checked={form.roles.includes('trainer')}
+                  onChange={() => handleArrayCheckboxChange('roles', 'trainer')}
+                  className="accent-green-600"
+                />
+                <strong>Trainer</strong> - Can be assigned to Training Events
+              </label>
+              <label className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                <input
+                  type="checkbox"
+                  checked={form.roles.includes('mentor')}
+                  onChange={() => handleArrayCheckboxChange('roles', 'mentor')}
+                  className="accent-green-600"
+                />
+                <strong>Mentor</strong> - Can be assigned to Mentoring sessions
+              </label>
             </div>
           </div>
         </div>

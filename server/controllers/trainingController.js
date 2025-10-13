@@ -3,6 +3,8 @@ const TrainingBooking = require('../models/TrainingBooking');
 const Certificate = require('../models/Certificate');
 const Invoice = require('../models/Invoice');
 const Feedback = require('../models/Feedback');
+const User = require('../models/User');
+const Freelancer = require('../models/Freelancer');
 const { generateInvoicePDFFile } = require('./invoiceController');
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
@@ -34,6 +36,138 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
+// Helper function to auto-create work history entry for freelancer trainer
+const createWorkHistoryForTrainer = async (trainerId, trainingEvent) => {
+  try {
+    // Get the trainer user
+    const trainerUser = await User.findById(trainerId);
+    if (!trainerUser || !trainerUser.freelancerId) {
+      console.log(`Trainer ${trainerId} is not a freelancer, skipping work history creation`);
+      return;
+    }
+
+    // Get the freelancer profile
+    const freelancer = await Freelancer.findById(trainerUser.freelancerId);
+    if (!freelancer) {
+      console.log(`Freelancer profile not found for trainer ${trainerId}`);
+      return;
+    }
+
+    // Calculate hours from event duration
+    const startDate = new Date(trainingEvent.startDate);
+    const endDate = new Date(trainingEvent.endDate);
+    const durationHours = Math.ceil((endDate - startDate) / (1000 * 60 * 60)); // Convert milliseconds to hours
+
+    // Use freelancer's hourly rate, or default to 0
+    const hourlyRate = freelancer.hourlyRate || 0;
+    const totalAmount = durationHours * hourlyRate;
+
+    // Check if work history entry already exists for this training
+    const existingEntry = freelancer.workHistory?.find(
+      entry => entry.assignment === `Training: ${trainingEvent.title}` && 
+               entry.startDate?.getTime() === startDate.getTime()
+    );
+
+    if (existingEntry) {
+      console.log(`Work history already exists for this training event`);
+      return;
+    }
+
+    // Create work history entry
+    const workEntry = {
+      assignment: `Training: ${trainingEvent.title}`,
+      startDate: startDate,
+      endDate: endDate,
+      hours: durationHours,
+      rate: hourlyRate,
+      totalAmount: totalAmount,
+      status: 'in_progress',
+      notes: `Auto-created for training event at ${trainingEvent.location || 'Virtual'}`
+    };
+
+    // Add to freelancer's work history
+    await Freelancer.findByIdAndUpdate(
+      freelancer._id,
+      { 
+        $push: { workHistory: workEntry },
+        updated_at: new Date()
+      }
+    );
+
+    console.log(`✅ Work history created for trainer ${freelancer.fullName}: ${durationHours}h @ £${hourlyRate}/h = £${totalAmount}`);
+  } catch (error) {
+    console.error('Error creating work history for trainer:', error);
+    // Don't throw error - work history creation should not break the main flow
+  }
+};
+
+// Helper function to update work history when training event is updated
+const updateWorkHistoryForTrainer = async (oldTrainerId, newTrainerId, oldEvent, newEvent) => {
+  try {
+    // If trainer changed, remove old work history and create new
+    if (oldTrainerId && newTrainerId && oldTrainerId.toString() !== newTrainerId.toString()) {
+      // Remove old trainer's work history
+      const oldTrainerUser = await User.findById(oldTrainerId);
+      if (oldTrainerUser?.freelancerId) {
+        await Freelancer.findByIdAndUpdate(
+          oldTrainerUser.freelancerId,
+          {
+            $pull: {
+              workHistory: {
+                assignment: `Training: ${oldEvent.title}`,
+                startDate: oldEvent.startDate
+              }
+            },
+            updated_at: new Date()
+          }
+        );
+        console.log(`✅ Removed work history for previous trainer`);
+      }
+
+      // Create new trainer's work history
+      if (newTrainerId) {
+        await createWorkHistoryForTrainer(newTrainerId, newEvent);
+      }
+    } else if (newTrainerId) {
+      // Same trainer, update existing work history if dates or title changed
+      const trainerUser = await User.findById(newTrainerId);
+      if (trainerUser?.freelancerId) {
+        const freelancer = await Freelancer.findById(trainerUser.freelancerId);
+        if (freelancer) {
+          const startDate = new Date(newEvent.startDate);
+          const endDate = new Date(newEvent.endDate);
+          const durationHours = Math.ceil((endDate - startDate) / (1000 * 60 * 60));
+          const hourlyRate = freelancer.hourlyRate || 0;
+          const totalAmount = durationHours * hourlyRate;
+
+          // Find and update the work history entry
+          const workHistoryIndex = freelancer.workHistory.findIndex(
+            entry => entry.assignment === `Training: ${oldEvent.title}` &&
+                     entry.startDate?.getTime() === new Date(oldEvent.startDate).getTime()
+          );
+
+          if (workHistoryIndex !== -1) {
+            freelancer.workHistory[workHistoryIndex] = {
+              ...freelancer.workHistory[workHistoryIndex].toObject(),
+              assignment: `Training: ${newEvent.title}`,
+              startDate: startDate,
+              endDate: endDate,
+              hours: durationHours,
+              rate: hourlyRate,
+              totalAmount: totalAmount,
+              notes: `Updated: Training event at ${newEvent.location || 'Virtual'}`
+            };
+            await freelancer.save();
+            console.log(`✅ Updated work history for trainer`);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error updating work history for trainer:', error);
+  }
+};
 
 // Get all training events
 const getAllTrainingEvents = async (req, res) => {
@@ -125,6 +259,12 @@ const createTrainingEvent = async (req, res) => {
     });
 
     await trainingEvent.save();
+
+    // Auto-create work history for freelancer trainer
+    if (trainer) {
+      await createWorkHistoryForTrainer(trainer, trainingEvent);
+    }
+
     res.status(201).json(trainingEvent);
   } catch (error) {
     console.error(error);
@@ -135,14 +275,24 @@ const createTrainingEvent = async (req, res) => {
 // Update training event
 const updateTrainingEvent = async (req, res) => {
   try {
+    // Get the old event data first
+    const oldEvent = await TrainingEvent.findById(req.params.id);
+    if (!oldEvent) {
+      return res.status(404).json({ msg: 'Training event not found' });
+    }
+
     const event = await TrainingEvent.findByIdAndUpdate(
       req.params.id,
       { ...req.body, updated_at: new Date() },
       { new: true }
     );
 
-    if (!event) {
-      return res.status(404).json({ msg: 'Training event not found' });
+    // Update work history if trainer or event details changed
+    const oldTrainerId = oldEvent.trainer?.toString();
+    const newTrainerId = event.trainer?.toString();
+    
+    if (oldTrainerId || newTrainerId) {
+      await updateWorkHistoryForTrainer(oldTrainerId, newTrainerId, oldEvent, event);
     }
 
     res.json(event);
@@ -166,6 +316,26 @@ const deleteTrainingEvent = async (req, res) => {
       return res.status(400).json({ msg: 'Cannot delete event with existing bookings' });
     }
 
+    // Remove work history for trainer if they're a freelancer
+    if (event.trainer) {
+      const trainerUser = await User.findById(event.trainer);
+      if (trainerUser?.freelancerId) {
+        await Freelancer.findByIdAndUpdate(
+          trainerUser.freelancerId,
+          {
+            $pull: {
+              workHistory: {
+                assignment: `Training: ${event.title}`,
+                startDate: event.startDate
+              }
+            },
+            updated_at: new Date()
+          }
+        );
+        console.log(`✅ Removed work history for deleted training event`);
+      }
+    }
+
     await TrainingEvent.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Training event deleted' });
   } catch (error) {
@@ -180,6 +350,26 @@ const forceDeleteTrainingEvent = async (req, res) => {
     const event = await TrainingEvent.findById(req.params.id);
     if (!event) {
       return res.status(404).json({ msg: 'Training event not found' });
+    }
+
+    // Remove work history for trainer if they're a freelancer
+    if (event.trainer) {
+      const trainerUser = await User.findById(event.trainer);
+      if (trainerUser?.freelancerId) {
+        await Freelancer.findByIdAndUpdate(
+          trainerUser.freelancerId,
+          {
+            $pull: {
+              workHistory: {
+                assignment: `Training: ${event.title}`,
+                startDate: event.startDate
+              }
+            },
+            updated_at: new Date()
+          }
+        );
+        console.log(`✅ Removed work history for force-deleted training event`);
+      }
     }
 
     // Delete all related bookings first

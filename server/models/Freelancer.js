@@ -29,6 +29,7 @@ const FreelancerSchema = new mongoose.Schema({
 
   // Section 5: Consideration for Work & Training
   considerationFor: [String], // e.g., ["Initial Assessment", "Form F", "Training"]
+  roles: [String], // e.g., ["assessor", "trainer", "mentor"] - defines what jobs they can be assigned to
 
   // Section 6: Additional Information
   qualificationsAndTraining: String,

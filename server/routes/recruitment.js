@@ -309,6 +309,48 @@ router.post('/enquiries/:enquiryId/full-assessment', async (req, res) => {
     await fullAssessment.save();
     
     console.log('Full assessment created successfully:', fullAssessment._id);
+    
+    // Auto-create work history for freelancer assessor
+    const finalAssessorId = assessorId || req.user.id;
+    if (finalAssessorId) {
+      try {
+        const assessorUser = await User.findById(finalAssessorId);
+        if (assessorUser?.freelancerId) {
+          const freelancer = await Freelancer.findById(assessorUser.freelancerId);
+          if (freelancer) {
+            // Estimate 8 hours for a full Form F assessment
+            const estimatedHours = 8;
+            const hourlyRate = freelancer.hourlyRate || 0;
+            const totalAmount = estimatedHours * hourlyRate;
+            
+            const workEntry = {
+              assignment: `Full Assessment: ${enquiry.full_name || 'Candidate'}`,
+              startDate: new Date(),
+              endDate: null, // Will be updated when assessment is completed
+              hours: estimatedHours,
+              rate: hourlyRate,
+              totalAmount: totalAmount,
+              status: 'in_progress',
+              notes: `Auto-created for full assessment (${meetingType || 'Assessment'})`
+            };
+            
+            await Freelancer.findByIdAndUpdate(
+              freelancer._id,
+              {
+                $push: { workHistory: workEntry },
+                updated_at: new Date()
+              }
+            );
+            
+            console.log(`✅ Work history created for assessor ${freelancer.fullName}: ${estimatedHours}h @ £${hourlyRate}/h = £${totalAmount}`);
+          }
+        }
+      } catch (workHistoryError) {
+        console.error('Error creating work history for assessor:', workHistoryError);
+        // Don't fail the main operation
+      }
+    }
+    
     res.status(201).json(fullAssessment);
   } catch (error) {
     console.error('Error creating full assessment:', error);
@@ -395,6 +437,45 @@ router.post('/enquiries/:enquiryId/mentoring', async (req, res) => {
     };
     
     console.log('Creating mentor allocation with data:', mentorAllocationData);
+    
+    // Auto-create work history for freelancer mentor (if mentor has associated user/freelancer)
+    // Note: Mentors might be in Mentor collection, check if they have a linked User/Freelancer
+    try {
+      const mentorUser = await User.findOne({ email: mentor.email });
+      if (mentorUser?.freelancerId) {
+        const freelancer = await Freelancer.findById(mentorUser.freelancerId);
+        if (freelancer) {
+          // Estimate 4 hours for mentoring sessions
+          const estimatedHours = 4;
+          const hourlyRate = freelancer.hourlyRate || 0;
+          const totalAmount = estimatedHours * hourlyRate;
+          
+          const workEntry = {
+            assignment: `Mentoring: ${enquiry.full_name || 'Candidate'}`,
+            startDate: meetingSchedule ? new Date(meetingSchedule) : new Date(),
+            endDate: null, // Will be updated when mentoring is completed
+            hours: estimatedHours,
+            rate: hourlyRate,
+            totalAmount: totalAmount,
+            status: 'in_progress',
+            notes: `Auto-created for mentoring allocation`
+          };
+          
+          await Freelancer.findByIdAndUpdate(
+            freelancer._id,
+            {
+              $push: { workHistory: workEntry },
+              updated_at: new Date()
+            }
+          );
+          
+          console.log(`✅ Work history created for mentor ${freelancer.fullName}: ${estimatedHours}h @ £${hourlyRate}/h = £${totalAmount}`);
+        }
+      }
+    } catch (workHistoryError) {
+      console.error('Error creating work history for mentor:', workHistoryError);
+      // Don't fail the main operation
+    }
     
     // For now, we'll store this in the enquiry document
     // In a real implementation, you might want a separate MentorAllocation model
