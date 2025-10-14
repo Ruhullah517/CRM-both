@@ -1,6 +1,11 @@
 const Case = require('../models/Case');
 const Activity = require('../models/Activity');
 const User = require('../models/User');
+const Freelancer = require('../models/Freelancer');
+const Contract = require('../models/Contract');
+const Enquiry = require('../models/Enquiry');
+const Invoice = require('../models/Invoice');
+const TrainingEvent = require('../models/TrainingEvent');
 const { Parser } = require('json2csv');
 
 // Open/Closed cases by date
@@ -371,6 +376,280 @@ const exportReport = async (req, res) => {
   }
 };
 
+// Freelancer work hours and earnings report
+const freelancerWorkReport = async (req, res) => {
+  try {
+    const freelancers = await Freelancer.find({ status: 'approved' });
+    
+    const report = freelancers.map(freelancer => {
+      const workHistory = freelancer.workHistory || [];
+      const completedWork = workHistory.filter(w => w.status === 'completed');
+      const inProgressWork = workHistory.filter(w => w.status === 'in_progress');
+      
+      const totalHours = workHistory.reduce((sum, w) => sum + (w.hours || 0), 0);
+      const totalEarnings = workHistory.reduce((sum, w) => sum + (w.totalAmount || 0), 0);
+      const completedHours = completedWork.reduce((sum, w) => sum + (w.hours || 0), 0);
+      const completedEarnings = completedWork.reduce((sum, w) => sum + (w.totalAmount || 0), 0);
+      
+      return {
+        freelancerId: freelancer._id,
+        name: freelancer.fullName,
+        email: freelancer.email,
+        hourlyRate: freelancer.hourlyRate || 0,
+        dailyRate: freelancer.dailyRate || 0,
+        availability: freelancer.availability,
+        totalAssignments: workHistory.length,
+        completedAssignments: completedWork.length,
+        inProgressAssignments: inProgressWork.length,
+        totalHours,
+        completedHours,
+        totalEarnings,
+        completedEarnings,
+        roles: freelancer.roles || []
+      };
+    });
+    
+    res.json(report);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Contract status breakdown
+const contractStatusReport = async (req, res) => {
+  try {
+    const contracts = await Contract.find();
+    const now = new Date();
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(now.getDate() + 30);
+    
+    const statusBreakdown = {
+      active: 0,
+      expiringSoon: 0, // expires within 30 days
+      expired: 0,
+      draft: 0,
+      total: contracts.length
+    };
+    
+    const expiringContracts = [];
+    
+    contracts.forEach(contract => {
+      if (contract.status === 'draft') {
+        statusBreakdown.draft++;
+      } else if (contract.endDate) {
+        const endDate = new Date(contract.endDate);
+        if (endDate < now) {
+          statusBreakdown.expired++;
+        } else if (endDate <= thirtyDaysFromNow) {
+          statusBreakdown.expiringSoon++;
+          expiringContracts.push({
+            contractId: contract._id,
+            title: contract.title,
+            clientName: contract.clientName,
+            endDate: contract.endDate,
+            daysRemaining: Math.ceil((endDate - now) / (1000 * 60 * 60 * 24))
+          });
+        } else {
+          statusBreakdown.active++;
+        }
+      } else {
+        statusBreakdown.active++;
+      }
+    });
+    
+    res.json({
+      statusBreakdown,
+      expiringContracts: expiringContracts.sort((a, b) => a.daysRemaining - b.daysRemaining)
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Recruitment pipeline analytics
+const recruitmentPipelineReport = async (req, res) => {
+  try {
+    const enquiries = await Enquiry.find();
+    
+    const pipelineStats = {
+      Enquiry: 0,
+      Application: 0,
+      Assessment: 0,
+      Mentoring: 0,
+      Approval: 0,
+      total: enquiries.length
+    };
+    
+    const statusBreakdown = {
+      Active: 0,
+      Paused: 0,
+      Approved: 0,
+      Rejected: 0,
+      Withdrawn: 0
+    };
+    
+    enquiries.forEach(enquiry => {
+      // Count by stage
+      if (enquiry.stage) {
+        pipelineStats[enquiry.stage] = (pipelineStats[enquiry.stage] || 0) + 1;
+      }
+      
+      // Count by status
+      if (enquiry.status) {
+        statusBreakdown[enquiry.status] = (statusBreakdown[enquiry.status] || 0) + 1;
+      }
+    });
+    
+    // Calculate conversion rates
+    const conversionRates = {
+      enquiryToApplication: pipelineStats.Enquiry > 0 
+        ? ((pipelineStats.Application + pipelineStats.Assessment + pipelineStats.Mentoring + pipelineStats.Approval) / pipelineStats.total * 100).toFixed(1)
+        : 0,
+      applicationToAssessment: (pipelineStats.Application + pipelineStats.Assessment + pipelineStats.Mentoring + pipelineStats.Approval) > 0
+        ? ((pipelineStats.Assessment + pipelineStats.Mentoring + pipelineStats.Approval) / (pipelineStats.Application + pipelineStats.Assessment + pipelineStats.Mentoring + pipelineStats.Approval) * 100).toFixed(1)
+        : 0,
+      assessmentToApproval: (pipelineStats.Assessment + pipelineStats.Mentoring + pipelineStats.Approval) > 0
+        ? (pipelineStats.Approval / (pipelineStats.Assessment + pipelineStats.Mentoring + pipelineStats.Approval) * 100).toFixed(1)
+        : 0,
+      overallConversion: pipelineStats.total > 0
+        ? (pipelineStats.Approval / pipelineStats.total * 100).toFixed(1)
+        : 0
+    };
+    
+    res.json({
+      pipelineStats,
+      statusBreakdown,
+      conversionRates
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Invoice and revenue analytics
+const invoiceRevenueReport = async (req, res) => {
+  try {
+    const invoices = await Invoice.find();
+    
+    const revenueStats = {
+      totalInvoiced: 0,
+      totalPaid: 0,
+      totalPending: 0,
+      totalOverdue: 0,
+      invoiceCount: invoices.length,
+      paidCount: 0,
+      pendingCount: 0,
+      overdueCount: 0
+    };
+    
+    const monthlyRevenue = {};
+    
+    invoices.forEach(invoice => {
+      const amount = invoice.total || 0;
+      revenueStats.totalInvoiced += amount;
+      
+      if (invoice.status === 'paid') {
+        revenueStats.totalPaid += amount;
+        revenueStats.paidCount++;
+      } else if (invoice.status === 'overdue') {
+        revenueStats.totalOverdue += amount;
+        revenueStats.overdueCount++;
+      } else {
+        revenueStats.totalPending += amount;
+        revenueStats.pendingCount++;
+      }
+      
+      // Group by month
+      if (invoice.issuedDate) {
+        const monthKey = new Date(invoice.issuedDate).toISOString().slice(0, 7); // YYYY-MM
+        if (!monthlyRevenue[monthKey]) {
+          monthlyRevenue[monthKey] = {
+            month: monthKey,
+            invoiced: 0,
+            paid: 0,
+            count: 0
+          };
+        }
+        monthlyRevenue[monthKey].invoiced += amount;
+        if (invoice.status === 'paid') {
+          monthlyRevenue[monthKey].paid += amount;
+        }
+        monthlyRevenue[monthKey].count++;
+      }
+    });
+    
+    const monthlyData = Object.values(monthlyRevenue).sort((a, b) => b.month.localeCompare(a.month)).slice(0, 6);
+    
+    res.json({
+      revenueStats,
+      monthlyRevenue: monthlyData
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Training events analytics
+const trainingEventsReport = async (req, res) => {
+  try {
+    const events = await TrainingEvent.find().populate('trainer', 'name');
+    const now = new Date();
+    
+    const stats = {
+      totalEvents: events.length,
+      upcomingEvents: 0,
+      completedEvents: 0,
+      cancelledEvents: 0,
+      draftEvents: 0,
+      totalParticipants: 0,
+      averageAttendance: 0
+    };
+    
+    const upcomingEventsList = [];
+    
+    events.forEach(event => {
+      const startDate = new Date(event.startDate);
+      
+      if (event.status === 'cancelled') {
+        stats.cancelledEvents++;
+      } else if (event.status === 'draft') {
+        stats.draftEvents++;
+      } else if (event.status === 'completed' || startDate < now) {
+        stats.completedEvents++;
+      } else {
+        stats.upcomingEvents++;
+        if (upcomingEventsList.length < 10) {
+          upcomingEventsList.push({
+            eventId: event._id,
+            title: event.title,
+            startDate: event.startDate,
+            endDate: event.endDate,
+            location: event.location,
+            trainer: event.trainer?.name || 'Not assigned',
+            maxParticipants: event.maxParticipants,
+            price: event.price
+          });
+        }
+      }
+    });
+    
+    // Sort upcoming events by date
+    upcomingEventsList.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+    
+    res.json({
+      stats,
+      upcomingEvents: upcomingEventsList
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
 module.exports = {
   casesStatusReport,
   caseTypeDistribution,
@@ -380,5 +659,10 @@ module.exports = {
   demographicBreakdown,
   timeLoggedReport,
   invoiceableHoursReport,
-  exportReport
+  exportReport,
+  freelancerWorkReport,
+  contractStatusReport,
+  recruitmentPipelineReport,
+  invoiceRevenueReport,
+  trainingEventsReport
 }; 
