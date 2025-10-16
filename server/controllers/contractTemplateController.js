@@ -48,8 +48,13 @@ const updateContractTemplate = async (req, res) => {
   const { name, type, content } = req.body;
   try {
     const placeholders = extractPlaceholders(content);
-    await ContractTemplate.findByIdAndUpdate(req.params.id, { name, type, content, placeholders });
-    res.json({ msg: 'Contract template updated' });
+    const template = await ContractTemplate.findByIdAndUpdate(
+      req.params.id, 
+      { name, type, content, placeholders },
+      { new: true } // Return the updated document
+    );
+    if (!template) return res.status(404).json({ msg: 'Contract template not found' });
+    res.json(template);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');

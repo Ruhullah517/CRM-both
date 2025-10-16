@@ -127,39 +127,35 @@ const generateContract = async (req, res) => {
 
     // Contract title (centered)
     const contractTitle = filledData?.contract_title || name || 'Service Level Agreement';
+    const titleWidth = boldFont.widthOfTextAtSize(contractTitle, 28);
     coverPage.drawText(contractTitle, {
-      x: 0,
+      x: (width - titleWidth) / 2,
       y: height - 350,
       size: 28,
       font: boldFont,
       color: rgb(0, 0, 0),
-    }, {
-      alignment: 'center',
-      width: width,
     });
 
     // Optional subtitle
-    coverPage.drawText('Black Foster Carers Alliance', {
-      x: 0,
+    const subtitle = 'Black Foster Carers Alliance';
+    const subtitleWidth = font.widthOfTextAtSize(subtitle, 16);
+    coverPage.drawText(subtitle, {
+      x: (width - subtitleWidth) / 2,
       y: height - 400,
       size: 16,
       font: font,
       color: rgb(0, 0, 0),
-    }, {
-      alignment: 'center',
-      width: width,
     });
 
     // Footer
-    coverPage.drawText('Registered Company No. 15210072 | BLACK FOSTER CARERS ALLIANCE', {
-      x: 0,
+    const footerText = 'Registered Company No. 15210072 | BLACK FOSTER CARERS ALLIANCE';
+    const footerWidth = font.widthOfTextAtSize(footerText, 10);
+    coverPage.drawText(footerText, {
+      x: (width - footerWidth) / 2,
       y: 80,
-      size: 10,
+      size: 10, 
       font: font,
       color: rgb(0, 0, 0),
-    }, {
-      alignment: 'center',
-      width: width,
     });
 
     // PAGE 2 - n (CONTENT PAGES)
@@ -221,38 +217,77 @@ const generateContract = async (req, res) => {
           
           // Render paragraph on new page
           currentY = height - 100;
-          newPage.drawText(paragraph.trim(), {
-            x: margin,
-            y: currentY,
-            size: 12,
-            font: font,
-            color: rgb(0, 0, 0),
-          }, {
-            width: maxWidth,
-            alignment: 'justify',
-          });
           
-          currentY -= (paragraph.split('\n').length * lineHeight) + 20;
+          // Split text into lines that fit within maxWidth
+          const words = paragraph.trim().split(' ');
+          let line = '';
+          words.forEach((word) => {
+            const testLine = line + (line ? ' ' : '') + word;
+            const lineWidth = font.widthOfTextAtSize(testLine, 12);
+            if (lineWidth > maxWidth && line) {
+              newPage.drawText(line, {
+                x: margin,
+                    y: currentY, 
+                size: 12,
+                font: font,
+                color: rgb(0, 0, 0),
+                  });
+                  currentY -= lineHeight;
+              line = word;
+                } else {
+              line = testLine;
+            }
+          });
+          if (line) {
+            newPage.drawText(line, {
+              x: margin,
+                  y: currentY, 
+              size: 12,
+              font: font,
+              color: rgb(0, 0, 0),
+            });
+            currentY -= lineHeight;
+          }
+          currentY -= 20; // Extra spacing between paragraphs
         } else {
           // Render paragraph on current page
-          page.drawText(paragraph.trim(), {
-            x: margin,
-            y: currentY,
-            size: 12,
-            font: font,
-            color: rgb(0, 0, 0),
-          }, {
-            width: maxWidth,
-            alignment: 'justify',
+          // Split text into lines that fit within maxWidth
+          const words = paragraph.trim().split(' ');
+          let line = '';
+          words.forEach((word) => {
+            const testLine = line + (line ? ' ' : '') + word;
+            const lineWidth = font.widthOfTextAtSize(testLine, 12);
+            if (lineWidth > maxWidth && line) {
+              page.drawText(line, {
+                x: margin,
+                y: currentY,
+                size: 12,
+                font: font,
+                color: rgb(0, 0, 0),
+              });
+              currentY -= lineHeight;
+              line = word;
+            } else {
+              line = testLine;
+            }
           });
-          
-          currentY -= (paragraph.split('\n').length * lineHeight) + 20;
+          if (line) {
+            page.drawText(line, {
+              x: margin,
+              y: currentY,
+              size: 12,
+              font: font,
+              color: rgb(0, 0, 0),
+            });
+          currentY -= lineHeight;
+          }
+          currentY -= 20; // Extra spacing between paragraphs
         }
       });
       
       return currentY;
     };
-
+    
     // Render main content
     renderContent(contentPage, filledContent, height - 100);
 
@@ -269,15 +304,14 @@ const generateContract = async (req, res) => {
     });
 
     // "Reach out to us" heading (centered)
-    contactPage.drawText('Reach out to us', {
-      x: 0,
+    const contactHeading = 'Reach out to us';
+    const headingWidth = boldFont.widthOfTextAtSize(contactHeading, 24);
+    contactPage.drawText(contactHeading, {
+      x: (width - headingWidth) / 2,
       y: height - 200,
       size: 24,
       font: boldFont,
       color: rgb(0, 0, 0),
-    }, {
-      alignment: 'center',
-      width: width,
     });
 
     // Contact details (centered)
@@ -290,29 +324,26 @@ const generateContract = async (req, res) => {
 
     let contactY = height - 280;
     contactDetails.forEach((detail, index) => {
+      const detailWidth = font.widthOfTextAtSize(detail, 16);
       contactPage.drawText(detail, {
-        x: 0,
+        x: (width - detailWidth) / 2,
         y: contactY,
         size: 16,
         font: font,
         color: rgb(0, 0, 0),
-      }, {
-        alignment: 'center',
-        width: width,
       });
       contactY -= 30;
     });
 
     // Footer
-    contactPage.drawText('| BLACK FOSTER CARERS ALLIANCE | Registered Company No. 15210072 |', {
-      x: 0,
+    const contactFooter = '| BLACK FOSTER CARERS ALLIANCE | Registered Company No. 15210072 |';
+    const contactFooterWidth = font.widthOfTextAtSize(contactFooter, 10);
+    contactPage.drawText(contactFooter, {
+      x: (width - contactFooterWidth) / 2,
       y: 80,
       size: 10,
       font: font,
       color: rgb(0, 0, 0),
-    }, {
-      alignment: 'center',
-      width: width,
     });
     
     const pdfBytes = await pdfDoc.save();

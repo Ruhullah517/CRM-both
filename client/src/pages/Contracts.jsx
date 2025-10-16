@@ -29,6 +29,83 @@ const statusColors = {
   expired: 'bg-orange-100 text-orange-800',
 };
 
+// Template View Modal Component
+const TemplateViewModal = ({ show, onClose, template }) => {
+  if (!show || !template) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">View Template</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Template Name
+              </label>
+              <p className="text-sm text-gray-900">{template.name}</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Type
+              </label>
+              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                {template.type}
+              </span>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Template Content
+              </label>
+              <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
+                <pre className="whitespace-pre-wrap text-sm font-mono">{template.content}</pre>
+              </div>
+            </div>
+
+            {template.placeholders && template.placeholders.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Placeholders
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {template.placeholders.map((placeholder, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex px-2 py-1 text-xs font-mono rounded-md bg-green-100 text-green-800"
+                    >
+                      {`{{${placeholder}}}`}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Template Modal Component
 const TemplateModal = ({ show, onClose, template, onSave, loading }) => {
   const [formData, setFormData] = useState({
@@ -304,6 +381,8 @@ const Contracts = () => {
   // Templates state
   const [templates, setTemplates] = useState([]);
   const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showTemplateView, setShowTemplateView] = useState(false);
+  const [viewingTemplate, setViewingTemplate] = useState(null);
   const [editingTemplate, setEditingTemplate] = useState(null);
   
   // Generate state
@@ -658,16 +737,28 @@ const Contracts = () => {
                       <div className="flex gap-2">
                         <button
                           onClick={() => {
+                            setViewingTemplate(template);
+                            setShowTemplateView(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-900"
+                          title="View Template"
+                        >
+                          <EyeIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => {
                             setEditingTemplate(template);
                             setShowTemplateModal(true);
                           }}
                           className="text-green-600 hover:text-green-900"
+                          title="Edit Template"
                         >
                           <PencilIcon className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleDeleteTemplate(template._id)}
                           className="text-red-600 hover:text-red-900"
+                          title="Delete Template"
                         >
                           <TrashIcon className="w-5 h-5" />
                         </button>
@@ -721,6 +812,15 @@ const Contracts = () => {
       )}
 
       {/* Modals */}
+      <TemplateViewModal
+        show={showTemplateView}
+        onClose={() => {
+          setShowTemplateView(false);
+          setViewingTemplate(null);
+        }}
+        template={viewingTemplate}
+      />
+
       <TemplateModal
         show={showTemplateModal}
         onClose={() => {
