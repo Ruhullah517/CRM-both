@@ -327,12 +327,12 @@ const generateContract = async (req, res) => {
       color: rgb(0, 0, 0),
     });
 
-    // Contact details with icons (centered)
+    // Contact details with text-based icons (centered)
     const contactDetails = [
-      { icon: '📞', text: '0800 001 6230' },
-      { icon: '✉️', text: 'Enquiries@blackfostercarersalliance.co.uk' },
-      { icon: '🏢', text: 'Blackfostercarersalliance' },
-      { icon: '🌐', text: 'www.blackfostercarersalliance.co.uk' }
+      { icon: 'TEL:', text: '0800 001 6230' },
+      { icon: 'EMAIL:', text: 'Enquiries@blackfostercarersalliance.co.uk' },
+      { icon: 'COMPANY:', text: 'Blackfostercarersalliance' },
+      { icon: 'WEB:', text: 'www.blackfostercarersalliance.co.uk' }
     ];
 
     let contactY = height - 280;
