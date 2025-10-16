@@ -341,12 +341,12 @@ const generateContract = async (req, res) => {
       color: rgb(1, 1, 1), // White color
     });
 
-    // Contact details with symbols and left alignment (white text)
+    // Contact details with ASCII symbols and left alignment (white text)
     const contactDetails = [
-      { icon: '☎', text: '0800 001 6230' },
-      { icon: '@', text: 'Enquiries@blackfostercarersalliance.co.uk' },
-      { icon: '🏢', text: 'Blackfostercarersalliance' },
-      { icon: '🌐', text: 'www.blackfostercarersalliance.co.uk' }
+      { icon: '[T]', text: '0800 001 6230' },
+      { icon: '[E]', text: 'Enquiries@blackfostercarersalliance.co.uk' },
+      { icon: '[C]', text: 'Blackfostercarersalliance' },
+      { icon: '[W]', text: 'www.blackfostercarersalliance.co.uk' }
     ];
 
     let contactY = height - 280;
