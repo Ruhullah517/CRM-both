@@ -138,11 +138,11 @@ const generateContract = async (req, res) => {
 
     // Contract title (centered) - Use template name
     const contractTitle = template.name || filledData?.contract_title || name || 'Service Level Agreement';
-    const titleWidth = boldFont.widthOfTextAtSize(contractTitle, 28);
+    const titleWidth = boldFont.widthOfTextAtSize(contractTitle, 36);
     coverPage.drawText(contractTitle, {
       x: (width - titleWidth) / 2,
-      y: height - 380, // Adjusted position
-      size: 28,
+      y: height - 390, // Adjusted position for larger text
+      size: 36, // Increased from 28 for more prominence
       font: boldFont,
       color: rgb(0, 0, 0),
     });
