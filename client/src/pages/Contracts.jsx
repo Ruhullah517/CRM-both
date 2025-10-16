@@ -39,22 +39,22 @@ const TemplateViewModal = ({ show, onClose, template }) => {
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">View Template</h2>
-            <button
+        <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
-            >
+        >
               ✕
-            </button>
-          </div>
-          
+        </button>
+      </div>
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Template Name
               </label>
               <p className="text-sm text-gray-900">{template.name}</p>
-            </div>
-            
+      </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Type
@@ -70,7 +70,7 @@ const TemplateViewModal = ({ show, onClose, template }) => {
               </label>
               <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
                 <pre className="whitespace-pre-wrap text-sm font-mono">{template.content}</pre>
-              </div>
+            </div>
             </div>
 
             {template.placeholders && template.placeholders.length > 0 && (
@@ -147,7 +147,7 @@ const TemplateModal = ({ show, onClose, template, onSave, loading }) => {
             >
               ✕
             </button>
-          </div>
+        </div>
           
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -160,8 +160,8 @@ const TemplateModal = ({ show, onClose, template, onSave, loading }) => {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 required
-              />
-            </div>
+          />
+        </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -194,12 +194,12 @@ const TemplateModal = ({ show, onClose, template, onSave, loading }) => {
                 placeholder="Enter your contract template content here..."
                 required
               />
-            </div>
-            
+        </div>
+
             <div className="flex gap-3 pt-4">
-              <button
+        <button
                 type="submit"
-                disabled={loading}
+          disabled={loading}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
               >
                 {loading ? 'Saving...' : (template ? 'Update' : 'Create')}
@@ -210,7 +210,7 @@ const TemplateModal = ({ show, onClose, template, onSave, loading }) => {
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
               >
                 Cancel
-              </button>
+        </button>
             </div>
           </form>
         </div>
@@ -234,7 +234,7 @@ const GenerateModal = ({ show, onClose, templates, onGenerate, loading }) => {
       const template = templates.find(t => t._id === selectedTemplate);
       if (template) {
         // Extract placeholders from template content
-        const matches = template.content.match(/{{\s*([\w_\d]+)\s*}}/g) || [];
+    const matches = template.content.match(/{{\s*([\w_\d]+)\s*}}/g) || [];
         const templatePlaceholders = matches.map(m => m.replace(/{{|}}/g, '').trim());
         setPlaceholders([...new Set(templatePlaceholders)]); // Remove duplicates
         
@@ -290,7 +290,7 @@ const GenerateModal = ({ show, onClose, templates, onGenerate, loading }) => {
           </div>
           
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
+        <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Contract Name
               </label>
@@ -301,26 +301,26 @@ const GenerateModal = ({ show, onClose, templates, onGenerate, loading }) => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                 required
               />
-            </div>
+        </div>
             
-            <div>
+        <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Select Template
               </label>
-              <select
+          <select
                 value={selectedTemplate}
                 onChange={(e) => setSelectedTemplate(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                required
-              >
+            required
+          >
                 <option value="">Choose a template...</option>
                 {templates.map(template => (
                   <option key={template._id} value={template._id}>
                     {template.name} ({template.type})
                   </option>
                 ))}
-              </select>
-            </div>
+          </select>
+        </div>
             
             {placeholders.length > 0 && (
               <div className="bg-gray-50 p-4 rounded-md">
@@ -331,22 +331,22 @@ const GenerateModal = ({ show, onClose, templates, onGenerate, loading }) => {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {placeholder.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                       </label>
-                      <input
-                        type="text"
+                <input
+                  type="text"
                         value={contractForm.filledData[placeholder] || ''}
                         onChange={(e) => handlePlaceholderChange(placeholder, e.target.value)}
                         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                        required
-                      />
-                    </div>
-                  ))}
-                </div>
+                  required
+                />
               </div>
-            )}
+            ))}
+          </div>
+          </div>
+        )}
             
             <div className="flex gap-3 pt-4">
-              <button
-                type="submit"
+        <button
+          type="submit"
                 disabled={loading || !selectedTemplate}
                 className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
               >
@@ -358,9 +358,9 @@ const GenerateModal = ({ show, onClose, templates, onGenerate, loading }) => {
                 className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
               >
                 Cancel
-              </button>
+        </button>
             </div>
-          </form>
+      </form>
         </div>
       </div>
     </div>
@@ -369,10 +369,10 @@ const GenerateModal = ({ show, onClose, templates, onGenerate, loading }) => {
 
 // Main Contracts Component
 const Contracts = () => {
-  const { user } = useAuth();
+  const { user, userInfo } = useAuth();
   const [activeTab, setActiveTab] = useState('contracts');
   const [loading, setLoading] = useState(false);
-  
+
   // Contracts state
   const [contracts, setContracts] = useState([]);
   const [selectedContract, setSelectedContract] = useState(null);
@@ -458,7 +458,7 @@ const Contracts = () => {
     try {
       const result = await generateContract({
         ...contractData,
-        generatedBy: user._id || user.user?.id
+        generatedBy: userInfo?.id || user?.user?.id
       });
       setContracts([result, ...contracts]);
       setShowGenerateModal(false);
@@ -527,7 +527,7 @@ const Contracts = () => {
         <nav className="-mb-px flex space-x-8">
           {tabs.map((tab) => {
             const Icon = tab.icon;
-            return (
+    return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
