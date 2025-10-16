@@ -79,10 +79,15 @@ const generateContract = async (req, res) => {
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
     
-    // Load logo for use across pages
+    // Load logo for use across pages (using logo-bg.png)
     let logoImage = null;
     try {
       const logoPaths = [
+        path.join(__dirname, '../uploads/logo-bg.png'),
+        path.join(__dirname, '../uploads/logo-bg.PNG'),
+        path.join(__dirname, '../../client/public/logo-bg.png'),
+        path.join(__dirname, '../../client/public/logo-bg.PNG'),
+        // Fallback to original logos
         path.join(__dirname, '../uploads/logo.png'),
         path.join(__dirname, '../uploads/logo.PNG'),
         path.join(__dirname, '../../client/public/logo.PNG'),
@@ -97,6 +102,7 @@ const generateContract = async (req, res) => {
           } else {
             logoImage = await pdfDoc.embedJpg(logoBytes);
           }
+          console.log('Logo loaded from:', logoPath);
           break;
         }
       }
@@ -116,9 +122,9 @@ const generateContract = async (req, res) => {
       color: rgb(0.875, 0.392, 0.239), // #df643d
     });
 
-    // Centered logo at the top
+    // Centered logo at the top (larger size)
     if (logoImage) {
-      const logoSize = 120;
+      const logoSize = 150; // Increased from 120
       const logoX = (width - logoSize) / 2;
       const logoY = height - 200;
       coverPage.drawImage(logoImage, {
@@ -129,12 +135,12 @@ const generateContract = async (req, res) => {
       });
     }
 
-    // Contract title (centered)
-    const contractTitle = filledData?.contract_title || name || 'Service Level Agreement';
+    // Contract title (centered) - Use template name
+    const contractTitle = template.name || filledData?.contract_title || name || 'Service Level Agreement';
     const titleWidth = boldFont.widthOfTextAtSize(contractTitle, 28);
     coverPage.drawText(contractTitle, {
       x: (width - titleWidth) / 2,
-      y: height - 350,
+      y: height - 380, // Adjusted position
       size: 28,
       font: boldFont,
       color: rgb(0, 0, 0),
@@ -145,22 +151,13 @@ const generateContract = async (req, res) => {
     const subtitleWidth = font.widthOfTextAtSize(subtitle, 16);
     coverPage.drawText(subtitle, {
       x: (width - subtitleWidth) / 2,
-      y: height - 400,
+      y: height - 430, // Adjusted position
       size: 16,
       font: font,
       color: rgb(0, 0, 0),
     });
 
-    // Footer
-    const footerText = 'Registered Company No. 15210072 | BLACK FOSTER CARERS ALLIANCE';
-    const footerWidth = font.widthOfTextAtSize(footerText, 10);
-    coverPage.drawText(footerText, {
-      x: (width - footerWidth) / 2,
-      y: 80,
-      size: 10, 
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+    // No footer on cover page (as requested)
 
     // PAGE 2 - n (CONTENT PAGES)
     const contentPage = pdfDoc.addPage();
@@ -174,16 +171,39 @@ const generateContract = async (req, res) => {
       color: rgb(1, 1, 1), // White
     });
 
-    // Logo at top-right corner
+    // Logo at top-right corner (wider)
     if (logoImage) {
-      const logoSize = 60;
+      const logoWidth = 80; // Increased width
+      const logoHeight = 60;
       contentPage.drawImage(logoImage, {
-        x: width - logoSize - 20,
-        y: height - logoSize - 20,
-        width: logoSize,
-        height: logoSize,
+        x: width - logoWidth - 20,
+        y: height - logoHeight - 20,
+        width: logoWidth,
+        height: logoHeight,
       });
     }
+
+    // Add template name as heading on first content page
+    const templateName = template.name || 'Contract';
+    const templateHeadingWidth = boldFont.widthOfTextAtSize(templateName, 18);
+    contentPage.drawText(templateName, {
+      x: (width - templateHeadingWidth) / 2,
+      y: height - 120, // Position below logo
+      size: 18,
+      font: boldFont,
+      color: rgb(0, 0, 0),
+    });
+
+    // Add footer to first content page
+    const footerText = '| BLACK FOSTER CARERS ALLIANCE | 6 St Michael\'s Court, West Bromwich,B70 8ET | enquiries@blackfostercarersalliance.co.uk | www.blackfostercarersalliance.co.uk| 0800 001 6230 | Registered Company No. 15210072 |';
+    const footerWidth = font.widthOfTextAtSize(footerText, 8);
+    contentPage.drawText(footerText, {
+      x: (width - footerWidth) / 2,
+      y: 30,
+      size: 8,
+      font: font,
+      color: rgb(0, 0, 0),
+    });
 
     // Render content with proper formatting
     const renderContent = (page, content, startY) => {
@@ -208,20 +228,32 @@ const generateContract = async (req, res) => {
         
         lines.forEach(lineText => {
           // Check if we need a new page
-          if (currentY < 100) {
+          if (currentY < 120) { // Increased from 100 to accommodate footer
             // Create new page
             const newPage = pdfDoc.addPage();
             
-            // Add logo to new page
+            // Add logo to new page (wider)
             if (logoImage) {
-              const logoSize = 60;
+              const logoWidth = 80; // Increased width
+              const logoHeight = 60;
               newPage.drawImage(logoImage, {
-                x: width - logoSize - 20,
-                y: height - logoSize - 20,
-                width: logoSize,
-                height: logoSize,
+                x: width - logoWidth - 20,
+                y: height - logoHeight - 20,
+                width: logoWidth,
+                height: logoHeight,
               });
             }
+            
+            // Add footer to content pages
+            const footerText = '| BLACK FOSTER CARERS ALLIANCE | 6 St Michael\'s Court, West Bromwich,B70 8ET | enquiries@blackfostercarersalliance.co.uk | www.blackfostercarersalliance.co.uk| 0800 001 6230 | Registered Company No. 15210072 |';
+            const footerWidth = font.widthOfTextAtSize(footerText, 8);
+            newPage.drawText(footerText, {
+              x: (width - footerWidth) / 2,
+              y: 30,
+              size: 8,
+              font: font,
+              color: rgb(0, 0, 0),
+            });
             
             currentY = height - 100;
             page = newPage; // Update page reference
@@ -286,46 +318,47 @@ const generateContract = async (req, res) => {
 
     // "Reach out to us" heading (centered)
     const contactHeading = 'Reach out to us';
-    const headingWidth = boldFont.widthOfTextAtSize(contactHeading, 24);
+    const contactHeadingWidth = boldFont.widthOfTextAtSize(contactHeading, 24);
     contactPage.drawText(contactHeading, {
-      x: (width - headingWidth) / 2,
+      x: (width - contactHeadingWidth) / 2,
       y: height - 200,
       size: 24,
       font: boldFont,
       color: rgb(0, 0, 0),
     });
 
-    // Contact details (centered)
+    // Contact details with icons (centered)
     const contactDetails = [
-      '0800 001 6230',
-      'Enquiries@blackfostercarersalliance.co.uk',
-      'Blackfostercarersalliance',
-      'www.blackfostercarersalliance.co.uk'
+      { icon: '📞', text: '0800 001 6230' },
+      { icon: '✉️', text: 'Enquiries@blackfostercarersalliance.co.uk' },
+      { icon: '🏢', text: 'Blackfostercarersalliance' },
+      { icon: '🌐', text: 'www.blackfostercarersalliance.co.uk' }
     ];
 
     let contactY = height - 280;
     contactDetails.forEach((detail, index) => {
-      const detailWidth = font.widthOfTextAtSize(detail, 16);
-      contactPage.drawText(detail, {
-        x: (width - detailWidth) / 2,
+      // Draw icon
+      contactPage.drawText(detail.icon, {
+        x: (width - 200) / 2, // Position icon to the left
         y: contactY,
         size: 16,
         font: font,
         color: rgb(0, 0, 0),
       });
-      contactY -= 30;
+      
+      // Draw text
+      const detailWidth = font.widthOfTextAtSize(detail.text, 16);
+      contactPage.drawText(detail.text, {
+        x: (width - detailWidth) / 2 + 30, // Position text to the right of icon
+        y: contactY,
+        size: 16,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
+      contactY -= 40; // Increased spacing
     });
 
-    // Footer
-    const contactFooter = '| BLACK FOSTER CARERS ALLIANCE | Registered Company No. 15210072 |';
-    const contactFooterWidth = font.widthOfTextAtSize(contactFooter, 10);
-    contactPage.drawText(contactFooter, {
-      x: (width - contactFooterWidth) / 2,
-      y: 80,
-      size: 10,
-      font: font,
-      color: rgb(0, 0, 0),
-    });
+    // No footer on contact page (as requested)
     
     const pdfBytes = await pdfDoc.save();
     
