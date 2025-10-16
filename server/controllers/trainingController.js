@@ -963,7 +963,7 @@ const sendCertificateEmail = async (certificate) => {
   }
 };
 
-// Generate certificate PDF
+// Generate certificate PDF with new Cultural Practice Power & Progress design
 const generateCertificatePDF = async (certificate) => {
   return new Promise((resolve, reject) => {
     try {
@@ -981,10 +981,10 @@ const generateCertificatePDF = async (certificate) => {
         size: 'A4',
         layout: 'landscape',
         margins: {
-          top: 50,
-          bottom: 50,
-          left: 50,
-          right: 50
+          top: 40,
+          bottom: 40,
+          left: 40,
+          right: 40
         }
       });
 
@@ -992,131 +992,185 @@ const generateCertificatePDF = async (certificate) => {
       const stream = fs.createWriteStream(filepath);
       doc.pipe(stream);
 
-      // Add background
+      // Add white background
       doc.rect(0, 0, doc.page.width, doc.page.height)
+        .fill('#ffffff');
+
+      // Add light gray textured background at bottom (15% of page height)
+      const grayBackgroundHeight = doc.page.height * 0.15;
+      doc.rect(0, doc.page.height - grayBackgroundHeight, doc.page.width, grayBackgroundHeight)
         .fill('#f8f9fa');
 
-      // Add border
-      doc.rect(20, 20, doc.page.width - 40, doc.page.height - 40)
-        .lineWidth(3)
-        .stroke('#007bff');
+      // Add main title in top left - "Cultural Practice Power & Progress"
+      doc.fontSize(28)
+        .font('Helvetica-Bold')
+        .fill('#000000')
+        .text('Cultural', 50, 60);
+      
+      doc.fontSize(28)
+        .font('Helvetica-Bold')
+        .fill('#000000')
+        .text('Practice', 50, 90);
+      
+      doc.fontSize(28)
+        .font('Helvetica-Bold')
+        .fill('#000000')
+        .text('Power &', 50, 120);
+      
+      doc.fontSize(28)
+        .font('Helvetica-Bold')
+        .fill('#00a86b') // Green color for "Progress"
+        .text('Progress', 50, 150);
 
-      // Add inner border
-      doc.rect(40, 40, doc.page.width - 80, doc.page.height - 80)
-        .lineWidth(1)
-        .stroke('#dee2e6');
-
-      // Add BFCA logo
+      // Add Black Foster Carers Alliance logo in top right
       try {
         const logoPath1 = path.join(__dirname, '../uploads/logo.png');
         const logoPath2 = path.join(__dirname, '../../client/public/logo.PNG');
         
         if (fs.existsSync(logoPath1)) {
-          doc.image(logoPath1, 50, 50, { width: 80, height: 80 });
+          doc.image(logoPath1, doc.page.width - 120, 60, { width: 60, height: 60 });
         } else if (fs.existsSync(logoPath2)) {
-          doc.image(logoPath2, 50, 50, { width: 80, height: 80 });
+          doc.image(logoPath2, doc.page.width - 120, 60, { width: 60, height: 60 });
         }
       } catch (error) {
         console.log('Logo not found for certificate, using text only');
       }
 
-      // Add certificate title
-      doc.fontSize(36)
+      // Add Black Foster Carers Alliance text in top right
+      doc.fontSize(12)
         .font('Helvetica-Bold')
-        .fill('#007bff')
-        .text('Certificate of Completion', 0, 120, {
-          align: 'center',
-          width: doc.page.width
-        });
-
-      // Add decorative line
-      doc.moveTo(100, 180)
-        .lineTo(doc.page.width - 100, 180)
-        .lineWidth(2)
-        .stroke('#007bff');
-
-      // Add participant name
-      doc.fontSize(28)
+        .fill('#000000')
+        .text('BLACK FOSTER CARERS', doc.page.width - 120, 130);
+      
+      doc.fontSize(14)
         .font('Helvetica-Bold')
-        .fill('#212529')
-        .text('This is to certify that', 0, 220, {
-          align: 'center',
-          width: doc.page.width
-        });
+        .fill('#000000')
+        .text('ALLIANCE', doc.page.width - 120, 145);
 
-      doc.fontSize(32)
-        .font('Helvetica-Bold')
-        .fill('#007bff')
-        .text(certificate.participant.name, 0, 260, {
-          align: 'center',
-          width: doc.page.width
-        });
-
-      // Add course details
+      // Add award statement in center
       doc.fontSize(18)
         .font('Helvetica')
-        .fill('#6c757d')
-        .text('has successfully completed the training course', 0, 310, {
+        .fill('#666666')
+        .text('This certificate is awarded to', 0, 250, {
           align: 'center',
           width: doc.page.width
         });
 
+      // Add participant name (with underline space)
       doc.fontSize(24)
         .font('Helvetica-Bold')
-        .fill('#212529')
-        .text(certificate.courseTitle, 0, 350, {
+        .fill('#000000')
+        .text(certificate.participant.name, 0, 290, {
           align: 'center',
           width: doc.page.width
         });
 
-      // Add completion details
+      // Add decorative line under name
+      doc.moveTo(doc.page.width * 0.25, 320)
+        .lineTo(doc.page.width * 0.75, 320)
+        .lineWidth(1)
+        .stroke('#000000');
+
+      // Add purpose of award
       doc.fontSize(16)
-        .font('Helvetica')
-        .fill('#6c757d')
-        .text(`Duration: ${certificate.duration}`, 0, 400, {
+        .font('Helvetica-Bold')
+        .fill('#000000')
+        .text('FOR ATTENDING THE CULTURAL PRACTICE POWER & PROGRESS', 0, 350, {
           align: 'center',
           width: doc.page.width
         });
 
       doc.fontSize(16)
-        .font('Helvetica')
-        .fill('#6c757d')
-        .text(`Completed on: ${certificate.completionDate.toLocaleDateString()}`, 0, 430, {
+        .font('Helvetica-Bold')
+        .fill('#000000')
+        .text('CONFERENCE', 0, 375, {
           align: 'center',
           width: doc.page.width
         });
 
-      // Add certificate number
+      // Add CPD Certified logo in bottom left
+      doc.fontSize(24)
+        .font('Helvetica-Bold')
+        .fill('#000000')
+        .text('CPD', 50, doc.page.height - 80);
+      
       doc.fontSize(12)
+        .font('Helvetica-Bold')
+        .fill('#000000')
+        .text('CERTIFIED', 50, doc.page.height - 60);
+      
+      doc.fontSize(8)
         .font('Helvetica')
-        .fill('#6c757d')
-        .text(`Certificate Number: ${certificate.certificateNumber}`, 0, 480, {
+        .fill('#666666')
+        .text('The CPD Certification Service', 50, doc.page.height - 45);
+
+      // Add signature in bottom center
+      doc.fontSize(16)
+        .font('Helvetica-Oblique')
+        .fill('#000000')
+        .text('Rachel Cole', 0, doc.page.height - 80, {
           align: 'center',
           width: doc.page.width
         });
 
       // Add signature line
-      doc.fontSize(14)
-        .font('Helvetica')
-        .fill('#6c757d')
-        .text('Authorized Signature', doc.page.width - 200, 520, {
-          align: 'center',
-          width: 150
-        });
-
-      doc.moveTo(doc.page.width - 200, 540)
-        .lineTo(doc.page.width - 50, 540)
+      doc.moveTo(doc.page.width * 0.35, doc.page.height - 60)
+        .lineTo(doc.page.width * 0.65, doc.page.height - 60)
         .lineWidth(1)
-        .stroke('#6c757d');
+        .stroke('#000000');
 
-      // Add company logo/name area (reduced size to prevent overflow)
-      doc.fontSize(10)
+      // Add organization name under signature
+      doc.fontSize(14)
         .font('Helvetica-Bold')
-        .fill('#007bff')
-        .text('Black Foster Carers Alliance', 50, 520, {
+        .fill('#000000')
+        .text('Black Foster Carers', 0, doc.page.height - 45, {
           align: 'center',
-          width: 150
+          width: doc.page.width
         });
+
+      doc.fontSize(14)
+        .font('Helvetica-Bold')
+        .fill('#000000')
+        .text('Alliance CIC', 0, doc.page.height - 30, {
+          align: 'center',
+          width: doc.page.width
+        });
+
+      // Add date in bottom right
+      const currentDate = new Date();
+      const monthYear = currentDate.toLocaleDateString('en-GB', { 
+        month: 'long', 
+        year: 'numeric' 
+      }).toUpperCase();
+      
+      doc.fontSize(14)
+        .font('Helvetica-Bold')
+        .fill('#000000')
+        .text(monthYear, doc.page.width - 120, doc.page.height - 50);
+
+      // Add green dotted border design element
+      // This creates a path of green dots starting from "Progress" text
+      const dotRadius = 3;
+      const dotSpacing = 15;
+      const greenColor = '#00a86b';
+
+      // Vertical dots from "Progress" text down
+      for (let y = 180; y <= 400; y += dotSpacing) {
+        doc.circle(90, y, dotRadius)
+          .fill(greenColor);
+      }
+
+      // Horizontal dots across bottom
+      for (let x = 90; x <= doc.page.width - 90; x += dotSpacing) {
+        doc.circle(x, 400, dotRadius)
+          .fill(greenColor);
+      }
+
+      // Vertical dots up to date area
+      for (let y = 400; y >= doc.page.height - 120; y -= dotSpacing) {
+        doc.circle(doc.page.width - 90, y, dotRadius)
+          .fill(greenColor);
+      }
 
       // Finalize PDF
       doc.end();
