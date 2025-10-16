@@ -15,7 +15,6 @@ import PublicFreelancerForm from '../pages/PublicFreelancerForm';
 import Recruitment from '../pages/Recruitment';
 import MyCases from '../pages/MyCases';
 import EmailTemplates from '../pages/EmailTemplates';
-import ContractTemplates from '../pages/ContractTemplates';
 import Mentors from '../pages/Mentors';
 import Users from '../pages/Users';
 import PrivateRoute from './PrivateRoute';
@@ -65,7 +64,6 @@ export default function AppRouter() {
               <Route path="/initial-assessment/:id" element={<InitialAssessment />} />
               <Route path="/full-assessment/:id" element={<FullAssessment />} />
               <Route path="/case-closure/:id" element={<CaseClosure />} />
-              <Route path="/contract-templates" element={<ContractTemplates />} />
               <Route path="/mentors" element={<Mentors />} />
               <Route path="/freelancers" element={<Freelancers />} />
               <Route path="/training" element={<TrainingEvents />} />

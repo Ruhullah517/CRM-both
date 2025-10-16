@@ -740,6 +740,121 @@ const Contracts = () => {
         loading={loading}
       />
 
+      {/* Contract Detail Modal */}
+      {showContractDetail && selectedContract && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-4 md:top-20 mx-auto p-3 md:p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white max-h-[90vh] overflow-y-auto">
+            <div className="mt-3">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Contract Details
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowContractDetail(false);
+                    setSelectedContract(null);
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Contract Name:</label>
+                    <p className="text-sm text-gray-900 break-words">{selectedContract.name || selectedContract._id}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Type:</label>
+                    <p className="text-sm text-gray-900">{selectedContract.roleType}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Status:</label>
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      statusColors[selectedContract.status?.toLowerCase()] || 'bg-gray-100 text-gray-800'
+                    }`}>
+                      {selectedContract.status}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Created By:</label>
+                    <p className="text-sm text-gray-900">{selectedContract.generatedBy?.name || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Created Date:</label>
+                    <p className="text-sm text-gray-900">
+                      {new Date(selectedContract.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Certificate Number:</label>
+                    <p className="text-sm text-gray-900">{selectedContract.certificateNumber || '-'}</p>
+                  </div>
+                </div>
+
+                {selectedContract.filledData && Object.keys(selectedContract.filledData).length > 0 && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Contract Details:</label>
+                    <div className="mt-2 bg-gray-50 p-3 rounded-md">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {Object.entries(selectedContract.filledData).map(([key, value]) => (
+                          <div key={key}>
+                            <span className="text-sm font-medium text-gray-600">
+                              {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}:
+                            </span>
+                            <span className="text-sm text-gray-900 ml-2">{value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedContract.generatedDocUrl && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">PDF Document:</label>
+                    <div className="mt-2">
+                      <a
+                        href={selectedContract.generatedDocUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200"
+                      >
+                        <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+                        View PDF
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                {selectedContract.generatedDocUrl && (
+                  <button
+                    onClick={() => handleDownloadContract(selectedContract._id)}
+                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4 mr-2" />
+                    Download PDF
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setShowContractDetail(false);
+                    setSelectedContract(null);
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {loading && <Loader />}
     </div>
   );

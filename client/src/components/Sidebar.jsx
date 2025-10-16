@@ -36,7 +36,6 @@ const navItems = [
 
   // Contract Management Section
   { name: 'Contracts', path: '/contracts', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'contract' },
-  { name: 'Contract Templates', path: '/contract-templates', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon, section: 'contract' },
 
   // Training & Development Section
   { name: 'Training Events', path: '/training', roles: ['admin', 'staff'], icon: TrainingIcon, section: 'training' },
