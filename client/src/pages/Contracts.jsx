@@ -184,7 +184,7 @@ const TemplateModal = ({ show, onClose, template, onSave, loading }) => {
                 Template Content
               </label>
               <div className="text-xs text-gray-500 mb-2">
-                Use placeholders like {{client_name}}, {{start_date}}, {{hourly_rate}} etc.
+                Use placeholders like {'{{'} client_name {'}}'}, {'{{'} start_date {'}}'}, {'{{'} hourly_rate {'}}'}  etc.
               </div>
               <textarea
                 value={formData.content}
