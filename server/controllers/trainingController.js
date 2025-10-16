@@ -981,10 +981,10 @@ const generateCertificatePDF = async (certificate) => {
         size: 'A4',
         layout: 'landscape',
         margins: {
-          top: 40,
-          bottom: 40,
-          left: 40,
-          right: 40
+          top: 30,
+          bottom: 30,
+          left: 30,
+          right: 30
         }
       });
 
@@ -996,139 +996,181 @@ const generateCertificatePDF = async (certificate) => {
       doc.rect(0, 0, doc.page.width, doc.page.height)
         .fill('#ffffff');
 
-      // Add light gray textured background at bottom (15% of page height)
-      const grayBackgroundHeight = doc.page.height * 0.15;
+      // Add light gray textured background at bottom (12% of page height)
+      const grayBackgroundHeight = doc.page.height * 0.12;
       doc.rect(0, doc.page.height - grayBackgroundHeight, doc.page.width, grayBackgroundHeight)
         .fill('#f8f9fa');
 
-      // Add main title in top left - "Cultural Practice Power & Progress"
-      doc.fontSize(28)
+      // Add main title in top left - "Cultural Practice Power & Progress" (reduced font sizes)
+      doc.fontSize(22)
         .font('Helvetica-Bold')
         .fill('#000000')
-        .text('Cultural', 50, 60);
+        .text('Cultural', 40, 40);
       
-      doc.fontSize(28)
+      doc.fontSize(22)
         .font('Helvetica-Bold')
         .fill('#000000')
-        .text('Practice', 50, 90);
+        .text('Practice', 40, 65);
       
-      doc.fontSize(28)
+      doc.fontSize(22)
         .font('Helvetica-Bold')
         .fill('#000000')
-        .text('Power &', 50, 120);
+        .text('Power &', 40, 90);
       
-      doc.fontSize(28)
+      doc.fontSize(22)
         .font('Helvetica-Bold')
         .fill('#00a86b') // Green color for "Progress"
-        .text('Progress', 50, 150);
+        .text('Progress', 40, 115);
 
-      // Add Black Foster Carers Alliance logo in top right
+      // Add Black Foster Carers Alliance logo in top right (smaller)
       try {
         const logoPath1 = path.join(__dirname, '../uploads/logo.png');
         const logoPath2 = path.join(__dirname, '../../client/public/logo.PNG');
         
         if (fs.existsSync(logoPath1)) {
-          doc.image(logoPath1, doc.page.width - 120, 60, { width: 60, height: 60 });
+          doc.image(logoPath1, doc.page.width - 100, 40, { width: 50, height: 50 });
         } else if (fs.existsSync(logoPath2)) {
-          doc.image(logoPath2, doc.page.width - 120, 60, { width: 60, height: 60 });
+          doc.image(logoPath2, doc.page.width - 100, 40, { width: 50, height: 50 });
         }
       } catch (error) {
         console.log('Logo not found for certificate, using text only');
       }
 
-      // Add Black Foster Carers Alliance text in top right
+      // Add Black Foster Carers Alliance text in top right (smaller)
+      doc.fontSize(10)
+        .font('Helvetica-Bold')
+        .fill('#000000')
+        .text('BLACK FOSTER CARERS', doc.page.width - 100, 95);
+      
       doc.fontSize(12)
         .font('Helvetica-Bold')
         .fill('#000000')
-        .text('BLACK FOSTER CARERS', doc.page.width - 120, 130);
-      
-      doc.fontSize(14)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('ALLIANCE', doc.page.width - 120, 145);
+        .text('ALLIANCE', doc.page.width - 100, 110);
 
-      // Add award statement in center
-      doc.fontSize(18)
+      // Add award statement in center (moved up)
+      doc.fontSize(16)
         .font('Helvetica')
         .fill('#666666')
-        .text('This certificate is awarded to', 0, 250, {
+        .text('This certificate is awarded to', 0, 180, {
           align: 'center',
           width: doc.page.width
         });
 
-      // Add participant name (with underline space)
-      doc.fontSize(24)
+      // Add participant name (moved up, smaller font)
+      doc.fontSize(20)
         .font('Helvetica-Bold')
         .fill('#000000')
-        .text(certificate.participant.name, 0, 290, {
+        .text(certificate.participant.name, 0, 210, {
           align: 'center',
           width: doc.page.width
         });
 
-      // Add decorative line under name
-      doc.moveTo(doc.page.width * 0.25, 320)
-        .lineTo(doc.page.width * 0.75, 320)
+      // Add decorative line under name (moved up)
+      doc.moveTo(doc.page.width * 0.25, 235)
+        .lineTo(doc.page.width * 0.75, 235)
         .lineWidth(1)
         .stroke('#000000');
 
-      // Add purpose of award
-      doc.fontSize(16)
+      // Add purpose of award (moved up, smaller font)
+      doc.fontSize(14)
         .font('Helvetica-Bold')
         .fill('#000000')
-        .text('FOR ATTENDING THE CULTURAL PRACTICE POWER & PROGRESS', 0, 350, {
+        .text('FOR ATTENDING THE CULTURAL PRACTICE POWER & PROGRESS', 0, 260, {
           align: 'center',
           width: doc.page.width
         });
 
-      doc.fontSize(16)
+      doc.fontSize(14)
         .font('Helvetica-Bold')
         .fill('#000000')
-        .text('CONFERENCE', 0, 375, {
+        .text('CONFERENCE', 0, 280, {
           align: 'center',
           width: doc.page.width
         });
 
-      // Add CPD Certified logo in bottom left
-      doc.fontSize(24)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('CPD', 50, doc.page.height - 80);
-      
-      doc.fontSize(12)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('CERTIFIED', 50, doc.page.height - 60);
-      
-      doc.fontSize(8)
-        .font('Helvetica')
-        .fill('#666666')
-        .text('The CPD Certification Service', 50, doc.page.height - 45);
+      // Add CPD Certified logo in bottom left (moved up)
+      try {
+        const cpdLogoPath1 = path.join(__dirname, '../uploads/cpd-certified-logo.png');
+        const cpdLogoPath2 = path.join(__dirname, '../uploads/cpd-logo.png');
+        const cpdLogoPath3 = path.join(__dirname, '../../client/public/cpd-certified-logo.png');
+        const cpdLogoPath4 = path.join(__dirname, '../../client/public/cpd-logo.png');
+        
+        let cpdLogoFound = false;
+        if (fs.existsSync(cpdLogoPath1)) {
+          doc.image(cpdLogoPath1, 40, doc.page.height - 70, { width: 80, height: 60 });
+          cpdLogoFound = true;
+        } else if (fs.existsSync(cpdLogoPath2)) {
+          doc.image(cpdLogoPath2, 40, doc.page.height - 70, { width: 80, height: 60 });
+          cpdLogoFound = true;
+        } else if (fs.existsSync(cpdLogoPath3)) {
+          doc.image(cpdLogoPath3, 40, doc.page.height - 70, { width: 80, height: 60 });
+          cpdLogoFound = true;
+        } else if (fs.existsSync(cpdLogoPath4)) {
+          doc.image(cpdLogoPath4, 40, doc.page.height - 70, { width: 80, height: 60 });
+          cpdLogoFound = true;
+        }
+        
+        // Fallback to text if logo not found
+        if (!cpdLogoFound) {
+          doc.fontSize(20)
+            .font('Helvetica-Bold')
+            .fill('#000000')
+            .text('CPD', 40, doc.page.height - 70);
+          
+          doc.fontSize(10)
+            .font('Helvetica-Bold')
+            .fill('#000000')
+            .text('CERTIFIED', 40, doc.page.height - 55);
+          
+          doc.fontSize(7)
+            .font('Helvetica')
+            .fill('#666666')
+            .text('The CPD Certification Service', 40, doc.page.height - 42);
+        }
+      } catch (error) {
+        console.log('CPD logo not found, using text fallback');
+        // Fallback to text
+        doc.fontSize(20)
+          .font('Helvetica-Bold')
+          .fill('#000000')
+          .text('CPD', 40, doc.page.height - 70);
+        
+        doc.fontSize(10)
+          .font('Helvetica-Bold')
+          .fill('#000000')
+          .text('CERTIFIED', 40, doc.page.height - 55);
+        
+        doc.fontSize(7)
+          .font('Helvetica')
+          .fill('#666666')
+          .text('The CPD Certification Service', 40, doc.page.height - 42);
+      }
 
-      // Add signature in bottom center
-      doc.fontSize(16)
+      // Add signature in bottom center (moved up)
+      doc.fontSize(14)
         .font('Helvetica-Oblique')
         .fill('#000000')
-        .text('Rachel Cole', 0, doc.page.height - 80, {
+        .text('Rachel Cole', 0, doc.page.height - 70, {
           align: 'center',
           width: doc.page.width
         });
 
-      // Add signature line
-      doc.moveTo(doc.page.width * 0.35, doc.page.height - 60)
-        .lineTo(doc.page.width * 0.65, doc.page.height - 60)
+      // Add signature line (moved up)
+      doc.moveTo(doc.page.width * 0.35, doc.page.height - 55)
+        .lineTo(doc.page.width * 0.65, doc.page.height - 55)
         .lineWidth(1)
         .stroke('#000000');
 
-      // Add organization name under signature
-      doc.fontSize(14)
+      // Add organization name under signature (moved up, smaller font)
+      doc.fontSize(12)
         .font('Helvetica-Bold')
         .fill('#000000')
-        .text('Black Foster Carers', 0, doc.page.height - 45, {
+        .text('Black Foster Carers', 0, doc.page.height - 42, {
           align: 'center',
           width: doc.page.width
         });
 
-      doc.fontSize(14)
+      doc.fontSize(12)
         .font('Helvetica-Bold')
         .fill('#000000')
         .text('Alliance CIC', 0, doc.page.height - 30, {
@@ -1136,39 +1178,38 @@ const generateCertificatePDF = async (certificate) => {
           width: doc.page.width
         });
 
-      // Add date in bottom right
+      // Add date in bottom right (moved up)
       const currentDate = new Date();
       const monthYear = currentDate.toLocaleDateString('en-GB', { 
         month: 'long', 
         year: 'numeric' 
       }).toUpperCase();
       
-      doc.fontSize(14)
+      doc.fontSize(12)
         .font('Helvetica-Bold')
         .fill('#000000')
-        .text(monthYear, doc.page.width - 120, doc.page.height - 50);
+        .text(monthYear, doc.page.width - 100, doc.page.height - 45);
 
-      // Add green dotted border design element
-      // This creates a path of green dots starting from "Progress" text
-      const dotRadius = 3;
-      const dotSpacing = 15;
+      // Add green dotted border design element (adjusted for single page)
+      const dotRadius = 2;
+      const dotSpacing = 12;
       const greenColor = '#00a86b';
 
-      // Vertical dots from "Progress" text down
-      for (let y = 180; y <= 400; y += dotSpacing) {
-        doc.circle(90, y, dotRadius)
+      // Vertical dots from "Progress" text down (adjusted height)
+      for (let y = 140; y <= 320; y += dotSpacing) {
+        doc.circle(80, y, dotRadius)
           .fill(greenColor);
       }
 
-      // Horizontal dots across bottom
-      for (let x = 90; x <= doc.page.width - 90; x += dotSpacing) {
-        doc.circle(x, 400, dotRadius)
+      // Horizontal dots across bottom (adjusted position)
+      for (let x = 80; x <= doc.page.width - 80; x += dotSpacing) {
+        doc.circle(x, 320, dotRadius)
           .fill(greenColor);
       }
 
-      // Vertical dots up to date area
-      for (let y = 400; y >= doc.page.height - 120; y -= dotSpacing) {
-        doc.circle(doc.page.width - 90, y, dotRadius)
+      // Vertical dots up to date area (adjusted height)
+      for (let y = 320; y >= doc.page.height - 80; y -= dotSpacing) {
+        doc.circle(doc.page.width - 80, y, dotRadius)
           .fill(greenColor);
       }
 
