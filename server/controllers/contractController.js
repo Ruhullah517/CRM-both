@@ -473,8 +473,12 @@ const downloadContract = async (req, res) => {
     // Remove leading slash if present
     if (filePath.startsWith('/')) filePath = filePath.slice(1);
     
-    // Build the absolute path relative to server directory
-    const absPath = path.join(__dirname, '..', filePath);
+    // Extract just the filename from the path
+    const fileName = filePath.split('/').pop();
+    
+    // Build the absolute path using the same structure as save
+    // This ensures we look in the same place where files are saved
+    const absPath = path.join(__dirname, '../uploads/contracts', fileName);
     
     console.log('Resolved file path:', absPath);
     console.log('File exists:', fs.existsSync(absPath));
