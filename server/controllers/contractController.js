@@ -122,16 +122,17 @@ const generateContract = async (req, res) => {
       color: rgb(0.875, 0.392, 0.239), // #df643d
     });
 
-    // Centered logo at the top (larger size)
+    // Centered logo at the top (larger and wider size)
     if (logoImage) {
-      const logoSize = 150; // Increased from 120
-      const logoX = (width - logoSize) / 2;
+      const logoWidth = 180; // Increased width for more prominent appearance
+      const logoHeight = 150; // Keep height proportional
+      const logoX = (width - logoWidth) / 2;
       const logoY = height - 200;
       coverPage.drawImage(logoImage, {
         x: logoX,
         y: logoY,
-        width: logoSize,
-        height: logoSize,
+        width: logoWidth,
+        height: logoHeight,
       });
     }
 
@@ -185,24 +186,31 @@ const generateContract = async (req, res) => {
 
     // Add template name as heading on first content page
     const templateName = template.name || 'Contract';
-    const templateHeadingWidth = boldFont.widthOfTextAtSize(templateName, 18);
+    const templateHeadingWidth = boldFont.widthOfTextAtSize(templateName, 20); // Increased size
     contentPage.drawText(templateName, {
       x: (width - templateHeadingWidth) / 2,
-      y: height - 120, // Position below logo
-      size: 18,
+      y: height - 130, // Position below logo with more space
+      size: 20, // Increased from 18 for bolder appearance
       font: boldFont,
       color: rgb(0, 0, 0),
     });
 
-    // Add footer to first content page
-    const footerText = '| BLACK FOSTER CARERS ALLIANCE | 6 St Michael\'s Court, West Bromwich,B70 8ET | enquiries@blackfostercarersalliance.co.uk | www.blackfostercarersalliance.co.uk| 0800 001 6230 | Registered Company No. 15210072 |';
-    const footerWidth = font.widthOfTextAtSize(footerText, 8);
-    contentPage.drawText(footerText, {
-      x: (width - footerWidth) / 2,
-      y: 30,
-      size: 8,
-      font: font,
-      color: rgb(0, 0, 0),
+    // Add footer to first content page (wrapped in multiple lines)
+    const footerLines = [
+      '| BLACK FOSTER CARERS ALLIANCE | 6 St Michael\'s Court, West Bromwich,B70 8ET |',
+      '| enquiries@blackfostercarersalliance.co.uk | www.blackfostercarersalliance.co.uk | 0800 001 6230 |',
+      '| Registered Company No. 15210072 |'
+    ];
+    
+    footerLines.forEach((line, index) => {
+      const footerWidth = font.widthOfTextAtSize(line, 8);
+      contentPage.drawText(line, {
+        x: (width - footerWidth) / 2,
+        y: 30 + (index * 12), // Stack lines vertically with 12pt spacing
+        size: 8,
+        font: font,
+        color: rgb(0, 0, 0),
+      });
     });
 
     // Render content with proper formatting
@@ -244,15 +252,22 @@ const generateContract = async (req, res) => {
               });
             }
             
-            // Add footer to content pages
-            const footerText = '| BLACK FOSTER CARERS ALLIANCE | 6 St Michael\'s Court, West Bromwich,B70 8ET | enquiries@blackfostercarersalliance.co.uk | www.blackfostercarersalliance.co.uk| 0800 001 6230 | Registered Company No. 15210072 |';
-            const footerWidth = font.widthOfTextAtSize(footerText, 8);
-            newPage.drawText(footerText, {
-              x: (width - footerWidth) / 2,
-              y: 30,
-              size: 8,
-              font: font,
-              color: rgb(0, 0, 0),
+            // Add footer to content pages (wrapped in multiple lines)
+            const footerLines = [
+              '| BLACK FOSTER CARERS ALLIANCE | 6 St Michael\'s Court, West Bromwich,B70 8ET |',
+              '| enquiries@blackfostercarersalliance.co.uk | www.blackfostercarersalliance.co.uk | 0800 001 6230 |',
+              '| Registered Company No. 15210072 |'
+            ];
+            
+            footerLines.forEach((line, index) => {
+              const footerWidth = font.widthOfTextAtSize(line, 8);
+              newPage.drawText(line, {
+                x: (width - footerWidth) / 2,
+                y: 30 + (index * 12), // Stack lines vertically with 12pt spacing
+                size: 8,
+                font: font,
+                color: rgb(0, 0, 0),
+              });
             });
             
             currentY = height - 100;
@@ -301,8 +316,8 @@ const generateContract = async (req, res) => {
       return currentY;
     };
     
-    // Render main content
-    renderContent(contentPage, filledContent, height - 100);
+    // Render main content with margin below heading
+    renderContent(contentPage, filledContent, height - 170); // Increased margin below heading
 
     // FINAL PAGE - CONTACT PAGE
     const contactPage = pdfDoc.addPage();
@@ -316,46 +331,44 @@ const generateContract = async (req, res) => {
       color: rgb(0.875, 0.392, 0.239), // #df643d
     });
 
-    // "Reach out to us" heading (centered)
+    // "Reach out to us" heading (left aligned, larger, white)
     const contactHeading = 'Reach out to us';
-    const contactHeadingWidth = boldFont.widthOfTextAtSize(contactHeading, 24);
     contactPage.drawText(contactHeading, {
-      x: (width - contactHeadingWidth) / 2,
+      x: 50, // Left aligned
       y: height - 200,
-      size: 24,
+      size: 32, // Increased from 24 for more prominence
       font: boldFont,
-      color: rgb(0, 0, 0),
+      color: rgb(1, 1, 1), // White color
     });
 
-    // Contact details with text-based icons (centered)
+    // Contact details with symbols and left alignment (white text)
     const contactDetails = [
-      { icon: 'TEL:', text: '0800 001 6230' },
-      { icon: 'EMAIL:', text: 'Enquiries@blackfostercarersalliance.co.uk' },
-      { icon: 'COMPANY:', text: 'Blackfostercarersalliance' },
-      { icon: 'WEB:', text: 'www.blackfostercarersalliance.co.uk' }
+      { icon: '☎', text: '0800 001 6230' },
+      { icon: '@', text: 'Enquiries@blackfostercarersalliance.co.uk' },
+      { icon: '🏢', text: 'Blackfostercarersalliance' },
+      { icon: '🌐', text: 'www.blackfostercarersalliance.co.uk' }
     ];
 
     let contactY = height - 280;
     contactDetails.forEach((detail, index) => {
       // Draw icon
       contactPage.drawText(detail.icon, {
-        x: (width - 200) / 2, // Position icon to the left
+        x: 50, // Left aligned
         y: contactY,
-        size: 16,
-        font: font,
-        color: rgb(0, 0, 0),
+        size: 18,
+        font: boldFont,
+        color: rgb(1, 1, 1), // White color
       });
       
       // Draw text
-      const detailWidth = font.widthOfTextAtSize(detail.text, 16);
       contactPage.drawText(detail.text, {
-        x: (width - detailWidth) / 2 + 30, // Position text to the right of icon
+        x: 100, // Position text to the right of icon
         y: contactY,
         size: 16,
         font: font,
-        color: rgb(0, 0, 0),
+        color: rgb(1, 1, 1), // White color
       });
-      contactY -= 40; // Increased spacing
+      contactY -= 50; // Increased spacing for better readability
     });
 
     // No footer on contact page (as requested)
