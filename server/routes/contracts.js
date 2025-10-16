@@ -8,6 +8,7 @@ const {
   downloadContract,
   getContractStatus,
   handleDocuSignWebhook,
+  updateContractStatus,
   deleteGeneratedContract,
 } = require('../controllers/contractController');
 const { authenticate, authorize } = require('../middleware/auth');
@@ -22,6 +23,8 @@ router.post('/generate', authenticate, authorize('admin', 'manager', 'staff'), g
 router.post('/:id/send-signature', authenticate, authorize('admin', 'manager', 'staff'), sendForSignature);
 // Get contract signature status
 router.get('/:id/status', authenticate, authorize('admin', 'manager', 'staff'), getContractStatus);
+// Update contract status
+router.put('/:id/status', authenticate, authorize('admin', 'manager', 'staff'), updateContractStatus);
 // Download contract PDF
 router.get('/:id/download', authenticate, authorize('admin', 'manager', 'staff'), downloadContract);
 // DocuSign webhook (no auth required)

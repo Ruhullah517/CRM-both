@@ -68,6 +68,17 @@ export const getContractStatus = async (id) => {
   }
 };
 
+// Update contract status
+export const updateContractStatus = async (id, status) => {
+  try {
+    const response = await api.put(`/contracts/${id}/status`, { status });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating contract status:', error);
+    throw error;
+  }
+};
+
 // Delete a contract
 export const deleteContract = async (id) => {
   try {

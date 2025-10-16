@@ -656,6 +656,38 @@ const handleDocuSignWebhook = async (req, res) => {
   }
 };
 
+// Update contract status
+const updateContractStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { id } = req.params;
+
+    // Validate status
+    const validStatuses = ['draft', 'pending', 'sent', 'delivered', 'signed', 'completed', 'declined', 'cancelled', 'expired'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ msg: 'Invalid status. Valid statuses are: ' + validStatuses.join(', ') });
+    }
+
+    const contract = await GeneratedContract.findByIdAndUpdate(
+      id,
+      { 
+        status,
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+
+    if (!contract) {
+      return res.status(404).json({ msg: 'Contract not found' });
+    }
+
+    res.json({ msg: 'Contract status updated successfully', contract });
+  } catch (error) {
+    console.error('Update contract status error:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
 // Delete a generated contract
 const deleteGeneratedContract = async (req, res) => {
   try {
@@ -675,5 +707,6 @@ module.exports = {
   downloadContract,
   getContractStatus,
   handleDocuSignWebhook,
+  updateContractStatus,
   deleteGeneratedContract,
 }; 
