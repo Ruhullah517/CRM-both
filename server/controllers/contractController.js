@@ -203,33 +203,42 @@ const generateContract = async (req, res) => {
       paragraphs.forEach(paragraph => {
         if (!paragraph.trim()) return;
         
-        // Check if we need a new page
-        if (currentY < 100) {
-          // Create new page
-          const newPage = pdfDoc.addPage();
-          
-          // Add logo to new page
-          if (logoImage) {
-            const logoSize = 60;
-            newPage.drawImage(logoImage, {
-              x: width - logoSize - 20,
-              y: height - logoSize - 20,
-              width: logoSize,
-              height: logoSize,
-            });
+        // Split paragraph by single newlines to handle line breaks
+        const lines = paragraph.split('\n').filter(line => line.trim());
+        
+        lines.forEach(lineText => {
+          // Check if we need a new page
+          if (currentY < 100) {
+            // Create new page
+            const newPage = pdfDoc.addPage();
+            
+            // Add logo to new page
+            if (logoImage) {
+              const logoSize = 60;
+              newPage.drawImage(logoImage, {
+                x: width - logoSize - 20,
+                y: height - logoSize - 20,
+                width: logoSize,
+                height: logoSize,
+              });
+            }
+            
+            currentY = height - 100;
+            page = newPage; // Update page reference
           }
           
-          // Render paragraph on new page
-          currentY = height - 100;
-          
-          // Split text into lines that fit within maxWidth
-          const words = paragraph.trim().split(' ');
+          // Split line into words that fit within maxWidth
+          const words = lineText.trim().split(' ');
           let line = '';
           words.forEach((word) => {
-            const testLine = line + (line ? ' ' : '') + word;
+            // Remove any remaining newline characters from word
+            const cleanWord = word.replace(/[\n\r]/g, ' ').trim();
+            if (!cleanWord) return;
+            
+            const testLine = line + (line ? ' ' : '') + cleanWord;
             const lineWidth = font.widthOfTextAtSize(testLine, 12);
             if (lineWidth > maxWidth && line) {
-              newPage.drawText(line, {
+              page.drawText(line, {
                 x: margin,
                     y: currentY, 
                 size: 12,
@@ -237,41 +246,8 @@ const generateContract = async (req, res) => {
                 color: rgb(0, 0, 0),
                   });
                   currentY -= lineHeight;
-              line = word;
+              line = cleanWord;
                 } else {
-              line = testLine;
-            }
-          });
-          if (line) {
-            newPage.drawText(line, {
-              x: margin,
-                  y: currentY, 
-              size: 12,
-              font: font,
-              color: rgb(0, 0, 0),
-            });
-            currentY -= lineHeight;
-          }
-          currentY -= 20; // Extra spacing between paragraphs
-        } else {
-          // Render paragraph on current page
-          // Split text into lines that fit within maxWidth
-          const words = paragraph.trim().split(' ');
-          let line = '';
-          words.forEach((word) => {
-            const testLine = line + (line ? ' ' : '') + word;
-            const lineWidth = font.widthOfTextAtSize(testLine, 12);
-            if (lineWidth > maxWidth && line) {
-              page.drawText(line, {
-                x: margin,
-                y: currentY,
-                size: 12,
-                font: font,
-                color: rgb(0, 0, 0),
-              });
-              currentY -= lineHeight;
-              line = word;
-            } else {
               line = testLine;
             }
           });
@@ -284,9 +260,10 @@ const generateContract = async (req, res) => {
               color: rgb(0, 0, 0),
             });
           currentY -= lineHeight;
-          }
-          currentY -= 20; // Extra spacing between paragraphs
         }
+        });
+        
+        currentY -= 10; // Extra spacing between paragraphs
       });
       
       return currentY;
