@@ -70,7 +70,11 @@ const generateContract = async (req, res) => {
 
     // Generate PDF with new professional multi-page structure
     const pdfDoc = await PDFDocument.create();
-    const { width, height } = pdfDoc.getPage(0).getSize();
+    
+    // Get standard A4 page dimensions (595.28 x 841.89 points)
+    const width = 595.28;
+    const height = 841.89;
+    
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
