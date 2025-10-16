@@ -1,6 +1,6 @@
 const GeneratedContract = require('../models/Contract');
 const ContractTemplate = require('../models/ContractTemplate');
-const { PDFDocument, StandardFonts } = require('pdf-lib');
+const { PDFDocument, StandardFonts, rgb } = require('pdf-lib');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
@@ -68,18 +68,16 @@ const generateContract = async (req, res) => {
       preserveNewlines: true
     });
 
-    // Generate PDF
+    // Generate PDF with new professional multi-page structure
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage();
-    const { width, height } = page.getSize();
+    const { width, height } = pdfDoc.getPage(0).getSize();
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const italicFont = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
-    const fontSize = 12;
     
-    // Add logo to top right
+    // Load logo for use across pages
+    let logoImage = null;
     try {
-      // Try multiple logo paths
       const logoPaths = [
         path.join(__dirname, '../uploads/logo.png'),
         path.join(__dirname, '../uploads/logo.PNG'),
@@ -87,279 +85,235 @@ const generateContract = async (req, res) => {
         path.join(__dirname, '../../client/public/logo.png')
       ];
       
-      let logoFound = false;
       for (const logoPath of logoPaths) {
-        console.log('Checking logo at:', logoPath);
         if (fs.existsSync(logoPath)) {
-          console.log('Found logo at:', logoPath);
           const logoBytes = fs.readFileSync(logoPath);
-          console.log('Logo file size:', logoBytes.length, 'bytes');
-          
-          // Try to determine if it's PNG or JPG
-          let logoImage;
           if (logoPath.toLowerCase().endsWith('.png')) {
             logoImage = await pdfDoc.embedPng(logoBytes);
-          } else if (logoPath.toLowerCase().endsWith('.jpg') || logoPath.toLowerCase().endsWith('.jpeg')) {
-            logoImage = await pdfDoc.embedJpg(logoBytes);
           } else {
-            // Try PNG first, then JPG
-            try {
-              logoImage = await pdfDoc.embedPng(logoBytes);
-            } catch (pngError) {
-              console.log('PNG failed, trying JPG:', pngError.message);
-              logoImage = await pdfDoc.embedJpg(logoBytes);
-            }
+            logoImage = await pdfDoc.embedJpg(logoBytes);
           }
-          
-          const logoHeight = 60; // Logo height
-          const logoWidth = 80; // Logo width (wider)
-          console.log('Logo embedded successfully, drawing at:', {
-            x: width - logoWidth - 20,
-            y: height - logoHeight - 20,
-            width: logoWidth,
-            height: logoHeight
-          });
-          
-          page.drawImage(logoImage, {
-            x: width - logoWidth - 20, // 20px from right edge
-            y: height - logoHeight - 20, // 20px from top
-            width: logoWidth,
-            height: logoHeight,
-          });
-          console.log('Logo drawn successfully');
-          logoFound = true;
           break;
         }
       }
-      
-      if (!logoFound) {
-        console.log('No logo file found in any of the expected locations');
-      }
     } catch (error) {
-      console.error('Error loading/embedding logo:', error);
+      console.error('Error loading logo:', error);
     }
     
-    // Add BFCA header
-    const headerFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    page.drawText('BLACK FOSTER CARERS ALLIANCE', { 
-      x: 40, 
-      y: height - 40, 
-      size: 16, 
-      font: headerFont 
-    });
+    // PAGE 1 - COVER PAGE
+    const coverPage = pdfDoc.addPage();
     
-    page.drawText('Black Foster Carers CIC', { 
-      x: 40, 
-      y: height - 60, 
-      size: 12, 
-      font: font 
-    });
-    
-    page.drawText('6 St Michael Court, West Bromwich B70 BET, United Kingdom', { 
-      x: 40, 
-      y: height - 80, 
-      size: 10, 
-      font: font 
-    });
-    
-    page.drawText('Email: Enquiries@blackfostercarersalliance.co.uk | Phone: 0800 001 6230', { 
-      x: 40, 
-      y: height - 100, 
-      size: 10, 
-      font: font 
-    });
-    
-    // Add separator line
-    page.drawLine({
-      start: { x: 40, y: height - 120 },
-      end: { x: width - 40, y: height - 120 },
-      thickness: 1
+    // Background color for cover page
+    coverPage.drawRectangle({
+      x: 0,
+      y: 0,
+      width: width,
+      height: height,
+      color: rgb(0.875, 0.392, 0.239), // #df643d
     });
 
-    // Parse HTML content and render with formatting
-    const renderHtmlContent = (htmlContent, startY) => {
+    // Centered logo at the top
+    if (logoImage) {
+      const logoSize = 120;
+      const logoX = (width - logoSize) / 2;
+      const logoY = height - 200;
+      coverPage.drawImage(logoImage, {
+        x: logoX,
+        y: logoY,
+        width: logoSize,
+        height: logoSize,
+      });
+    }
+
+    // Contract title (centered)
+    const contractTitle = filledData?.contract_title || name || 'Service Level Agreement';
+    coverPage.drawText(contractTitle, {
+      x: 0,
+      y: height - 350,
+      size: 28,
+      font: boldFont,
+      color: rgb(0, 0, 0),
+    }, {
+      alignment: 'center',
+      width: width,
+    });
+
+    // Optional subtitle
+    coverPage.drawText('Black Foster Carers Alliance', {
+      x: 0,
+      y: height - 400,
+      size: 16,
+      font: font,
+      color: rgb(0, 0, 0),
+    }, {
+      alignment: 'center',
+      width: width,
+    });
+
+    // Footer
+    coverPage.drawText('Registered Company No. 15210072 | BLACK FOSTER CARERS ALLIANCE', {
+      x: 0,
+      y: 80,
+      size: 10,
+      font: font,
+      color: rgb(0, 0, 0),
+    }, {
+      alignment: 'center',
+      width: width,
+    });
+
+    // PAGE 2 - n (CONTENT PAGES)
+    const contentPage = pdfDoc.addPage();
+    
+    // Background for content pages
+    contentPage.drawRectangle({
+      x: 0,
+      y: 0,
+      width: width,
+      height: height,
+      color: rgb(1, 1, 1), // White
+    });
+
+    // Logo at top-right corner
+    if (logoImage) {
+      const logoSize = 60;
+      contentPage.drawImage(logoImage, {
+        x: width - logoSize - 20,
+        y: height - logoSize - 20,
+        width: logoSize,
+        height: logoSize,
+      });
+    }
+
+    // Render content with proper formatting
+    const renderContent = (page, content, startY) => {
       let currentY = startY;
-      const lineHeight = fontSize + 4;
-      let currentX = 40;
-      const maxWidth = width - 80; // 40px margin on each side
+      const lineHeight = 16;
+      const margin = 50;
+      const maxWidth = width - (margin * 2);
       
-      // Advanced HTML parser that preserves formatting and handles entities
-      const parseHtmlWithFormatting = (html) => {
-        const segments = [];
-        let currentFormat = { bold: false, italic: false, size: fontSize, align: 'left' };
-        
-        // First, decode HTML entities
-        const decodeHtmlEntities = (text) => {
-          return text
-            .replace(/&nbsp;/g, ' ')
-            .replace(/&amp;/g, '&')
-            .replace(/&lt;/g, '<')
-            .replace(/&gt;/g, '>')
-            .replace(/&quot;/g, '"')
-            .replace(/&#39;/g, "'")
-            .replace(/&apos;/g, "'");
-        };
-        
-        // Simple regex-based parser for inline formatting
-        const regex = /<(\/?)([^>]+)>/g;
-        let lastIndex = 0;
-        let match;
-        
-        while ((match = regex.exec(html)) !== null) {
-          // Add text before the tag
-          if (match.index > lastIndex) {
-            const text = decodeHtmlEntities(html.substring(lastIndex, match.index));
-            if (text.trim()) {
-              segments.push({ text, ...currentFormat });
-            }
-          }
-          
-          const isClosing = match[1] === '/';
-          const tagName = match[2].split(' ')[0].toLowerCase();
-          
-          // Handle formatting tags
-          if (tagName === 'strong' || tagName === 'b') {
-            currentFormat.bold = !isClosing;
-          } else if (tagName === 'em' || tagName === 'i') {
-            currentFormat.italic = !isClosing;
-          } else if (tagName === 'br') {
-            segments.push({ text: '\n', ...currentFormat });
-          } else if (tagName === 'p' && isClosing) {
-            segments.push({ text: '\n\n', ...currentFormat });
-          } else if (tagName === 'div' && isClosing) {
-            segments.push({ text: '\n', ...currentFormat });
-          } else if (tagName.includes('font-size')) {
-            const sizeMatch = match[2].match(/font-size[:\s]*(\d+)px/);
-            if (sizeMatch) {
-              currentFormat.size = parseInt(sizeMatch[1]);
-            }
-          } else if (tagName.includes('text-align')) {
-            const alignMatch = match[2].match(/text-align[:\s]*(center|right|left|justify)/);
-            if (alignMatch) {
-              currentFormat.align = alignMatch[1];
-            }
-          }
-          
-          lastIndex = regex.lastIndex;
-        }
-        
-        // Add remaining text
-        if (lastIndex < html.length) {
-          const text = decodeHtmlEntities(html.substring(lastIndex));
-          if (text.trim()) {
-            segments.push({ text, ...currentFormat });
-          }
-        }
-        
-        return segments;
-      };
-      
-      // Parse the HTML content
-      const segments = parseHtmlWithFormatting(filledContent);
-      
-      // Group segments into lines
-      const lines = [];
-      let currentLine = [];
-      
-      segments.forEach(segment => {
-        if (segment.text.includes('\n')) {
-          const parts = segment.text.split('\n');
-          parts.forEach((part, index) => {
-            if (part) {
-              currentLine.push({ ...segment, text: part });
-            }
-            if (index < parts.length - 1) {
-              lines.push([...currentLine]);
-              currentLine = [];
-            }
-          });
-        } else {
-          currentLine.push(segment);
-        }
+      // Convert HTML to plain text and split into paragraphs
+      const plainText = convert(content, {
+        wordwrap: false,
+        preserveNewlines: true
       });
       
-      if (currentLine.length > 0) {
-        lines.push(currentLine);
-      }
+      const paragraphs = plainText.split('\n\n');
       
-      // Render each line with proper mixed formatting
-      lines.forEach(lineSegments => {
-        if (currentY > 40 && lineSegments.length > 0) {
-          let currentX = 40;
+      paragraphs.forEach(paragraph => {
+        if (!paragraph.trim()) return;
+        
+        // Check if we need a new page
+        if (currentY < 100) {
+          // Create new page
+          const newPage = pdfDoc.addPage();
           
-          // Check alignment for the first segment with proper defaults
-          const firstSegment = lineSegments[0] || { align: 'left', size: fontSize, bold: false, italic: false };
-          const align = firstSegment.align || 'left';
-          
-          // Calculate total line width for alignment
-          let totalLineWidth = 0;
-          lineSegments.forEach(segment => {
-            const segmentSize = segment.size || fontSize;
-            const segmentFont = segment.bold ? boldFont : (segment.italic ? italicFont : font);
-            totalLineWidth += segmentFont.widthOfTextAtSize(segment.text, segmentSize);
-          });
-          
-          // Set initial X position based on alignment
-          if (align === 'center') {
-            currentX = (width - totalLineWidth) / 2;
-          } else if (align === 'right') {
-            currentX = width - totalLineWidth - 40;
+          // Add logo to new page
+          if (logoImage) {
+            const logoSize = 60;
+            newPage.drawImage(logoImage, {
+              x: width - logoSize - 20,
+              y: height - logoSize - 20,
+              width: logoSize,
+              height: logoSize,
+            });
           }
           
-          // Render each segment with its own formatting
-          lineSegments.forEach(segment => {
-            if (currentY > 40) {
-              const segmentSize = segment.size || fontSize;
-              const segmentFont = segment.bold ? boldFont : (segment.italic ? italicFont : font);
-              
-              // Handle word wrapping for this segment
-              const words = segment.text.split(' ');
-              let currentLine = '';
-              
-              words.forEach(word => {
-                const testLine = currentLine + (currentLine ? ' ' : '') + word;
-                const textWidth = segmentFont.widthOfTextAtSize(testLine, segmentSize);
-                
-                if (textWidth > maxWidth && currentLine) {
-                  // Draw current line
-                  page.drawText(currentLine, { 
-                    x: currentX, 
-                    y: currentY, 
-                    size: segmentSize, 
-                    font: segmentFont
-                  });
-                  currentY -= lineHeight;
-                  currentLine = word;
-                  currentX = 40; // Reset to left for wrapped lines
-                } else {
-                  currentLine = testLine;
-                }
-              });
-              
-              // Draw the last part of this segment
-              if (currentLine) {
-                page.drawText(currentLine, { 
-                  x: currentX, 
-                  y: currentY, 
-                  size: segmentSize, 
-                  font: segmentFont
-                });
-                // Update X position for next segment
-                currentX += segmentFont.widthOfTextAtSize(currentLine, segmentSize);
-              }
-            }
+          // Render paragraph on new page
+          currentY = height - 100;
+          newPage.drawText(paragraph.trim(), {
+            x: margin,
+            y: currentY,
+            size: 12,
+            font: font,
+            color: rgb(0, 0, 0),
+          }, {
+            width: maxWidth,
+            alignment: 'justify',
           });
           
-          // Move to next line after all segments
-          currentY -= lineHeight;
+          currentY -= (paragraph.split('\n').length * lineHeight) + 20;
+        } else {
+          // Render paragraph on current page
+          page.drawText(paragraph.trim(), {
+            x: margin,
+            y: currentY,
+            size: 12,
+            font: font,
+            color: rgb(0, 0, 0),
+          }, {
+            width: maxWidth,
+            alignment: 'justify',
+          });
+          
+          currentY -= (paragraph.split('\n').length * lineHeight) + 20;
         }
       });
       
       return currentY;
     };
+
+    // Render main content
+    renderContent(contentPage, filledContent, height - 100);
+
+    // FINAL PAGE - CONTACT PAGE
+    const contactPage = pdfDoc.addPage();
     
-    // Render the HTML content
-    const finalY = renderHtmlContent(filledContent, height - 140);
+    // Background color for contact page
+    contactPage.drawRectangle({
+      x: 0,
+      y: 0,
+      width: width,
+      height: height,
+      color: rgb(0.875, 0.392, 0.239), // #df643d
+    });
+
+    // "Reach out to us" heading (centered)
+    contactPage.drawText('Reach out to us', {
+      x: 0,
+      y: height - 200,
+      size: 24,
+      font: boldFont,
+      color: rgb(0, 0, 0),
+    }, {
+      alignment: 'center',
+      width: width,
+    });
+
+    // Contact details (centered)
+    const contactDetails = [
+      '0800 001 6230',
+      'Enquiries@blackfostercarersalliance.co.uk',
+      'Blackfostercarersalliance',
+      'www.blackfostercarersalliance.co.uk'
+    ];
+
+    let contactY = height - 280;
+    contactDetails.forEach((detail, index) => {
+      contactPage.drawText(detail, {
+        x: 0,
+        y: contactY,
+        size: 16,
+        font: font,
+        color: rgb(0, 0, 0),
+      }, {
+        alignment: 'center',
+        width: width,
+      });
+      contactY -= 30;
+    });
+
+    // Footer
+    contactPage.drawText('| BLACK FOSTER CARERS ALLIANCE | Registered Company No. 15210072 |', {
+      x: 0,
+      y: 80,
+      size: 10,
+      font: font,
+      color: rgb(0, 0, 0),
+    }, {
+      alignment: 'center',
+      width: width,
+    });
     
     const pdfBytes = await pdfDoc.save();
     
