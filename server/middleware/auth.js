@@ -14,7 +14,7 @@ const authenticate = async (req, res, next) => {
     console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('Decoded JWT:', decoded);
-    const userId = decoded.id || decoded.user?.id; // Support both formats
+    const userId = decoded.user?.id; // JWT structure has user.id
     console.log('UserId used for lookup:', userId);
     const user = await User.findById(userId);
     console.log('User found:', user ? user.name : 'null');

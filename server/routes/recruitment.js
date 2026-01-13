@@ -8,6 +8,7 @@ const Enquiry = require('../models/Enquiry');
 const User = require('../models/User');
 const Freelancer = require('../models/Freelancer');
 const Mentor = require('../models/Mentor');
+const MentorActivity = require('../models/MentorActivity');
 const FullAssessment = require('../models/FullAssessment');
 
 // Configure multer for file uploads
@@ -359,22 +360,19 @@ router.post('/enquiries/:enquiryId/full-assessment', async (req, res) => {
   }
 });
 
-// Get full assessment by enquiry ID
+// Get all full assessments by enquiry ID
 router.get('/enquiries/:enquiryId/full-assessment', async (req, res) => {
   try {
     const { enquiryId } = req.params;
     
-    const fullAssessment = await FullAssessment.findOne({ enquiryId })
+    const fullAssessments = await FullAssessment.find({ enquiryId })
       .populate('assessorId', 'name email')
-      .populate('enquiryId', 'full_name email_address');
+      .populate('enquiryId', 'full_name email_address')
+      .sort({ date: -1 }); // Sort by date, newest first
     
-    if (!fullAssessment) {
-      return res.status(404).json({ error: 'Full assessment not found' });
-    }
-    
-    res.json(fullAssessment);
+    res.json(fullAssessments);
   } catch (error) {
-    console.error('Error fetching full assessment:', error);
+    console.error('Error fetching full assessments:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -399,11 +397,18 @@ router.put('/enquiries/:enquiryId/full-assessment', async (req, res) => {
 });
 
 // Mentor allocation routes
-// Create mentor allocation
-router.post('/enquiries/:enquiryId/mentoring', async (req, res) => {
+// Create / update mentor allocation
+router.post('/enquiries/:enquiryId/mentoring', authenticate, authorize('admin', 'manager', 'staff'), async (req, res) => {
   try {
     const { enquiryId } = req.params;
     const { mentorId, meetingSchedule } = req.body;
+
+    if (!mentorId || mentorId === 'undefined' || mentorId === 'null' || mentorId === '') {
+      return res.status(400).json({ error: 'mentorId is required' });
+    }
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     
     console.log('Mentor allocation request:', {
       enquiryId,
@@ -419,19 +424,37 @@ router.post('/enquiries/:enquiryId/mentoring', async (req, res) => {
       return res.status(404).json({ error: 'Enquiry not found' });
     }
     
-    // Check if mentor exists
-    const mentor = await Mentor.findById(mentorId);
+    // Check if mentor exists (accept either existing Mentor or a Freelancer with role=mentor)
+    let mentor = await Mentor.findById(mentorId);
     if (!mentor) {
-      console.log('Mentor not found:', mentorId);
-      return res.status(404).json({ error: 'Mentor not found' });
+      // Try freelancer fallback
+      const freelancer = await Freelancer.findById(mentorId);
+      if (!freelancer) {
+        console.log('Mentor not found (checked Mentor and Freelancer collections):', mentorId);
+        return res.status(404).json({ error: 'Mentor not found' });
+      }
+
+      // Reuse mentor by email if it already exists, otherwise create a lightweight mentor record
+      mentor = await Mentor.findOne({ email: freelancer.email });
+      if (!mentor) {
+        mentor = await Mentor.create({
+          name: freelancer.fullName || freelancer.name || freelancer.email || 'Mentor',
+          email: freelancer.email,
+          phone: freelancer.mobileNumber,
+          status: 'Active',
+          skills: freelancer.skills || [],
+          avatar: freelancer.avatar,
+          mentees: []
+        });
+      }
     }
     
     // Create mentor allocation record
     const mentorAllocationData = {
       enquiryId,
-      mentorId,
+      mentorId: mentor._id, // ensure we store the resolved mentor id
       meetingSchedule: meetingSchedule ? new Date(meetingSchedule) : null,
-      allocatedBy: req.user.id,
+      allocatedBy: req.user?.id,
       allocatedAt: new Date(),
       status: 'active'
     };
@@ -488,12 +511,45 @@ router.post('/enquiries/:enquiryId/mentoring', async (req, res) => {
       { new: true }
     );
     
+    // Create assignment activity for the mentor
+    try {
+      const { createAssignmentActivity } = require('../controllers/mentorController');
+      await createAssignmentActivity(mentor._id, enquiryId, req.user.id, meetingSchedule);
+      console.log('✅ Assignment activity created for mentor');
+    } catch (activityError) {
+      console.error('Error creating assignment activity (non-fatal):', activityError);
+      // Don't fail the main operation
+    }
+    
     console.log('Mentor allocated successfully to enquiry:', enquiryId);
     res.status(201).json(updatedEnquiry);
   } catch (error) {
     console.error('Error allocating mentor:', error);
     console.error('Error stack:', error.stack);
     res.status(500).json({ error: error.message, details: error.stack });
+  }
+});
+
+// Remove mentor allocation
+router.delete('/enquiries/:enquiryId/mentoring', authenticate, authorize('admin', 'manager', 'staff'), async (req, res) => {
+  try {
+    const { enquiryId } = req.params;
+
+    const enquiry = await Enquiry.findById(enquiryId);
+    if (!enquiry) {
+      return res.status(404).json({ error: 'Enquiry not found' });
+    }
+
+    const updatedEnquiry = await Enquiry.findByIdAndUpdate(
+      enquiryId,
+      { $unset: { mentorAllocation: "" }, updatedAt: new Date() },
+      { new: true }
+    );
+
+    res.json({ msg: 'Mentor allocation removed', enquiry: updatedEnquiry });
+  } catch (error) {
+    console.error('Error removing mentor allocation:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -522,6 +578,59 @@ router.get('/enquiries/:enquiryId/mentoring', async (req, res) => {
     res.json(mentorAllocation.mentorAllocation);
   } catch (error) {
     console.error('Error fetching mentor allocation:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Complete mentor allocation / enquiry assignment
+router.post('/enquiries/:enquiryId/mentoring/complete', authenticate, authorize('admin', 'manager', 'staff'), async (req, res) => {
+  try {
+    const { enquiryId } = req.params;
+    const { completionNotes } = req.body;
+
+    const enquiry = await Enquiry.findById(enquiryId);
+    if (!enquiry) {
+      return res.status(404).json({ error: 'Enquiry not found' });
+    }
+    if (!enquiry.mentorAllocation) {
+      return res.status(400).json({ error: 'Mentor allocation not found for this enquiry' });
+    }
+
+    const updatedAllocation = {
+      ...enquiry.mentorAllocation.toObject?.() || enquiry.mentorAllocation,
+      status: 'completed',
+      completedAt: new Date(),
+      completedBy: req.user?.id
+    };
+
+    // Persist allocation update
+    await Enquiry.findByIdAndUpdate(
+      enquiryId,
+      {
+        mentorAllocation: updatedAllocation,
+        updatedAt: new Date()
+      }
+    );
+
+    // Also complete any active mentor assignment activity tied to this enquiry
+    const activity = await MentorActivity.findOne({
+      enquiryId,
+      activityType: 'assignment',
+      status: 'active'
+    });
+    if (activity) {
+      activity.status = 'completed';
+      activity.completedAt = new Date();
+      activity.completedBy = req.user?.id;
+      if (completionNotes) {
+        activity.description = `${activity.description}\n\nCompletion Notes: ${completionNotes}`;
+      }
+      await activity.save();
+    }
+
+    res.json({ message: 'Mentor allocation marked as completed', mentorAllocation: updatedAllocation });
+  } catch (error) {
+    console.error('Error completing mentor allocation:', error);
     res.status(500).json({ error: error.message });
   }
 });

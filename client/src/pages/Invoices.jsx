@@ -10,12 +10,16 @@ import {
   CurrencyPoundIcon,
   ArrowDownTrayIcon,
   EnvelopeIcon,
-  PencilIcon
+  PencilIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import api from '../services/api';
+import { deleteInvoice } from '../services/invoices';
+import { useAuth } from '../contexts/AuthContext';
 
 const Invoices = () => {
+  const { role } = useAuth();
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -24,6 +28,7 @@ const Invoices = () => {
   const [stats, setStats] = useState({});
   const [markingAsPaid, setMarkingAsPaid] = useState(null);
   const [sendingEmail, setSendingEmail] = useState(null);
+  const [deletingInvoice, setDeletingInvoice] = useState(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -216,6 +221,31 @@ const Invoices = () => {
     }
   };
 
+  const handleDeleteInvoice = async (invoiceId, invoiceNumber) => {
+    if (!window.confirm(`Are you sure you want to delete invoice ${invoiceNumber}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setDeletingInvoice(invoiceId);
+      console.log('Deleting invoice:', invoiceId);
+      await deleteInvoice(invoiceId);
+      console.log('Invoice deleted successfully');
+      
+      // Refresh both invoices and stats
+      await fetchInvoices();
+      await fetchStats();
+      
+      alert('Invoice deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting invoice:', error);
+      const errorMessage = error.response?.data?.msg || error.message || 'Error deleting invoice. Please try again.';
+      alert(errorMessage);
+    } finally {
+      setDeletingInvoice(null);
+    }
+  };
+
   const updateItem = (index, field, value) => {
     const newItems = [...formData.items];
     newItems[index] = { ...newItems[index], [field]: value };
@@ -313,6 +343,14 @@ const Invoices = () => {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
+            {role === 'admin' && (
+              <button
+                onClick={() => window.location.assign('/invoice-settings')}
+                className="bg-white border border-gray-300 text-gray-700 px-3 py-2 md:px-4 rounded-md flex items-center justify-center shadow-sm hover:bg-gray-50"
+              >
+                <span className="text-sm md:text-base font-medium">Invoice Settings</span>
+              </button>
+            )}
             <button
               onClick={exportPaymentHistory}
               className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 md:px-4 rounded-md flex items-center justify-center"
@@ -515,6 +553,27 @@ const Invoices = () => {
                           )}
                         </button>
                       )}
+                      <button
+                        onClick={() => handleDeleteInvoice(invoice._id, invoice.invoiceNumber)}
+                        disabled={deletingInvoice === invoice._id}
+                        className={`flex items-center ${
+                          deletingInvoice === invoice._id 
+                            ? 'text-gray-400 cursor-not-allowed' 
+                            : 'text-red-600 hover:text-red-900'
+                        }`}
+                      >
+                        {deletingInvoice === invoice._id ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600 mr-1"></div>
+                            Deleting...
+                          </>
+                        ) : (
+                          <>
+                            <TrashIcon className="h-4 w-4 mr-1" />
+                            Delete
+                          </>
+                        )}
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -610,6 +669,21 @@ const Invoices = () => {
                     )}
                   </button>
                 )}
+                <button
+                  onClick={() => handleDeleteInvoice(invoice._id, invoice.invoiceNumber)}
+                  disabled={deletingInvoice === invoice._id}
+                  className={`p-1 ${
+                    deletingInvoice === invoice._id 
+                      ? 'text-gray-400 cursor-not-allowed' 
+                      : 'text-red-600 hover:text-red-900'
+                  }`}
+                >
+                  {deletingInvoice === invoice._id ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                  ) : (
+                    <TrashIcon className="h-4 w-4" />
+                  )}
+                </button>
               </div>
             </div>
             

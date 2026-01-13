@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getCases } from '../services/cases';
 import { getEnquiries } from '../services/enquiries';
+import { getFreelancerByEmail } from '../services/freelancers';
 import { 
   BriefcaseIcon, 
   UserGroupIcon, 
@@ -26,9 +27,21 @@ const MyCases = () => {
     setLoading(true);
     try {
       const userRole = user.user?.role || user.role;
-      const userId = user.user?.id || user.id;
+      const userEmail = user.user?.email || user.email;
 
       if (userRole === 'freelancer') {
+        // Get freelancer ID by email
+        let freelancerId = null;
+        try {
+          const freelancerData = await getFreelancerByEmail(userEmail);
+          freelancerId = freelancerData._id;
+        } catch (err) {
+          console.error('Could not find freelancer profile:', err);
+          setError('Freelancer profile not found. Please contact your administrator.');
+          setLoading(false);
+          return;
+        }
+
         // For freelancers, get cases where they are assigned as assessor
         const [casesData, enquiriesData] = await Promise.all([
           getCases().catch(() => []),
@@ -37,19 +50,22 @@ const MyCases = () => {
 
         // Filter cases assigned to this freelancer
         const myCases = casesData.filter(caseItem => 
-          caseItem.assignedTo === userId || 
-          caseItem.assignedAssessor === userId
+          caseItem.assignedTo === freelancerId || 
+          caseItem.assignedAssessor === freelancerId
         );
 
         // Filter enquiries assigned to this freelancer
         const myEnquiries = enquiriesData.filter(enquiry => 
-          enquiry.assignedAssessor === userId ||
-          enquiry.assignedMentor === userId
+          enquiry.assignedAssessor === freelancerId ||
+          enquiry.assignedMentor === freelancerId
         );
 
         setCases(myCases);
         setEnquiries(myEnquiries);
       } else if (userRole === 'mentor') {
+        // Get user ID for mentors
+        const userId = user.user?.id || user.id;
+        
         // For mentors, get cases and enquiries where they are assigned as mentor
         const [casesData, enquiriesData] = await Promise.all([
           getCases().catch(() => []),

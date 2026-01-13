@@ -24,6 +24,13 @@ const EnquirySchema = new mongoose.Schema({
   previous_investigation: Boolean,
   previous_experience: Boolean,
 
+  // Initial Call (pre-assessment touchpoint)
+  initialCall: {
+    date: Date,
+    time: String,
+    notes: String,
+  },
+
   // Motivation & Support
   motivation: String,
   support_needs: String,

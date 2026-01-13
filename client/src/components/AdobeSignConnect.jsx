@@ -1,8 +1,9 @@
 import React from 'react';
+import { getFrontendUrl } from '../config/urls';
 
 const AdobeSignConnect = () => {
     const CLIENT_ID = 'ats-2d31a55f-feaf-4b56-ba7b-2b3a89f4d86f';
-    const REDIRECT_URI = 'https://crm-both.vercel.app/adobe/callback'; // frontend callback which triggers backend exchange
+    const REDIRECT_URI = `${getFrontendUrl()}/adobe/callback`; // frontend callback which triggers backend exchange
     const STATE = 'your-unique-state-value'; // you can also generate dynamically
 
     const handleConnect = () => {

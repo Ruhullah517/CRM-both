@@ -230,7 +230,7 @@ const BookingStatusForm = ({ booking, onSubmit, onCancel, loading }) => {
         <button
           type="submit"
           disabled={loading}
-          className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 disabled:opacity-50 font-medium transition-colors"
+          className="flex-1 bg-[#2EAB2C] text-white px-6 py-3 rounded-md hover:bg-green-700 disabled:opacity-50 font-medium transition-colors"
         >
           {loading ? (
             <span className="flex items-center justify-center">
@@ -955,7 +955,7 @@ Jane Smith,jane@example.com,0987654321,XYZ Inc,Director,confirmed,false,false`}
                      <button
                        onClick={() => handleBulkImport(selectedEventForImport._id)}
                        disabled={importing || !selectedEventForImport}
-                       className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                       className="w-full bg-[#2EAB2C] text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                      >
                        {importing ? (
                          <span className="flex items-center justify-center">
@@ -1666,7 +1666,7 @@ const TrainingEventForm = ({ event, users, freelancers, onSubmit, onCancel }) =>
            <div className="mt-6 flex gap-3">
             <button
               onClick={() => window.open(`/training/${event.bookingLink}`, '_blank')}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="bg-[#2EAB2C] text-white px-4 py-2 rounded hover:bg-green-700"
             >
               View Public Page
             </button>
@@ -1736,7 +1736,7 @@ const EmailModal = ({ event, emailData, setEmailData, onSend, onClose, sending }
             <button
               onClick={onSend}
               disabled={sending || !emailData.email.trim()}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 bg-[#2EAB2C] text-white px-4 py-2 rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {sending ? (
                 <span className="flex items-center justify-center">

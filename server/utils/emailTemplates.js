@@ -1,38 +1,39 @@
 // Email template helper functions with branding
+const { getFrontendUrl } = require('../config/urls');
 
-const getEmailHeader = () => {
+const getEmailHeader = (showSubheading = true) => {
   return `
-    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+    <div style="background: #000000; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; border-top: 4px solid #2EAB2C;">
       <div style="margin: 0 auto 15px; display: flex; align-items: center; justify-content: center;">
-        <div style="background: white; border-radius: 8px; padding: 2px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex; align-items: center; justify-content: center; min-width: 80px; min-height: 60px;">
+        <div style="background: #000000; border-radius: 8px; padding: 2px; box-shadow: 0 4px 8px rgba(46,171,44,0.3); display: flex; align-items: center; justify-content: center; min-width: 100px; min-height: 80px;">
           <!-- Logo will be embedded as attachment and referenced here -->
           <img src="cid:company-logo" 
                alt="Black Foster Carers Alliance Logo" 
-               style="max-height: 60px; max-width: 120px; height: auto; width: auto; display: block; border: 0;" 
-               width="60" height="60" />
+               style="max-height: 80px; max-width: 160px; height: auto; width: auto; display: block; border: 0;" 
+               width="80" height="80" />
         </div>
       </div>
       <h1 style="color: white; margin: 0; font-size: 28px; font-weight: bold;">BLACK FOSTER CARERS</h1>
-      <h2 style="color: white; margin: 5px 0 0; font-size: 32px; font-weight: bold;">ALLIANCE</h2>
-      <p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">Training & Development Services</p>
+      <h2 style="color: #2EAB2C; margin: 5px 0 0; font-size: 32px; font-weight: bold;">ALLIANCE</h2>
+      ${showSubheading ? '<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 14px;">Training & Development Services</p>' : ''}
     </div>
   `;
 };
 
 const getEmailFooter = () => {
   return `
-    <div style="background: #f8f9fa; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; margin-top: 20px;">
-      <div style="border-top: 2px solid #dee2e6; padding-top: 20px;">
-        <p style="color: #6c757d; margin: 5px 0; font-size: 14px;">
+    <div style="background: #f5f5f5; border: 2px solid #333333; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; margin-top: 20px;">
+      <div style="border-top: 2px solid #2EAB2C; padding-top: 20px;">
+        <p style="color: #000000; margin: 5px 0; font-size: 14px; font-weight: bold;">
           <strong>Black Foster Carers Alliance</strong><br>
         </p>
-        <p style="color: #6c757d; margin: 5px 0; font-size: 12px;">
-          Email: Enquiries@blackfostercarersalliance.co.uk<br>
-          Phone: 0800 001 6230<br>
-          Website: www.blackfostercarersalliance.co.uk
+        <p style="color: #333333; margin: 5px 0; font-size: 12px;">
+          Email: <a href="mailto:Enquiries@blackfostercarersalliance.co.uk" style="color: #2EAB2C; text-decoration: none;">Enquiries@blackfostercarersalliance.co.uk</a><br>
+          Phone: <a href="tel:08000016230" style="color: #2EAB2C; text-decoration: none;">0800 001 6230</a><br>
+          Website: <a href="https://www.blackfostercarersalliance.co.uk" style="color: #2EAB2C; text-decoration: none;">www.blackfostercarersalliance.co.uk</a>
         </p>
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
-          <p style="color: #6c757d; font-size: 11px; margin: 0;">
+        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #2EAB2C;">
+          <p style="color: #666666; font-size: 11px; margin: 0;">
             This email was sent from the Black Foster Carers Alliance CRM System
           </p>
         </div>
@@ -41,10 +42,10 @@ const getEmailFooter = () => {
   `;
 };
 
-const getEmailContainer = (content) => {
+const getEmailContainer = (content, showSubheading = true) => {
   return `
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-      ${getEmailHeader()}
+      ${getEmailHeader(showSubheading)}
       <div style="padding: 30px;">
         ${content}
       </div>
@@ -56,9 +57,9 @@ const getEmailContainer = (content) => {
 const getBookingConfirmationContent = (booking, trainingEvent) => {
   return `
     <div style="text-align: center; margin-bottom: 30px;">
-      <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-        <h2 style="color: #155724; margin: 0 0 10px 0; font-size: 24px;">✓ Training Registration Confirmed</h2>
-        <p style="color: #155724; margin: 0; font-size: 16px;">Your training registration has been successfully confirmed!</p>
+      <div style="background: #e8f7e8; border: 2px solid #2EAB2C; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h2 style="color: #1a7a1a; margin: 0 0 10px 0; font-size: 24px;">✓ Training Registration Confirmed</h2>
+        <p style="color: #1a7a1a; margin: 0; font-size: 16px;">Your training registration has been successfully confirmed!</p>
       </div>
     </div>
 
@@ -93,7 +94,7 @@ const getBookingConfirmationContent = (booking, trainingEvent) => {
       ${trainingEvent.virtualMeetingLink ? `
         <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #dee2e6;">
           <p style="margin: 5px 0; color: #666;"><strong>Virtual Meeting Link:</strong></p>
-          <a href="${trainingEvent.virtualMeetingLink}" style="color: #007bff; text-decoration: none; font-weight: bold;">${trainingEvent.virtualMeetingLink}</a>
+          <a href="${trainingEvent.virtualMeetingLink}" style="color: #2EAB2C; text-decoration: none; font-weight: bold;">${trainingEvent.virtualMeetingLink}</a>
         </div>
       ` : ''}
     </div>
@@ -118,9 +119,9 @@ const getBookingConfirmationContent = (booking, trainingEvent) => {
 const getInvoiceEmailContent = (invoice) => {
   return `
     <div style="text-align: center; margin-bottom: 30px;">
-      <div style="background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-        <h2 style="color: #721c24; margin: 0 0 10px 0; font-size: 24px;">📄 Training Registration Invoice</h2>
-        <p style="color: #721c24; margin: 0; font-size: 16px;">Please find attached the invoice for your training registration.</p>
+      <div style="background: #f5f5f5; border: 2px solid #333333; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h2 style="color: #000000; margin: 0 0 10px 0; font-size: 24px;">📄 Training Registration Invoice</h2>
+        <p style="color: #333333; margin: 0; font-size: 16px;">Please find attached the invoice for your training registration.</p>
       </div>
     </div>
 
@@ -146,10 +147,10 @@ const getInvoiceEmailContent = (invoice) => {
       </div>
     </div>
 
-    <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-      <h4 style="color: #0c5460; margin: 0 0 10px 0;">💳 Payment Instructions</h4>
-      <p style="color: #0c5460; margin: 0 0 10px 0;">Please review the attached invoice and process the payment by the due date to confirm your registration.</p>
-      <p style="color: #0c5460; margin: 0; font-weight: bold;">Your training registration is confirmed once payment is received.</p>
+    <div style="background: #e8f7e8; border: 2px solid #2EAB2C; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+      <h4 style="color: #1a7a1a; margin: 0 0 10px 0;">💳 Payment Instructions</h4>
+      <p style="color: #1a7a1a; margin: 0 0 10px 0;">Please review the attached invoice and process the payment by the due date to confirm your registration.</p>
+      <p style="color: #1a7a1a; margin: 0; font-weight: bold;">Your training registration is confirmed once payment is received.</p>
     </div>
 
     <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
@@ -170,9 +171,9 @@ const getInvoiceEmailContent = (invoice) => {
 const getFeedbackRequestContent = (booking) => {
   return `
     <div style="text-align: center; margin-bottom: 30px;">
-      <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-        <h2 style="color: #155724; margin: 0 0 10px 0; font-size: 24px;">🎓 Training Completed!</h2>
-        <p style="color: #155724; margin: 0; font-size: 16px;">Congratulations on completing your training session.</p>
+      <div style="background: #e8f7e8; border: 2px solid #2EAB2C; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h2 style="color: #1a7a1a; margin: 0 0 10px 0; font-size: 24px;">🎓 Training Completed!</h2>
+        <p style="color: #1a7a1a; margin: 0; font-size: 16px;">Congratulations on completing your training session.</p>
       </div>
     </div>
 
@@ -181,8 +182,8 @@ const getFeedbackRequestContent = (booking) => {
       <p style="color: #666; margin: 0 0 15px 0;">We value your feedback! Please take a moment to share your experience and help us improve our training programs.</p>
       
       <div style="text-align: center; margin: 20px 0;">
-        <a href="${process.env.FRONTEND_URL || 'https://crm-both.vercel.app'}/feedback/${booking._id}" 
-           style="background: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+        <a href="${getFrontendUrl()}/feedback/${booking._id}" 
+           style="background: #2EAB2C; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           📊 Provide Feedback
         </a>
       </div>
@@ -208,9 +209,9 @@ const getFeedbackRequestContent = (booking) => {
 const getCertificateEmailContent = (certificate, invoiceInfo = '') => {
   return `
     <div style="text-align: center; margin-bottom: 30px;">
-      <div style="background: #d4edda; border: 1px solid #c3e6cb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-        <h2 style="color: #155724; margin: 0 0 10px 0; font-size: 24px;">🎓 Certificate of Completion</h2>
-        <p style="color: #155724; margin: 0; font-size: 16px;">Congratulations! You have successfully completed your training.</p>
+      <div style="background: #e8f7e8; border: 2px solid #2EAB2C; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h2 style="color: #1a7a1a; margin: 0 0 10px 0; font-size: 24px;">🎓 Certificate of Completion</h2>
+        <p style="color: #1a7a1a; margin: 0; font-size: 16px;">Congratulations! You have successfully completed your training.</p>
       </div>
     </div>
 
@@ -243,9 +244,9 @@ const getCertificateEmailContent = (certificate, invoiceInfo = '') => {
       </div>
     ` : ''}
 
-    <div style="background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-      <h4 style="color: #0c5460; margin: 0 0 10px 0;">📎 Certificate Attachment</h4>
-      <p style="color: #0c5460; margin: 0;">Your certificate is attached to this email. You can also download it from your training dashboard.</p>
+    <div style="background: #e8f7e8; border: 2px solid #2EAB2C; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+      <h4 style="color: #1a7a1a; margin: 0 0 10px 0;">📎 Certificate Attachment</h4>
+      <p style="color: #1a7a1a; margin: 0;">Your certificate is attached to this email. You can also download it from your training dashboard.</p>
     </div>
 
     <div style="text-align: center; margin-top: 30px;">
@@ -258,21 +259,21 @@ const getCertificateEmailContent = (certificate, invoiceInfo = '') => {
 const getBookingInvitationContent = (trainingEvent, bookingUrl, message = '') => {
   return `
     <div style="text-align: center; margin-bottom: 30px;">
-      <div style="background: #cce5ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-        <h2 style="color: #004085; margin: 0 0 10px 0; font-size: 24px;">📧 Training Event Invitation</h2>
-        <p style="color: #004085; margin: 0; font-size: 16px;">You're invited to join our upcoming training session!</p>
+      <div style="background: #f5f5f5; border: 2px solid #333333; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h2 style="color: #000000; margin: 0 0 10px 0; font-size: 24px;">📧 Training Event Invitation</h2>
+        <p style="color: #333333; margin: 0; font-size: 16px;">You're invited to join our upcoming training session!</p>
       </div>
     </div>
 
     ${message ? `
-      <div style="background: #f8f9fa; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-        <h4 style="color: #333; margin: 0 0 10px 0;">💬 Personal Message</h4>
-        <p style="color: #666; margin: 0; white-space: pre-line;">${message}</p>
+      <div style="background: #e8f7e8; border: 2px solid #2EAB2C; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+        <h4 style="color: #1a7a1a; margin: 0 0 10px 0;">💬 Personal Message</h4>
+        <p style="color: #1a7a1a; margin: 0; white-space: pre-line;">${message}</p>
       </div>
     ` : ''}
 
-    <div style="background: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-      <h3 style="color: #333; margin: 0 0 15px 0; font-size: 18px;">📅 Event Details</h3>
+    <div style="background: #f5f5f5; border: 2px solid #333333; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+      <h3 style="color: #000000; margin: 0 0 15px 0; font-size: 18px;">📅 Event Details</h3>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
         <div>
           <p style="margin: 5px 0; color: #666;"><strong>Title:</strong></p>
@@ -317,7 +318,7 @@ const getBookingInvitationContent = (trainingEvent, bookingUrl, message = '') =>
       <h4 style="color: #856404; margin: 0 0 10px 0;">🔗 Alternative Booking Method</h4>
       <p style="color: #856404; margin: 0 0 10px 0;">If the button doesn't work, copy and paste this link into your browser:</p>
       <p style="color: #856404; margin: 0; word-break: break-all;">
-        <a href="${bookingUrl}" style="color: #007bff; text-decoration: none;">${bookingUrl}</a>
+        <a href="${bookingUrl}" style="color: #2EAB2C !important; text-decoration: none; font-weight: bold;">${bookingUrl}</a>
       </p>
     </div>
 

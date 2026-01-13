@@ -13,6 +13,11 @@ export const getFreelancerById = async (id) => {
   return response.data;
 };
 
+export const getFreelancerByEmail = async (email) => {
+  const response = await api.get(`/freelancers/email/${email}`);
+  return response.data;
+};
+
 export const createFreelancer = async (freelancerData) => {
   const formData = new FormData();
   
@@ -72,6 +77,11 @@ export const updateFreelancerAvailability = async (id, availabilityData) => {
   return response.data;
 };
 
+export const updateMyAvailability = async (availabilityData) => {
+  const response = await api.put('/freelancers/my-availability', availabilityData);
+  return response.data;
+};
+
 export const addComplianceDocument = async (id, documentData) => {
   const formData = new FormData();
   formData.append('name', documentData.name);
@@ -96,6 +106,16 @@ export const deleteComplianceDocument = async (id, documentIndex) => {
 
 export const addWorkHistory = async (id, workHistoryData) => {
   const response = await api.post(`/freelancers/${id}/work-history`, workHistoryData);
+  return response.data;
+};
+
+export const updateWorkHistory = async (id, workIndex, workHistoryData) => {
+  const response = await api.put(`/freelancers/${id}/work-history/${workIndex}`, workHistoryData);
+  return response.data;
+};
+
+export const deleteWorkHistory = async (id, workIndex) => {
+  const response = await api.delete(`/freelancers/${id}/work-history/${workIndex}`);
   return response.data;
 };
 

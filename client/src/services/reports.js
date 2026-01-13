@@ -14,4 +14,5 @@ export const getContractStatusReport = () => api.get('/reports/contract-status')
 export const getRecruitmentPipelineReport = () => api.get('/reports/recruitment-pipeline').then(r => r.data);
 export const getInvoiceRevenueReport = () => api.get('/reports/invoice-revenue').then(r => r.data);
 export const getTrainingEventsReport = () => api.get('/reports/training-events').then(r => r.data);
+export const getMentorReport = () => api.get('/reports/mentors').then(r => r.data);
 

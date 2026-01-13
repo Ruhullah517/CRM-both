@@ -7,12 +7,13 @@ const {
   approveEnquiry,
   rejectEnquiry,
   assignEnquiry,
+  updateEnquiry,
   deleteEnquiry,
 } = require('../controllers/enquiryController');
 const { authenticate, authorize } = require('../middleware/auth');
 
 // List all enquiries
-router.get('/', authenticate, authorize('admin', 'manager', 'staff'), getAllEnquiries);
+router.get('/', authenticate, authorize('admin', 'manager', 'staff', 'caseworker'), getAllEnquiries);
 
 // Get a single enquiry by ID
 router.get('/:id', authenticate, authorize('admin', 'manager', 'staff'), getEnquiryById);
@@ -25,6 +26,9 @@ router.post('/:id/reject', authenticate, authorize('admin', 'manager', 'staff'),
 
 // Assign an enquiry to a staff member
 router.post('/:id/assign', authenticate, authorize('admin', 'manager', 'staff'), assignEnquiry);
+
+// Update enquiry (initial call, status, etc.)
+router.put('/:id', authenticate, authorize('admin', 'manager', 'staff'), updateEnquiry);
 
 router.post('/', authenticate, authorize('admin', 'manager', 'staff'), createEnquiry);
 

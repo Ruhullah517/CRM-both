@@ -202,16 +202,16 @@ export const createFullAssessment = async (enquiryId, assessmentData) => {
   }
 };
 
-// Get full assessment by enquiry ID
+// Get all full assessments by enquiry ID
 export const getFullAssessmentByEnquiryId = async (enquiryId) => {
   try {
     const response = await api.get(`/recruitment/enquiries/${enquiryId}/full-assessment`);
-    return response.data;
+    return response.data; // Returns an array of assessments
   } catch (error) {
     if (error.response && error.response.status === 404) {
-      return null; // No full assessment found
+      return []; // Return empty array if no assessments found
     }
-    console.error('Error fetching full assessment:', error);
+    console.error('Error fetching full assessments:', error);
     throw error;
   }
 };
@@ -233,6 +233,17 @@ export const allocateMentoring = async (enquiryId, mentoringData) => {
   }
 };
 
+// Remove mentor allocation
+export const deleteMentoring = async (enquiryId) => {
+  try {
+    const response = await api.delete(`/recruitment/enquiries/${enquiryId}/mentoring`);
+    return response.data;
+  } catch (error) {
+    console.error('Service: Error removing mentoring:', error);
+    throw error;
+  }
+};
+
 // Get mentor allocation by enquiry ID
 export const getMentorAllocationByEnquiryId = async (enquiryId) => {
   try {
@@ -243,6 +254,17 @@ export const getMentorAllocationByEnquiryId = async (enquiryId) => {
       return null; // No mentor allocation found
     }
     console.error('Error fetching mentor allocation:', error);
+    throw error;
+  }
+};
+
+// Complete mentor allocation / enquiry assignment
+export const completeMentoring = async (enquiryId, completionNotes) => {
+  try {
+    const response = await api.post(`/recruitment/enquiries/${enquiryId}/mentoring/complete`, { completionNotes });
+    return response.data;
+  } catch (error) {
+    console.error('Service: Error completing mentoring allocation:', error);
     throw error;
   }
 };

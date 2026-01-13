@@ -6,6 +6,8 @@ const Contract = require('../models/Contract');
 const Enquiry = require('../models/Enquiry');
 const Invoice = require('../models/Invoice');
 const TrainingEvent = require('../models/TrainingEvent');
+const Mentor = require('../models/Mentor');
+const MentorActivity = require('../models/MentorActivity');
 const { Parser } = require('json2csv');
 
 // Open/Closed cases by date
@@ -650,6 +652,72 @@ const trainingEventsReport = async (req, res) => {
   }
 };
 
+// Mentor assignments and activity report
+const mentorReport = async (req, res) => {
+  try {
+    const mentors = await Mentor.find();
+    
+    const report = await Promise.all(mentors.map(async (mentor) => {
+      // Get assignments for this mentor
+      const assignments = await MentorActivity.find({
+        mentorId: mentor._id,
+        activityType: 'assignment'
+      }).populate('enquiryId', 'full_name status');
+      
+      // Get activity logs for assignments
+      const assignmentIds = assignments.map(a => a._id);
+      const logs = await MentorActivity.find({
+        mentorId: mentor._id,
+        parentAssignmentId: { $in: assignmentIds },
+        activityType: 'assignment_log'
+      });
+      
+      // Get enquiries assigned to this mentor
+      const enquiries = await Enquiry.find({
+        'mentorAllocation.mentorId': mentor._id
+      });
+      
+      const activeAssignments = assignments.filter(a => a.status === 'active' || !a.status);
+      const completedAssignments = assignments.filter(a => a.status === 'completed');
+      
+      return {
+        mentorId: mentor._id,
+        name: mentor.name,
+        email: mentor.email,
+        phone: mentor.phone,
+        status: mentor.status || 'Active',
+        specialization: mentor.specialization || '',
+        totalAssignments: assignments.length,
+        activeAssignments: activeAssignments.length,
+        completedAssignments: completedAssignments.length,
+        totalActivityLogs: logs.length,
+        assignedEnquiries: enquiries.length,
+        skills: mentor.skills || []
+      };
+    }));
+    
+    const stats = {
+      totalMentors: mentors.length,
+      activeMentors: mentors.filter(m => m.status === 'Active').length,
+      inactiveMentors: mentors.filter(m => m.status === 'Inactive').length,
+      onLeaveMentors: mentors.filter(m => m.status === 'On Leave').length,
+      totalAssignments: report.reduce((sum, r) => sum + r.totalAssignments, 0),
+      activeAssignments: report.reduce((sum, r) => sum + r.activeAssignments, 0),
+      completedAssignments: report.reduce((sum, r) => sum + r.completedAssignments, 0),
+      totalActivityLogs: report.reduce((sum, r) => sum + r.totalActivityLogs, 0),
+      totalAssignedEnquiries: report.reduce((sum, r) => sum + r.assignedEnquiries, 0)
+    };
+    
+    res.json({
+      stats,
+      mentors: report.sort((a, b) => b.totalAssignments - a.totalAssignments)
+    });
+  } catch (error) {
+    console.error('Error generating mentor report:', error);
+    res.status(500).send('Server error');
+  }
+};
+
 module.exports = {
   casesStatusReport,
   caseTypeDistribution,
@@ -664,5 +732,6 @@ module.exports = {
   contractStatusReport,
   recruitmentPipelineReport,
   invoiceRevenueReport,
-  trainingEventsReport
+  trainingEventsReport,
+  mentorReport
 }; 

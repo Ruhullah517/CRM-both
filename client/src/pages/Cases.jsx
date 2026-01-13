@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { SERVER_BASE_URL } from '../config/api';
 import {
   EyeIcon,
   PencilSquareIcon,
@@ -228,7 +229,7 @@ const CaseList = ({ onSelect, onAdd, cases, onDelete, staffList }) => {
 
 const CaseDetail = ({ caseItem, onBack, onEdit, staffList }) => {
   const { user } = useAuth();
-  const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
+  const backendBaseUrl = SERVER_BASE_URL;
   const [meetings, setMeetings] = React.useState([]);
   const [mLoading, setMLoading] = React.useState(false);
   const [mForm, setMForm] = React.useState({ meetingType: 'Telephone', meetingDate: '', notes: '' });
@@ -699,7 +700,7 @@ const CaseForm = ({ caseItem, loading, onBack, onSave }) => {
   const [financeContactName, setFinanceContactName] = useState(caseItem?.referralDetails?.financeContactName || "");
   const [financeContactNumber, setFinanceContactNumber] = useState(caseItem?.referralDetails?.financeContactNumber || "");
   const [financeEmail, setFinanceEmail] = useState(caseItem?.referralDetails?.financeEmail || "");
-  const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
+  const backendBaseUrl = SERVER_BASE_URL;
 
   useEffect(() => {
     api.get('/users/staff')

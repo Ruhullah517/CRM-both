@@ -1,6 +1,8 @@
 import api from './api';
 
-const API_URL = 'https://crm-backend-0v14.onrender.com/api/email-automations';
+import { SERVER_BASE_URL } from '../config/api';
+
+const API_URL = `${SERVER_BASE_URL}/api/email-automations`;
 
 export const getAllAutomations = async () => {
   const response = await api.get(API_URL);

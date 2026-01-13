@@ -58,11 +58,25 @@ const loginUser = async (req, res) => {
     if (!isMatch) {
       return res.status(400).json({ msg: 'Invalid credentials' });
     }
-    // Create JWT
+    // If mentor user missing mentorId, try to link by email
+    let mentorId = user.mentorId;
+    if (!mentorId && user.role === 'mentor' && user.email) {
+      const Mentor = require('../models/Mentor');
+      const mentor = await Mentor.findOne({ email: user.email });
+      if (mentor) {
+        mentorId = mentor._id;
+        user.mentorId = mentor._id;
+        await user.save();
+      }
+    }
+
+    // Create JWT (include mentorId/freelancerId when relevant)
     const payload = {
       user: {
         id: user._id,
-        role: user.role
+        role: user.role,
+        mentorId,
+        freelancerId: user.freelancerId
       },
     };
     jwt.sign(
@@ -71,8 +85,8 @@ const loginUser = async (req, res) => {
       { expiresIn: '5h' },
       (err, token) => {
         if (err) throw err;
-        const { _id, name, email, role } = user;
-        res.json({ token, user: { id: _id, name, email, role } });
+        const { _id, name, email, role, freelancerId } = user;
+        res.json({ token, user: { id: _id, name, email, role, mentorId, freelancerId } });
       }
     );
   } catch (error) {
@@ -97,7 +111,8 @@ const forgotPassword = async (req, res) => {
     user.resetPasswordExpires = expires;
     await user.save();
 
-    const frontendBase = process.env.FRONTEND_URL || 'https://crm-both.vercel.app';
+    const { getFrontendUrl } = require('../config/urls');
+    const frontendBase = getFrontendUrl();
     const resetUrl = `${frontendBase}/reset-password?token=${token}`;
 
     const mailOptions = {
@@ -108,7 +123,7 @@ const forgotPassword = async (req, res) => {
         <p>Hello ${user.name || ''},</p>
         <p>We received a request to reset your BFCA CRM password. Click the button below to set a new password. This link will expire in 30 minutes.</p>
         <p style="margin:20px 0;"><a href="${resetUrl}" style="background:#2EAB2C;color:#fff;padding:10px 16px;border-radius:6px;text-decoration:none;">Reset Password</a></p>
-        <p>If the button doesn’t work, copy and paste this URL into your browser:<br/><a href="${resetUrl}">${resetUrl}</a></p>
+        <p>If the button doesn't work, copy and paste this URL into your browser:<br/><a href="${resetUrl}" style="color: #2EAB2C; text-decoration: none;">${resetUrl}</a></p>
         <p>If you didn’t request this, you can safely ignore this email.</p>
       </div>`
     };

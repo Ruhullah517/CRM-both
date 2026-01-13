@@ -34,7 +34,7 @@ router.get('/bookings/:id', getBookingById);
 router.use(authenticate);
 
 // Training Events
-router.get('/events', authorize('admin', 'manager', 'staff', 'trainer'), getAllTrainingEvents);
+router.get('/events', authorize('admin', 'manager', 'staff', 'trainer', 'caseworker'), getAllTrainingEvents);
 router.get('/events/:id', authorize('admin', 'manager', 'staff', 'trainer'), getTrainingEventById);
 router.post('/events', authorize('admin', 'manager', 'staff'), createTrainingEvent);
 router.put('/events/:id', authorize('admin', 'manager', 'staff'), updateTrainingEvent);

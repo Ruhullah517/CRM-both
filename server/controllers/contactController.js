@@ -286,9 +286,27 @@ const bulkUpdateContacts = async (req, res) => {
       return res.status(400).json({ msg: 'Contact IDs array is required' });
     }
     
+    // Prepare the update object
+    // If updateData contains MongoDB operators ($set, $addToSet, etc.), use them directly
+    // Otherwise, wrap in $set
+    let update;
+    if (Object.keys(updateData).some(key => key.startsWith('$'))) {
+      // Contains MongoDB operators, use as is and add updated_at
+      update = {
+        ...updateData,
+        $set: { ...(updateData.$set || {}), updated_at: new Date() }
+      };
+    } else {
+      // Regular fields, wrap in $set
+      update = { $set: { ...updateData, updated_at: new Date() } };
+    }
+    
+    console.log('Bulk update - Contact IDs:', contactIds);
+    console.log('Bulk update - Update data:', JSON.stringify(update, null, 2));
+    
     const result = await Contact.updateMany(
       { _id: { $in: contactIds } },
-      { ...updateData, updated_at: new Date() }
+      update
     );
     
     res.json({ 
@@ -296,8 +314,8 @@ const bulkUpdateContacts = async (req, res) => {
       modifiedCount: result.modifiedCount
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).send('Server error');
+    console.error('Bulk update error:', error);
+    res.status(500).json({ msg: 'Server error', error: error.message });
   }
 };
 

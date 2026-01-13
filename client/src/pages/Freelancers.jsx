@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { SERVER_BASE_URL } from '../config/api';
 import {
   EyeIcon,
   PencilSquareIcon,
@@ -19,6 +20,8 @@ import {
   addComplianceDocument,
   deleteComplianceDocument,
   addWorkHistory,
+  updateWorkHistory,
+  deleteWorkHistory,
   getExpiringCompliance,
   updateContractRenewal,
   updateFreelancerStatus,
@@ -146,6 +149,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
   const [showComplianceModal, setShowComplianceModal] = useState(false);
   const [showWorkHistoryModal, setShowWorkHistoryModal] = useState(false);
+  const [editingWorkIndex, setEditingWorkIndex] = useState(null);
   const [showContractModal, setShowContractModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -281,8 +285,15 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
     setSaving(true);
     setModalError(null);
     try {
-      await addWorkHistory(freelancer._id, workHistoryForm);
+      if (editingWorkIndex !== null) {
+        // Update existing work history
+        await updateWorkHistory(freelancer._id, editingWorkIndex, workHistoryForm);
+      } else {
+        // Add new work history
+        await addWorkHistory(freelancer._id, workHistoryForm);
+      }
       setShowWorkHistoryModal(false);
+      setEditingWorkIndex(null);
       setWorkHistoryForm({
         assignment: '',
         startDate: '',
@@ -293,7 +304,33 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
       });
       window.location.reload();
     } catch (err) {
-      setModalError('Failed to add work history');
+      setModalError(editingWorkIndex !== null ? 'Failed to update work history' : 'Failed to add work history');
+    }
+    setSaving(false);
+  };
+
+  const handleEditWorkHistory = (index, work) => {
+    setEditingWorkIndex(index);
+    setWorkHistoryForm({
+      assignment: work.assignment,
+      startDate: work.startDate ? new Date(work.startDate).toISOString().split('T')[0] : '',
+      endDate: work.endDate ? new Date(work.endDate).toISOString().split('T')[0] : '',
+      hours: work.hours,
+      rate: work.rate,
+      notes: work.notes || ''
+    });
+    setShowWorkHistoryModal(true);
+  };
+
+  const handleDeleteWorkHistory = async (index) => {
+    if (!window.confirm('Delete this work history entry?')) return;
+    setSaving(true);
+    setModalError(null);
+    try {
+      await deleteWorkHistory(freelancer._id, index);
+      window.location.reload();
+    } catch (err) {
+      alert('Failed to delete work history');
     }
     setSaving(false);
   };
@@ -564,7 +601,18 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-[#2EAB2C]">Work History</h3>
             <button 
-              onClick={() => setShowWorkHistoryModal(true)}
+              onClick={() => {
+                setEditingWorkIndex(null);
+                setWorkHistoryForm({
+                  assignment: '',
+                  startDate: '',
+                  endDate: '',
+                  hours: '',
+                  rate: freelancer.hourlyRate || '',
+                  notes: ''
+                });
+                setShowWorkHistoryModal(true);
+              }}
               className="px-4 py-2 bg-[#2EAB2C] text-white rounded hover:bg-green-800"
             >
               Add Entry
@@ -575,22 +623,36 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
               {freelancer.workHistory.map((work, index) => (
                 <div key={index} className="border rounded p-4">
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <h4 className="font-semibold">{work.assignment}</h4>
                       <p className="text-sm text-gray-600">
                         {formatDate(work.startDate)} - {work.endDate ? formatDate(work.endDate) : 'Ongoing'}
                       </p>
                       <p className="text-sm text-gray-600">
-                        {work.hours} hours @ £{work.rate}/hour = £{work.totalAmount}
+                        {work.hours} hours @ £{work.rate}/hour = £{work.totalAmount?.toFixed(2)}
                       </p>
-                      <span className={`px-2 py-1 rounded text-xs ${
+                      <span className={`inline-block px-2 py-1 rounded text-xs mt-1 ${
                         work.status === 'completed' ? 'bg-green-100 text-green-800' :
                         work.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-red-100 text-red-800'
                       }`}>
-                        {work.status}
+                        {work.status === 'in_progress' ? 'In Progress' : work.status}
                       </span>
-                      {work.notes && <p className="text-sm mt-2">{work.notes}</p>}
+                      {work.notes && <p className="text-sm text-gray-600 mt-2">{work.notes}</p>}
+                    </div>
+                    <div className="flex gap-2 ml-4">
+                      <button
+                        onClick={() => handleEditWorkHistory(index, work)}
+                        className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteWorkHistory(index)}
+                        className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -991,7 +1053,9 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div className="mt-3">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Add Work Entry</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                {editingWorkIndex !== null ? 'Edit Work Entry' : 'Add Work Entry'}
+              </h3>
               {modalError && <div className="text-red-600 text-sm mb-3">{modalError}</div>}
               <form onSubmit={handleAddWorkHistory} className="space-y-4">
                 <div>
@@ -1076,6 +1140,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
                     type="button"
                     onClick={() => {
                       setShowWorkHistoryModal(false);
+                      setEditingWorkIndex(null);
                       setModalError(null);
                     }}
                     className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
@@ -1087,7 +1152,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
                     disabled={saving}
                     className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#2EAB2C] hover:bg-green-700 disabled:opacity-50"
                   >
-                    {saving ? 'Adding...' : 'Add Entry'}
+                    {saving ? (editingWorkIndex !== null ? 'Updating...' : 'Adding...') : (editingWorkIndex !== null ? 'Update Entry' : 'Add Entry')}
                   </button>
                 </div>
               </form>
@@ -1798,7 +1863,22 @@ const Freelancers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
-  const backendBaseUrl = "https://crm-backend-0v14.onrender.com";
+  const backendBaseUrl = SERVER_BASE_URL;
+
+  // Helper to get JWT token consistent with global axios interceptor
+  const getAuthToken = () => {
+    let token = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.token) token = parsed.token;
+      } catch {
+        // ignore JSON parse errors
+      }
+    }
+    return token;
+  };
 
   // --- Send Form Online modal state ---
   const [showSendFormModal, setShowSendFormModal] = useState(false);
@@ -1811,9 +1891,13 @@ const Freelancers = () => {
     setSendFormLoading(true);
     setSendFormStatus("");
     try {
+      const token = getAuthToken();
       const res = await fetch(`${backendBaseUrl}/api/freelancers/send-form-link`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ email: sendFormEmail }),
       });
       const data = await res.json();

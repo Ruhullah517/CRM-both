@@ -14,7 +14,7 @@ const {
 const { authenticate, authorize } = require('../middleware/auth');
 
 // List all generated contracts
-router.get('/', authenticate, authorize('admin', 'manager', 'staff'), getAllGeneratedContracts);
+router.get('/', authenticate, authorize('admin', 'manager', 'staff', 'caseworker'), getAllGeneratedContracts);
 // Get a single generated contract
 router.get('/:id', authenticate, authorize('admin', 'manager', 'staff'), getGeneratedContract);
 // Generate a new contract

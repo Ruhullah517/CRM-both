@@ -16,6 +16,7 @@ import Recruitment from '../pages/Recruitment';
 import MyCases from '../pages/MyCases';
 import EmailTemplates from '../pages/EmailTemplates';
 import Mentors from '../pages/Mentors';
+import MentorDetail from '../pages/MentorDetail';
 import Users from '../pages/Users';
 import PrivateRoute from './PrivateRoute';
 import Enquiries from '../pages/Enquiries';
@@ -26,6 +27,7 @@ import TrainingEvents from '../pages/TrainingEvents';
 import PublicTrainingBooking from '../pages/PublicTrainingBooking';
 import Certificates from '../pages/Certificates';
 import Invoices from '../pages/Invoices';
+import InvoiceSettings from '../pages/InvoiceSettings';
 import Calendar from '../pages/Calendar';
 import EmailManagement from '../pages/EmailManagement';
 import EmailAutomations from '../pages/EmailAutomations';
@@ -38,6 +40,7 @@ import CaseClosure from '../pages/CaseClosure';
 import SalesCommunication from '../pages/SalesCommunication';
 import HRModule from '../pages/HRModule';
 import FreelancerSelfService from '../pages/FreelancerSelfService';
+import MyTasks from '../pages/MyTasks';
 
 
 import PublicFeedback from '../pages/PublicFeedback';
@@ -65,10 +68,12 @@ export default function AppRouter() {
               <Route path="/full-assessment/:id" element={<FullAssessment />} />
               <Route path="/case-closure/:id" element={<CaseClosure />} />
               <Route path="/mentors" element={<Mentors />} />
+              <Route path="/mentors/:id" element={<MentorDetail />} />
               <Route path="/freelancers" element={<Freelancers />} />
               <Route path="/training" element={<TrainingEvents />} />
               <Route path="/certificates" element={<Certificates />} />
               <Route path="/invoices" element={<Invoices />} />
+              <Route path="/invoice-settings" element={<InvoiceSettings />} />
               <Route path="/contracts" element={<Contracts />} />
               <Route path="/email-management" element={<EmailManagement />} />
               <Route path="/contact-management" element={<ContactManagement />} />
@@ -99,8 +104,7 @@ export default function AppRouter() {
 
             {/* Mentor-specific routes */}
             <Route element={<PrivateRoute roles={["mentor"]} />}>
-              <Route path="/my-profile" element={<Profile />} />
-              <Route path="/my-cases" element={<MyCases />} />
+              <Route path="/my-tasks" element={<MyTasks />} />
             </Route>
             <Route path="/enquiries" element={<Enquiries />} />
             <Route path="/enquiries/:id" element={<EnquiryDetail />} />

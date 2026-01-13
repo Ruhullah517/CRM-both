@@ -1,10 +1,9 @@
 import api from './api';
 
 // Public API endpoints - No authentication required
-const PUBLIC_API_URL = 'https://crm-backend-0v14.onrender.com/api/leads';
+import { SERVER_BASE_URL } from '../config/api';
 
-// For local development, use:
-// const PUBLIC_API_URL = 'http://localhost:5000/api/leads';
+const PUBLIC_API_URL = `${SERVER_BASE_URL}/api/leads`;
 
 // Submit contact form (public)
 export const submitContactForm = async (data) => {

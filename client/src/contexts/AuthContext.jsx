@@ -21,7 +21,7 @@ export function AuthProvider({ children }) {
   };
 
   // Helpers for easy access
-  const userInfo = user?.user || null; // { id, name, email, role }
+  const userInfo = user?.user || null; // { id, name, email, role, mentorId }
   const token = user?.token || null;
   const role = userInfo?.role || null;
 

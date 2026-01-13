@@ -13,6 +13,7 @@ export default function Login() {
   const [showForgot, setShowForgot] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotStatus, setForgotStatus] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -82,20 +83,24 @@ export default function Login() {
             <button
               type="button"
               className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:opacity-50"
+              disabled={!forgotEmail.trim() || forgotLoading}
               onClick={async () => {
                 setForgotStatus('');
+                setForgotLoading(true);
                 try {
                   await requestPasswordReset(forgotEmail);
                   setForgotStatus('If the email exists, a reset link has been sent.');
                 } catch (e) {
                   setForgotStatus('If the email exists, a reset link has been sent.');
+                } finally {
+                  setForgotLoading(false);
                 }
               }}
             >
-              Send reset link
+              {forgotLoading ? 'Sending...' : 'Send reset link'}
             </button>
             <div className="text-center">
-              <button type="button" className="text-sm text-gray-600 hover:underline" onClick={() => setShowForgot(false)}>
+              <button type="button" className="text-sm text-gray-600 hover:underline" onClick={() => { setShowForgot(false); setForgotLoading(false); }}>
                 Back to login
               </button>
             </div>

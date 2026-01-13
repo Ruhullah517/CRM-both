@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getCases } from '../services/cases';
 import { getContracts } from '../services/contracts';
-import { getFreelancers } from '../services/freelancers';
+import { getFreelancers, getFreelancerByEmail } from '../services/freelancers';
 import { getEnquiries } from '../services/enquiries';
 import {
   UserGroupIcon,
@@ -25,6 +25,7 @@ import api from '../services/api';
 
 export default function Dashboard() {
   const { userInfo } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [overdueInvoices, setOverdueInvoices] = useState([]);
   const [expiringContracts, setExpiringContracts] = useState([]);
@@ -43,6 +44,16 @@ export default function Dashboard() {
       const user = localStorage.getItem('user');
       if (!user) {
         setLoading(false);
+        return;
+      }
+
+      // Redirect freelancers or mentors to their dedicated areas
+      if (userInfo?.role === 'freelancer') {
+        navigate('/my-profile');
+        return;
+      }
+      if (userInfo?.role === 'mentor') {
+        navigate('/my-tasks');
         return;
       }
 

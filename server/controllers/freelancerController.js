@@ -34,6 +34,31 @@ const getFreelancerById = async (req, res) => {
   }
 };
 
+// Get a single freelancer by email
+const getFreelancerByEmail = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const f = await Freelancer.findOne({ email: email });
+    if (!f) return res.status(404).json({ msg: 'Freelancer not found' });
+    res.json({ ...f.toObject(), contractDate: f.contract_date });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+};
+
+function parseArrayField(val) {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    if (val.startsWith('[')) {
+      try { return JSON.parse(val); } catch (e) { return []; }
+    }
+    // comma separated fallback
+    return val.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 // Create a new freelancer
 const createFreelancer = async (req, res) => {
   try {
@@ -84,6 +109,7 @@ const createFreelancer = async (req, res) => {
 
       // Section 5: Consideration for Work & Training
       considerationFor: req.body.considerationFor,
+      roles: parseArrayField(req.body.roles),
 
       // Section 6: Additional Information
       qualificationsAndTraining: req.body.qualificationsAndTraining,
@@ -164,6 +190,7 @@ const updateFreelancer = async (req, res) => {
 
       // Section 5: Consideration for Work & Training
       considerationFor: req.body.considerationFor,
+      roles: parseArrayField(req.body.roles),
 
       // Section 6: Additional Information
       qualificationsAndTraining: req.body.qualificationsAndTraining,
@@ -211,7 +238,11 @@ const sendFreelancerFormLink = async (req, res) => {
 
   try {
     const token = uuidv4();
-    const link = `https://crm-both.vercel.app/freelancer-form/${token}`;
+    const { getFrontendUrl } = require('../config/urls');
+    const rawFrontendUrl = getFrontendUrl();
+    // Ensure no trailing slash to avoid double slashes in generated links
+    const frontendUrl = rawFrontendUrl.replace(/\/+$/, '');
+    const link = `${frontendUrl}/freelancer-form/${token}`;
     await FreelancerFormToken.create({ email, token });
 
     await sendMail({
@@ -220,9 +251,9 @@ const sendFreelancerFormLink = async (req, res) => {
       subject: 'Complete Your Freelancer Form – BFCA',
       html: getEmailContainer(`
         <div style="text-align: center; margin-bottom: 30px;">
-          <div style="background: #cce5ff; border: 1px solid #b3d9ff; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-            <h2 style="color: #004085; margin: 0 0 10px 0; font-size: 24px;">👋 Welcome to Black Foster Carers Alliance</h2>
-            <p style="color: #004085; margin: 0; font-size: 16px;">Thank you for your interest in working with us!</p>
+          <div style="background: #e8f7e8; border: 1px solid #2EAB2C; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h2 style="color: #1a7a1a; margin: 0 0 10px 0; font-size: 24px;">👋 Welcome to Black Foster Carers Alliance</h2>
+            <p style="color: #1a7a1a; margin: 0; font-size: 16px;">Thank you for your interest in working with us!</p>
           </div>
         </div>
 
@@ -254,8 +285,8 @@ const sendFreelancerFormLink = async (req, res) => {
       `),
       attachments: [
         {
-          filename: 'logo.jpg',
-          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
+          filename: 'logo-white.png',
+          path: path.join(__dirname, '..', '..', 'client', 'public', 'logo-white.png'),
           cid: 'company-logo'
         }
       ]
@@ -277,6 +308,9 @@ async function createOrUpdateContactFromFreelancer(freelancer) {
       email: freelancer.email,
       phone: freelancer.mobileNumber,
       tags: ['Freelancer'],
+      contactType: 'freelancer',
+      // Mark where this contact originated from for Sales & Communication source filters
+      leadSource: 'freelancer',
       notes: '',
       organizationName: '',
       organizationAddress: '',
@@ -284,9 +318,9 @@ async function createOrUpdateContactFromFreelancer(freelancer) {
       // user_id is intentionally omitted
     });
   } else {
-    if (!contact.tags.includes('Freelancer')) {
-      contact.tags.push('Freelancer');
-    }
+    if (!contact.tags.includes('Freelancer')) contact.tags.push('Freelancer');
+    if (!contact.leadSource) contact.leadSource = 'freelancer';
+    if (!contact.contactType || contact.contactType === 'prospect') contact.contactType = 'freelancer';
     if (!contact.name && (freelancer.fullName || freelancer.name)) contact.name = freelancer.fullName || freelancer.name;
     if (!contact.phone && freelancer.mobileNumber) contact.phone = freelancer.mobileNumber;
   }
@@ -373,6 +407,9 @@ const submitFreelancerPublicForm = async (req, res) => {
 // Update freelancer availability
 const updateAvailability = async (req, res) => {
   try {
+    console.log('=== updateAvailability ROUTE CALLED (ADMIN) ===');
+    console.log('Params:', req.params);
+    console.log('Body:', req.body);
     const { hourlyRate, dailyRate, availability, availabilityNotes } = req.body;
     const freelancer = await Freelancer.findByIdAndUpdate(
       req.params.id,
@@ -384,6 +421,46 @@ const updateAvailability = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
+  }
+};
+
+// Update my own availability (for freelancers)
+const updateMyAvailability = async (req, res) => {
+  try {
+    console.log('=== updateMyAvailability ROUTE CALLED ===');
+    console.log('updateMyAvailability called with:', req.body);
+    console.log('User:', req.user);
+    
+    const { availability, availabilityNotes } = req.body;
+    const userEmail = req.user.email;
+    
+    console.log('Looking for freelancer with email:', userEmail);
+    
+    // Find freelancer by email
+    const freelancer = await Freelancer.findOne({ email: userEmail });
+    if (!freelancer) {
+      console.log('Freelancer not found for email:', userEmail);
+      return res.status(404).json({ msg: 'Freelancer profile not found' });
+    }
+    
+    console.log('Found freelancer:', freelancer.fullName);
+    
+    // Update availability using findByIdAndUpdate to bypass validation
+    const updatedFreelancer = await Freelancer.findByIdAndUpdate(
+      freelancer._id,
+      {
+        availability,
+        availabilityNotes,
+        updated_at: new Date()
+      },
+      { new: true, runValidators: false }
+    );
+    
+    console.log('Availability updated successfully');
+    res.json(updatedFreelancer);
+  } catch (error) {
+    console.error('Error updating my availability:', error);
+    res.status(500).json({ msg: 'Server error: ' + error.message });
   }
 };
 
@@ -472,6 +549,82 @@ const addWorkHistory = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
+  }
+};
+
+// Update work history entry
+const updateWorkHistory = async (req, res) => {
+  try {
+    const { workIndex } = req.params;
+    const { assignment, startDate, endDate, hours, rate, notes, status } = req.body;
+    
+    // Calculate total amount
+    const totalAmount = hours * rate;
+    
+    // Prepare the updated work entry
+    const updatedWorkEntry = {
+      assignment,
+      startDate: new Date(startDate),
+      endDate: endDate ? new Date(endDate) : null,
+      hours,
+      rate,
+      totalAmount,
+      status: status || (endDate ? 'completed' : 'in_progress'),
+      notes
+    };
+    
+    // Use findByIdAndUpdate with array element update to avoid full document validation
+    const updateQuery = {};
+    updateQuery[`workHistory.${workIndex}`] = updatedWorkEntry;
+    updateQuery.updated_at = new Date();
+    
+    const freelancer = await Freelancer.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateQuery },
+      { new: true, runValidators: false } // Skip validation to avoid issues with other fields
+    );
+    
+    if (!freelancer) return res.status(404).json({ msg: 'Freelancer not found' });
+    
+    res.json(freelancer);
+  } catch (error) {
+    console.error('Update work history error:', error);
+    res.status(500).json({ msg: 'Server error', error: error.message });
+  }
+};
+
+// Delete work history entry
+const deleteWorkHistory = async (req, res) => {
+  try {
+    const { workIndex } = req.params;
+    
+    const freelancer = await Freelancer.findById(req.params.id);
+    if (!freelancer) return res.status(404).json({ msg: 'Freelancer not found' });
+    
+    if (!freelancer.workHistory || !freelancer.workHistory[workIndex]) {
+      return res.status(404).json({ msg: 'Work history entry not found' });
+    }
+
+    // Remove the work history entry using $pull with position
+    // Since we can't directly remove by index, we need to use a different approach
+    const workHistoryCopy = [...freelancer.workHistory];
+    workHistoryCopy.splice(parseInt(workIndex), 1);
+    
+    const updatedFreelancer = await Freelancer.findByIdAndUpdate(
+      req.params.id,
+      { 
+        $set: { 
+          workHistory: workHistoryCopy,
+          updated_at: new Date() 
+        }
+      },
+      { new: true, runValidators: false }
+    );
+    
+    res.json(updatedFreelancer);
+  } catch (error) {
+    console.error('Delete work history error:', error);
+    res.status(500).json({ msg: 'Server error', error: error.message });
   }
 };
 
@@ -617,7 +770,7 @@ const createUserAccountForFreelancer = async (req, res) => {
               <div class="credentials">
                 <h3 style="margin-top: 0; color: #2EAB2C;">Your Login Credentials</h3>
                 <p><strong>Email:</strong> ${freelancer.email}</p>
-                <p><strong>Password:</strong> <code style="background: #f0f0f0; padding: 5px 10px; border-radius: 3px;">${generatedPassword}</code></p>
+                <p><strong>Password:</strong> <code style="background: #e8f7e8; color: #1a7a1a; padding: 5px 10px; border-radius: 3px;">${generatedPassword}</code></p>
               </div>
 
               <div class="warning">
@@ -632,7 +785,7 @@ const createUserAccountForFreelancer = async (req, res) => {
                 <li>View your work history and assignments</li>
               </ul>
 
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:5173'}" class="button">Login to CRM</a>
+              <a href="${process.env.FRONTEND_URL || (process.env.NODE_ENV === 'development' ? 'http://localhost:5173' : 'http://crm.blackfostercarersalliance.co.uk')}" class="button" style="color: white;">Login to CRM</a>
 
               <p style="margin-top: 30px;">If you have any questions, please contact our HR team.</p>
               
@@ -645,11 +798,12 @@ const createUserAccountForFreelancer = async (req, res) => {
         </html>
       `;
 
-      await sendMail(
-        freelancer.email,
-        'Welcome to BFCA CRM - Your Login Credentials',
-        emailHtml
-      );
+      await sendMail({
+        from: getFromAddress(),
+        to: freelancer.email,
+        subject: 'Welcome to BFCA CRM - Your Login Credentials',
+        html: emailHtml
+      });
     } catch (emailError) {
       console.error('Failed to send credentials email:', emailError);
       // Don't fail the whole operation if email fails
@@ -677,13 +831,17 @@ const createUserAccountForFreelancer = async (req, res) => {
 module.exports = {
   getAllFreelancers,
   getFreelancerById,
+  getFreelancerByEmail,
   createFreelancer,
   updateFreelancer,
   deleteFreelancer,
   updateAvailability,
+  updateMyAvailability,
   addComplianceDocument,
   deleteComplianceDocument,
   addWorkHistory,
+  updateWorkHistory,
+  deleteWorkHistory,
   getExpiringCompliance,
   updateContractRenewal,
   createUserAccountForFreelancer,

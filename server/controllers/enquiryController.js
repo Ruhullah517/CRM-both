@@ -63,6 +63,39 @@ const assignEnquiry = async (req, res) => {
   }
 };
 
+// Update an enquiry (supports initial call and other partial updates)
+const updateEnquiry = async (req, res) => {
+  try {
+    const enquiry = await Enquiry.findById(req.params.id);
+    if (!enquiry) return res.status(404).json({ msg: 'Enquiry not found' });
+
+    const isApproved = enquiry.status === 'Approved';
+
+    // Prevent editing initial call once approved
+    if (isApproved && req.body.initialCall) {
+      return res.status(400).json({ msg: 'Initial Call cannot be edited after approval' });
+    }
+
+    const updateData = { ...req.body };
+
+    // Merge initialCall fields to avoid overwriting with undefined
+    if (req.body.initialCall) {
+      const existing = enquiry.initialCall || {};
+      updateData.initialCall = {
+        date: req.body.initialCall.date ?? existing.date,
+        time: req.body.initialCall.time ?? existing.time,
+        notes: req.body.initialCall.notes ?? existing.notes,
+      };
+    }
+
+    const updated = await Enquiry.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    res.json(updated);
+  } catch (error) {
+    console.error('Error updating enquiry:', error);
+    res.status(500).send('Server error');
+  }
+};
+
 // Create a new enquiry
 const wpToSchemaMap = {
   "fields.name.raw_value": "full_name",
@@ -92,11 +125,35 @@ const wpToSchemaMap = {
 
 function transformWpEnquiry(wpData) {
   const result = {};
+
+  // Helper to support both flattened keys (e.g., "fields.name.raw_value")
+  // and nested objects (e.g., { fields: { name: { raw_value: '...' }}})
+  const getValue = (data, key) => {
+    if (data[key] !== undefined) return data[key];
+    const parts = key.split('.');
+    let cur = data;
+    for (const p of parts) {
+      if (cur && Object.prototype.hasOwnProperty.call(cur, p)) {
+        cur = cur[p];
+      } else {
+        return undefined;
+      }
+    }
+    return cur;
+  };
+
   for (const [wpKey, schemaKey] of Object.entries(wpToSchemaMap)) {
-    if (wpData[wpKey] !== undefined) {
-      result[schemaKey] = wpData[wpKey];
+    const val = getValue(wpData, wpKey);
+    if (val !== undefined) {
+      result[schemaKey] = val;
     }
   }
+
+  // Additional fallbacks for common keys if the WP field IDs change
+  if (!result.full_name) result.full_name = wpData.full_name || wpData.name || wpData.fullName;
+  if (!result.email_address) result.email_address = wpData.email_address || wpData.email || wpData.emailAddress;
+  if (!result.telephone) result.telephone = wpData.telephone || wpData.phone || wpData.contact_number;
+
   // Combine date and time if both exist
   if (result.availability_for_call && result.availability_for_call_time) {
     result.availability_for_call = `${result.availability_for_call} ${result.availability_for_call_time}`;
@@ -122,15 +179,18 @@ async function createOrUpdateContactFromEnquiry(enquiry) {
       email: enquiry.email_address,
       phone: enquiry.telephone,
       tags: ['Enquiry'],
+      contactType: 'prospect',
+      // Mark where this contact originated from for Sales & Communication source filters
+      leadSource: 'enquiry',
       notes: '',
       organizationName: '',
       organizationAddress: '',
       communicationHistory: [],
     });
   } else {
-    if (!contact.tags.includes('Enquiry')) {
-      contact.tags.push('Enquiry');
-    }
+    if (!contact.tags.includes('Enquiry')) contact.tags.push('Enquiry');
+    if (!contact.leadSource) contact.leadSource = 'enquiry';
+    if (!contact.contactType) contact.contactType = 'prospect';
     if (!contact.name && enquiry.full_name) contact.name = enquiry.full_name;
     if (!contact.phone && enquiry.telephone) contact.phone = enquiry.telephone;
   }
@@ -188,5 +248,6 @@ module.exports = {
   approveEnquiry,
   rejectEnquiry,
   assignEnquiry,
+  updateEnquiry,
   deleteEnquiry,
 }; 

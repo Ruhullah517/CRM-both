@@ -6,6 +6,7 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, required: true },
   avatar: { type: String, default: '' },
   role: { type: String, default: 'user' },
+  mentorId: { type: mongoose.Schema.Types.ObjectId, ref: 'Mentor' }, // Link to Mentor profile
   freelancerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Freelancer' }, // Link to Freelancer profile
   resetPasswordToken: { type: String },
   resetPasswordExpires: { type: Date },

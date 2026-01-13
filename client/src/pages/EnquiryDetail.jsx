@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getEnquiryById, assignEnquiry, deleteEnquiry } from '../services/enquiries';
+import { SERVER_BASE_URL } from '../config/api';
+import { getEnquiryById, assignEnquiry, deleteEnquiry, updateEnquiry } from '../services/enquiries';
 import { getAssessmentByEnquiryId, createAssessment, uploadAssessmentAttachment } from '../services/assessments';
-import { createFullAssessment, getFullAssessmentByEnquiryId, allocateMentoring, getMentorAllocationByEnquiryId, addCaseNote, approveCandidate, rejectCandidate } from '../services/recruitment';
+import { createFullAssessment, getFullAssessmentByEnquiryId, allocateMentoring, getMentorAllocationByEnquiryId, approveCandidate, rejectCandidate, deleteMentoring } from '../services/recruitment';
 import { getApplicationByEnquiryId, uploadApplication } from '../services/applications';
 import { getUsers } from '../services/users';
 import { getMentors } from '../services/mentors';
+import { getFreelancers } from '../services/freelancers';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate } from '../utils/dateUtils';
 import { ChevronDownIcon, ChevronUpIcon, CheckCircleIcon, ClockIcon } from '@heroicons/react/24/solid';
@@ -31,7 +33,7 @@ const DetailRow = ({ label, value }) => (
 );
 
 // Recruitment Flow Progress Component
-const RecruitmentFlowProgress = ({ enquiry, assessment, application, fullAssessment, mentorAllocation }) => {
+const RecruitmentFlowProgress = ({ enquiry, assessment, application, fullAssessments, mentorAllocation }) => {
   const stages = [
     { key: 'enquiry', name: 'Enquiry', icon: CheckCircleIcon },
     { key: 'initial', name: 'Initial Assessment', icon: CheckCircleIcon },
@@ -43,11 +45,12 @@ const RecruitmentFlowProgress = ({ enquiry, assessment, application, fullAssessm
 
   // Check completion status of each stage
   const getStageStatus = () => {
+    const latestAssessment = Array.isArray(fullAssessments) && fullAssessments.length > 0 ? fullAssessments[0] : null;
     return {
       enquiry: true, // Always completed if enquiry exists
       initial: !!assessment && assessment.result, // Has assessment with result
       application: !!application, // Has application uploaded
-      formf: !!fullAssessment && fullAssessment.recommendation, // Has full assessment with recommendation
+      formf: !!latestAssessment && latestAssessment.recommendation, // Has full assessment with recommendation
       mentoring: !!mentorAllocation && mentorAllocation.mentorId, // Has mentor allocated
       approval: enquiry.status === 'Completed' || enquiry.status === 'Approved' // Final approval
     };
@@ -148,8 +151,12 @@ export default function EnquiryDetail() {
   const [status, setStatus] = useState('Needs More Info');
   const [assessmentSubmitting, setAssessmentSubmitting] = useState(false);
 
+  // Initial Call state (new requirement)
+  const [initialCall, setInitialCall] = useState({ date: '', time: '', notes: '' });
+  const [initialCallSaving, setInitialCallSaving] = useState(false);
+
   // Full Assessment State
-  const [fullAssessment, setFullAssessment] = useState(null);
+  const [fullAssessments, setFullAssessments] = useState([]);
   const [fullAssessmentLoading, setFullAssessmentLoading] = useState(true);
 
   // Mentor Allocation State
@@ -175,10 +182,7 @@ export default function EnquiryDetail() {
   const [meetingSchedule, setMeetingSchedule] = useState('');
   const [allocSubmitting, setAllocSubmitting] = useState(false);
   const [mentorList, setMentorList] = useState([]);
-
-  // Case note
-  const [caseNote, setCaseNote] = useState('');
-  const [noteSubmitting, setNoteSubmitting] = useState(false);
+  const [showMentorForm, setShowMentorForm] = useState(false);
 
   // Approval/Rejection state
   const [approvalNotes, setApprovalNotes] = useState('');
@@ -249,8 +253,34 @@ export default function EnquiryDetail() {
 
   async function fetchMentors() {
     try {
-      const mentors = await getMentors();
-      setMentorList(mentors);
+      // Prefer freelancers tagged as mentors so allocation aligns with HR data
+      const freelancers = await getFreelancers();
+      const mentorFreelancers = (freelancers || []).filter(f => {
+        // roles can be array or JSON string
+        let roles = [];
+        if (Array.isArray(f.roles)) roles = f.roles;
+        else if (typeof f.roles === 'string' && f.roles.startsWith('[')) {
+          try { roles = JSON.parse(f.roles); } catch (e) { roles = []; }
+        }
+        return roles.map(r => (r || '').toLowerCase()).includes('mentor');
+      });
+      const normalized = mentorFreelancers.map(f => ({
+        _id: f._id,
+        name: f.fullName || f.name || f.email || 'Unknown',
+        email: f.email,
+        phone: f.mobileNumber,
+        source: 'freelancer'
+      }));
+
+      // Fallback to legacy mentors if no freelancer mentors are present
+      let legacyMentors = [];
+      try {
+        legacyMentors = await getMentors();
+      } catch (legacyErr) {
+        legacyMentors = [];
+      }
+
+      setMentorList([...normalized, ...legacyMentors]);
     } catch (err) {
       setMentorList([]);
     }
@@ -260,10 +290,10 @@ export default function EnquiryDetail() {
     setFullAssessmentLoading(true);
     try {
       const data = await getFullAssessmentByEnquiryId(id);
-      setFullAssessment(data);
+      setFullAssessments(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error fetching full assessment:', err);
-      setFullAssessment(null);
+      console.error('Error fetching full assessments:', err);
+      setFullAssessments([]);
     }
     setFullAssessmentLoading(false);
   }
@@ -279,6 +309,49 @@ export default function EnquiryDetail() {
       setMentorAllocation(null);
     }
     setMentorAllocationLoading(false);
+  }
+
+  // Keep initial call form in sync with loaded enquiry
+  useEffect(() => {
+    if (!enquiry) return;
+    const call = enquiry.initialCall || {};
+    const normalizedDate = call.date ? new Date(call.date).toISOString().slice(0, 10) : '';
+    const normalizedTime = call.time
+      ? (call.time.includes('T') ? new Date(call.time).toISOString().slice(11, 16) : call.time)
+      : '';
+    setInitialCall({
+      date: normalizedDate,
+      time: normalizedTime,
+      notes: call.notes || '',
+    });
+  }, [enquiry]);
+
+  async function handleInitialCallSave(e) {
+    e.preventDefault();
+    if (!initialCall.date || !initialCall.time) {
+      alert('Please provide both date and time for the initial call.');
+      return;
+    }
+
+    if (enquiry?.status === 'Approved') {
+      alert('Initial Call cannot be edited after approval.');
+      return;
+    }
+
+    setInitialCallSaving(true);
+    try {
+      const updated = await updateEnquiry(id, { initialCall });
+      setEnquiry(updated);
+      alert('Initial call saved successfully!');
+      // Refresh the page to ensure all data is up to date
+      await fetchEnquiry();
+    } catch (err) {
+      console.error('Error saving initial call:', err);
+      const msg = err?.response?.data?.msg || err?.message || 'Failed to save initial call.';
+      alert(msg);
+    } finally {
+      setInitialCallSaving(false);
+    }
   }
 
   async function handleAssign() {
@@ -426,7 +499,14 @@ export default function EnquiryDetail() {
       await fetchEnquiry();
       await fetchMentorAllocation();
       
-      alert('Full assessment saved.');
+      // Reset form
+      setFaRecommendation('Proceed');
+      setFaChecksDone('');
+      setFaNotes('');
+      setFaMeetingType('Home Visit');
+      setFaMeetingDate('');
+      
+      alert('Form F Assessment saved successfully!');
     } catch (err) {
       console.error('Error saving full assessment:', err);
       console.error('Error details:', err.response?.data || err.message);
@@ -454,6 +534,7 @@ export default function EnquiryDetail() {
       await fetchFullAssessment();
       
       alert('Mentor allocated.');
+      setShowMentorForm(false);
     } catch (err) {
       console.error('Error allocating mentor:', err);
       console.error('Error details:', err.response?.data || err.message);
@@ -462,18 +543,25 @@ export default function EnquiryDetail() {
     setAllocSubmitting(false);
   }
 
-  async function handleAddCaseNote(e) {
-    e.preventDefault();
-    if (!caseNote.trim()) return;
-    setNoteSubmitting(true);
+  async function handleRemoveMentor() {
+    if (!mentorAllocation) return;
+    if (!window.confirm('Remove the assigned mentor?')) return;
+    setAllocSubmitting(true);
     try {
-      await addCaseNote({ enquiryId: id, content: caseNote });
-      setCaseNote('');
-      alert('Case note added.');
+      await deleteMentoring(id);
+      setMentorAllocation(null); // immediate UI update
+      await fetchMentorAllocation();
+      await fetchEnquiry();
+      await fetchFullAssessment();
+      setMentorId('');
+      setMeetingSchedule('');
+      setShowMentorForm(false);
+      alert('Mentor removed.');
     } catch (err) {
-      alert('Failed to add case note');
+      console.error('Error removing mentor:', err);
+      alert(`Failed to remove mentor: ${err.response?.data?.message || err.message || 'Please try again.'}`);
     }
-    setNoteSubmitting(false);
+    setAllocSubmitting(false);
   }
 
   async function handleApproveCandidate() {
@@ -544,6 +632,8 @@ export default function EnquiryDetail() {
   if (error) return <div>{error}</div>;
   if (!enquiry) return <div>Enquiry not found.</div>;
 
+  const isEnquiryApproved = enquiry?.status === 'Approved';
+
   const toggleSection = (section) => {
     setOpenSection(openSection === section ? null : section);
   };
@@ -557,7 +647,7 @@ export default function EnquiryDetail() {
         enquiry={enquiry} 
         assessment={assessment}
         application={application}
-        fullAssessment={fullAssessment}
+        fullAssessments={fullAssessments}
         mentorAllocation={mentorAllocation}
       />
 
@@ -643,6 +733,71 @@ export default function EnquiryDetail() {
         <DetailRow label="Availability for follow-up call" value={enquiry.availability_for_call} />
         <DetailRow label="How did you hear about us?" value={enquiry.how_did_you_hear} />
         <DetailRow label="Information confirmed correct?" value={enquiry.information_correct_confirmation} />
+      </DetailSection>
+
+      {/* Initial Call (pre-assessment) */}
+      <DetailSection title="Initial Call" isOpen={openSection === 'initialCall'} onToggle={() => toggleSection('initialCall')}>
+        {isEnquiryApproved ? (
+          initialCall.date || initialCall.time || initialCall.notes ? (
+            <div className="space-y-2">
+              <DetailRow label="Date" value={formatDate(initialCall.date)} />
+              <DetailRow label="Time" value={initialCall.time || '-'} />
+              <DetailRow label="Notes" value={initialCall.notes || '-'} />
+              <p className="text-sm text-gray-500">Initial Call is locked after approval.</p>
+            </div>
+          ) : (
+            <p className="text-gray-600">No initial call recorded. Enquiry is approved; edits are locked.</p>
+          )
+        ) : (
+          <form onSubmit={handleInitialCallSave} className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block font-semibold mb-1">Date</label>
+                <input
+                  type="date"
+                  className="w-full border rounded px-2 py-1"
+                  value={initialCall.date}
+                  onChange={e => setInitialCall(prev => ({ ...prev, date: e.target.value }))}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block font-semibold mb-1">Time</label>
+                <input
+                  type="time"
+                  className="w-full border rounded px-2 py-1"
+                  value={initialCall.time}
+                  onChange={e => setInitialCall(prev => ({ ...prev, time: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">Notes</label>
+              <textarea
+                className="w-full border rounded px-2 py-1"
+                rows={3}
+                value={initialCall.notes}
+                onChange={e => setInitialCall(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Call summary, key points, or follow-up actions"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                type="submit"
+                disabled={initialCallSaving}
+                className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
+              >
+                {initialCallSaving ? 'Saving...' : 'Save Initial Call'}
+              </button>
+              {(initialCall.date || initialCall.time || initialCall.notes) && (
+                <span className="text-sm text-gray-500">Edits are allowed until approval.</span>
+              )}
+            </div>
+          </form>
+        )}
       </DetailSection>
 
       {/* Initial Assessment Section */}
@@ -751,7 +906,7 @@ export default function EnquiryDetail() {
                 <p className="mt-2">
                   <b>File:</b>{" "}
                   <a
-                    href={`https://backendcrm.blackfostercarersalliance.co.uk/${application.application_form_path}`}
+                    href={`${SERVER_BASE_URL}/${application.application_form_path}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[#2EAB2C] hover:underline break-all"
@@ -818,31 +973,57 @@ export default function EnquiryDetail() {
 
       {/* Form F Assessment Section */}
       <DetailSection title="3. Form F Assessment" isOpen={openSection === 'fullAssessment'} onToggle={() => toggleSection('fullAssessment')}>
-        {fullAssessmentLoading ? (
-          <div>Loading Form F Assessment...</div>
-        ) : fullAssessment ? (
-          <div>
-            <DetailRow label="Assessor" value={fullAssessment.assessorId?.name || 'Unknown'} />
-            <DetailRow label="Date" value={formatDate(fullAssessment.date)} />
-            <DetailRow label="Recommendation" value={fullAssessment.recommendation} />
-            <DetailRow label="Checks Done" value={fullAssessment.checksDone?.join(', ') || '-'} />
-            <DetailRow label="Meeting Type" value={fullAssessment.meetingType || '-'} />
-            <DetailRow label="Meeting Date" value={fullAssessment.meetingDate ? formatDate(fullAssessment.meetingDate) : '-'} />
-            <DetailRow label="Notes" value={fullAssessment.notes || '-'} />
-          </div>
-        ) : (
-          <form onSubmit={handleCreateFullAssessment} className="space-y-3">
+        <div className="mb-4 p-4 rounded bg-gray-50 border border-gray-200">
+          <div className="font-semibold text-blue-900 mb-2 text-lg">Form F Assessments</div>
+          {fullAssessmentLoading ? (
+            <div className="text-xs text-gray-500">Loading...</div>
+          ) : (
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {fullAssessments.length === 0 && (
+                <div className="text-xs text-gray-500">No Form F assessments recorded yet</div>
+              )}
+              {fullAssessments.map((assessment) => (
+                <div key={assessment._id} className="border-l-4 border-blue-500 rounded p-3 bg-white">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-sm font-semibold text-blue-700">
+                          Recommendation: {assessment.recommendation}
+                        </div>
+                        {assessment.meetingType && (
+                          <span className="text-xs text-gray-500">• {assessment.meetingType}</span>
+                        )}
+                      </div>
+                      {assessment.notes && (
+                        <div className="text-sm mt-1 text-gray-700">{assessment.notes}</div>
+                      )}
+                      {assessment.checksDone && assessment.checksDone.length > 0 && (
+                        <div className="text-xs text-gray-600 mt-1">
+                          Checks Done: {Array.isArray(assessment.checksDone) ? assessment.checksDone.join(', ') : assessment.checksDone}
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-500 mt-2">
+                        Assessor: {assessment.assessorId?.name || 'Unknown'} • 
+                        {assessment.date && ` ${formatDate(assessment.date)}`}
+                        {assessment.meetingDate && ` • Meeting: ${formatDate(assessment.meetingDate)}`}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        <form onSubmit={handleCreateFullAssessment} className="mt-3 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block font-semibold mb-1">Recommendation</label>
-              <select className="w-full border rounded px-2 py-1" value={faRecommendation} onChange={e => setFaRecommendation(e.target.value)}>
+              <select className="w-full border rounded px-2 py-1" value={faRecommendation} onChange={e => setFaRecommendation(e.target.value)} required>
                 <option>Proceed</option>
                 <option>Do not proceed</option>
                 <option>Hold</option>
               </select>
-            </div>
-            <div>
-              <label className="block font-semibold mb-1">Checks Done (comma separated)</label>
-              <input className="w-full border rounded px-2 py-1" placeholder="DBS, References, Home Safety" value={faChecksDone} onChange={e => setFaChecksDone(e.target.value)} />
             </div>
             <div>
               <label className="block font-semibold mb-1">Meeting Type</label>
@@ -853,18 +1034,26 @@ export default function EnquiryDetail() {
                 <option>Video Call</option>
               </select>
             </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block font-semibold mb-1">Checks Done (comma separated)</label>
+              <input className="w-full border rounded px-2 py-1" placeholder="DBS, References, Home Safety" value={faChecksDone} onChange={e => setFaChecksDone(e.target.value)} />
+            </div>
             <div>
               <label className="block font-semibold mb-1">Meeting Date</label>
               <input type="date" className="w-full border rounded px-2 py-1" value={faMeetingDate} onChange={e => setFaMeetingDate(e.target.value)} />
             </div>
-            <div>
-              <label className="block font-semibold mb-1">Notes</label>
-              <textarea className="w-full border rounded px-2 py-1" value={faNotes} onChange={e => setFaNotes(e.target.value)} />
-            </div>
+          </div>
+          <div>
+            <label className="block font-semibold mb-1">Notes</label>
+            <textarea className="w-full border rounded px-2 py-1" rows={3} value={faNotes} onChange={e => setFaNotes(e.target.value)} placeholder="Assessment notes, observations, or recommendations..." />
+          </div>
+          <div className="flex justify-end">
             <button 
               type="submit" 
               disabled={faSubmitting} 
-              className="bg-blue-600 text-white px-3 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
             >
               {faSubmitting ? (
                 <>
@@ -872,11 +1061,11 @@ export default function EnquiryDetail() {
                   Saving...
                 </>
               ) : (
-                'Save Full Assessment'
+                'Add Form F Assessment'
               )}
             </button>
-          </form>
-        )}
+          </div>
+        </form>
       </DetailSection>
 
       {/* Mentoring Allocation */}
@@ -884,48 +1073,97 @@ export default function EnquiryDetail() {
         {mentorAllocationLoading ? (
           <div>Loading Mentor Allocation...</div>
         ) : mentorAllocation ? (
-          <div>
-            <DetailRow label="Mentor" value={mentorAllocation.mentorId?.name || mentorAllocation.mentorId} />
+          <div className="space-y-3">
+            <DetailRow label="Mentor" value={mentorAllocation.mentorId?.name || mentorAllocation.mentorId || '-'} />
             <DetailRow label="Meeting Date" value={mentorAllocation.meetingSchedule ? formatDate(mentorAllocation.meetingSchedule) : '-'} />
             <DetailRow label="Allocated By" value={mentorAllocation.allocatedBy?.name || 'Unknown'} />
             <DetailRow label="Allocated Date" value={mentorAllocation.allocatedAt ? formatDate(mentorAllocation.allocatedAt) : '-'} />
             <DetailRow label="Status" value={mentorAllocation.status || 'Active'} />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="bg-blue-600 text-white px-3 py-2 rounded shadow hover:bg-blue-700 disabled:opacity-50"
+                onClick={() => {
+                  setShowMentorForm(s => !s);
+                  setMentorId('');
+                  setMeetingSchedule('');
+                }}
+              >
+                {showMentorForm ? 'Cancel Change' : 'Reassign Mentor'}
+              </button>
+              <button
+                type="button"
+                className="bg-red-600 text-white px-3 py-2 rounded shadow hover:bg-red-700 disabled:opacity-50"
+                onClick={handleRemoveMentor}
+                disabled={allocSubmitting}
+              >
+                {allocSubmitting ? 'Removing...' : 'Remove Mentor'}
+              </button>
+            </div>
+            {showMentorForm && (
+              <form onSubmit={handleAllocateMentor} className="space-y-3 border-t pt-3">
+                <div>
+                  <label className="block font-semibold mb-1">Select Mentor</label>
+                  <select 
+                    className="w-full border rounded px-2 py-1" 
+                    value={mentorId} 
+                    onChange={e => setMentorId(e.target.value)}
+                    required
+                  >
+                    <option value="">Select a Mentor</option>
+                    {mentorList.map(mentor => (
+                      <option key={mentor._id} value={mentor._id}>
+                        {mentor.name} - {mentor.specialization || 'General'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-semibold mb-1">Meeting Date</label>
+                  <input type="date" className="w-full border rounded px-2 py-1" value={meetingSchedule} onChange={e => setMeetingSchedule(e.target.value)} />
+                </div>
+                <button
+                  type="submit"
+                  disabled={allocSubmitting || !mentorId}
+                  className="bg-purple-600 text-white px-3 py-2 rounded disabled:opacity-50"
+                >
+                  {allocSubmitting ? 'Allocating...' : 'Allocate Mentor'}
+                </button>
+              </form>
+            )}
           </div>
         ) : (
           <form onSubmit={handleAllocateMentor} className="space-y-3">
-          <div>
-            <label className="block font-semibold mb-1">Select Mentor</label>
-            <select 
-              className="w-full border rounded px-2 py-1" 
-              value={mentorId} 
-              onChange={e => setMentorId(e.target.value)}
-              required
+            <div>
+              <label className="block font-semibold mb-1">Select Mentor</label>
+              <select 
+                className="w-full border rounded px-2 py-1" 
+                value={mentorId} 
+                onChange={e => setMentorId(e.target.value)}
+                required
+              >
+                <option value="">Select a Mentor</option>
+                {mentorList.map(mentor => (
+                  <option key={mentor._id} value={mentor._id}>
+                    {mentor.name} - {mentor.specialization || 'General'}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block font-semibold mb-1">Meeting Date</label>
+              <input type="date" className="w-full border rounded px-2 py-1" value={meetingSchedule} onChange={e => setMeetingSchedule(e.target.value)} />
+            </div>
+            <button
+              type="submit"
+              disabled={allocSubmitting || !mentorId}
+              className="bg-purple-600 text-white px-3 py-2 rounded disabled:opacity-50"
             >
-              <option value="">Select a Mentor</option>
-              {mentorList.map(mentor => (
-                <option key={mentor._id} value={mentor._id}>
-                  {mentor.name} - {mentor.specialization || 'General'}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block font-semibold mb-1">Meeting Date</label>
-            <input type="date" className="w-full border rounded px-2 py-1" value={meetingSchedule} onChange={e => setMeetingSchedule(e.target.value)} required />
-          </div>
-            <button type="submit" disabled={allocSubmitting || !mentorId} className="bg-purple-600 text-white px-3 py-2 rounded disabled:opacity-50">{allocSubmitting ? 'Allocating...' : 'Allocate Mentor'}</button>
+              {allocSubmitting ? 'Allocating...' : 'Allocate Mentor'}
+            </button>
           </form>
         )}
       </DetailSection>
-
-      {/* Case Notes */}
-      <DetailSection title="Case Notes" isOpen={openSection === 'caseNotes'} onToggle={() => toggleSection('caseNotes')}>
-        <form onSubmit={handleAddCaseNote} className="space-y-3">
-          <textarea className="w-full border rounded px-2 py-1" placeholder="Add case note" value={caseNote} onChange={e => setCaseNote(e.target.value)} />
-          <button type="submit" disabled={noteSubmitting} className="bg-gray-800 text-white px-3 py-2 rounded">{noteSubmitting ? 'Adding...' : 'Add Note'}</button>
-        </form>
-      </DetailSection>
-
 
       {/* Final Approval Section */}
       <DetailSection title="5. Final Approval" isOpen={openSection === 'approval'} onToggle={() => toggleSection('approval')}>

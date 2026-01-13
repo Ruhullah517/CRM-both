@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { SERVER_BASE_URL } from '../config/api';
 
 const geoOptions = [
   'North East', 'North West', 'East Midlands', 'West Midlands', 'South East', 'South West', 'London', 'Other', 'Wales', 'Scotland'
@@ -89,7 +90,7 @@ const FreelancerPublicForm = () => {
         data.append(key, form[key]);
       }
     }
-    const res = await fetch('https://backendcrm.blackfostercarersalliance.co.uk/api/freelancers/public', {
+    const res = await fetch(`${SERVER_BASE_URL}/api/freelancers/public`, {
       method: 'POST',
       body: data,
     });

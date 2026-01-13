@@ -174,13 +174,14 @@ const SalesCommunication = () => {
         $addToSet: { tags: tag }
       };
       
-      await bulkUpdateContacts({ contactIds: selectedContacts, updateData });
+      await bulkUpdateContacts(selectedContacts, updateData);
       await loadData();
       setSelectedContacts([]);
       alert(`Tagged ${selectedContacts.length} contacts with "${tag}"`);
     } catch (error) {
       console.error('Error tagging contacts:', error);
-      alert('Error tagging contacts');
+      console.error('Error details:', error.response?.data || error.message);
+      alert('Error tagging contacts: ' + (error.response?.data?.msg || error.message));
     } finally {
       setLoading(false);
     }
@@ -205,7 +206,11 @@ const SalesCommunication = () => {
           email: c.email,
           data: {
             name: c.name,
-            organization: c.organizationName || ''
+            organization: c.organizationName || '',
+            // Helpful date fields for templates: {{today}} or {{date}} / {{datetime}}
+            today: new Date().toLocaleDateString(),
+            date: new Date().toLocaleDateString(),
+            datetime: new Date().toLocaleString()
           }
         }));
       
@@ -224,6 +229,14 @@ const SalesCommunication = () => {
       setSelectedTemplate('');
       setEmailSubject('');
       setEmailBody('');
+      
+      // Reload email stats to update the counter
+      try {
+        const emailStatsData = await getEmailStats();
+        setEmailStats(emailStatsData);
+      } catch (error) {
+        console.warn('Could not reload email stats:', error);
+      }
     } catch (error) {
       console.error('Error sending emails:', error);
       console.error('Error details:', error.response?.data || error.message);
@@ -255,6 +268,14 @@ const SalesCommunication = () => {
       setSelectedTemplate('');
       setEmailSubject('');
       setEmailBody('');
+      
+      // Reload email stats to update the counter
+      try {
+        const emailStatsData = await getEmailStats();
+        setEmailStats(emailStatsData);
+      } catch (error) {
+        console.warn('Could not reload email stats:', error);
+      }
     } catch (error) {
       console.error('Error sending emails:', error);
       console.error('Error details:', error.response?.data || error.message);
@@ -349,7 +370,7 @@ const SalesCommunication = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -377,16 +398,6 @@ const SalesCommunication = () => {
               <p className="text-2xl font-bold text-gray-800">{emailStats?.totalSent || 0}</p>
             </div>
             <EnvelopeIcon className="h-12 w-12 text-purple-500" />
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-500 text-sm">Follow-ups Needed</p>
-              <p className="text-2xl font-bold text-gray-800">{contactStats?.contactsNeedingFollowUp || 0}</p>
-            </div>
-            <BoltIcon className="h-12 w-12 text-orange-500" />
           </div>
         </div>
       </div>

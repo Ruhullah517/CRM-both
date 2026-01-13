@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { SERVER_BASE_URL } from '../config/api';
 import { getEnquiryById, updateEnquiry } from '../services/enquiries';
 import { createReminder } from '../services/reminders';
 import { CheckIcon, XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
@@ -72,7 +73,7 @@ const InitialAssessment = () => {
         formDataToSend.append('type', 'initial-assessment');
 
         // Upload files
-        const uploadResponse = await fetch('https://crm-backend-0v14.onrender.com/api/assessments/upload-attachments', {
+        const uploadResponse = await fetch(`${SERVER_BASE_URL}/api/assessments/upload-attachments`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`

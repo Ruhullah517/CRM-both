@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { SERVER_BASE_URL } from '../config/api';
 import {
   PlusIcon,
   PencilSquareIcon,
@@ -31,11 +32,10 @@ export default function EmailTemplates() {
   const isAdminOrStaff = user.user?.role === 'admin' || user?.role === 'staff';
   const [templates, setTemplates] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ id: null, name: '', subject: '', body: '', logoFile: null, logoFileName: '', category: '' });
+  const [form, setForm] = useState({ id: null, name: '', subject: '', body: '', category: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [logoPreview, setLogoPreview] = useState(null);
-  const backendUrl="https://crm-backend-0v14.onrender.com"
+  const backendUrl = SERVER_BASE_URL;
 
   useEffect(() => {
     fetchTemplates();
@@ -57,79 +57,19 @@ export default function EmailTemplates() {
   }
 
   function openAdd() {
-    setForm({ id: null, name: '', subject: '', body: '', logoFile: null, logoFileName: '', category: '' });
-    setLogoPreview(null);
+    setForm({ id: null, name: '', subject: '', body: '', category: '' });
     setShowForm(true);
   }
   function openEdit(t) {
-    // Clean up any duplicate logos and empty logo tags in the body
-    let cleanBody = t.body;
-    
-    // Remove empty logo tags like <img alt="Logo"> or <p><img alt="Logo"></p>
-    cleanBody = cleanBody.replace(/<p>\s*<img[^>]*alt="Logo"[^>]*>\s*<\/p>/g, '');
-    cleanBody = cleanBody.replace(/<img[^>]*alt="Logo"[^>]*>/g, '');
-    
-    // Remove duplicate logo divs
-    const logoPattern = /<div style="margin-bottom: 20px;"><img src="[^"]*" alt="Logo" style="max-height: 60px; max-width: 200px;" \/><\/div>/;
-    const logos = cleanBody.match(new RegExp(logoPattern, 'g'));
-    if (logos && logos.length > 1) {
-      // Remove all but the first logo
-      cleanBody = cleanBody.replace(logoPattern, '');
-      cleanBody = logos[0] + cleanBody;
-    }
-    
-    setForm({ ...t, id: t._id || t.id, logoFile: null, body: cleanBody });
-    setLogoPreview(t.logoFile ? t.logoFile : null);
-    setShowForm(true);
-  }
-
-  function openAdd() {
-    setForm({ id: null, name: '', subject: '', body: '', logoFile: null, logoFileName: '', category: '' });
-    setLogoPreview(null);
+    setForm({ ...t, id: t._id || t.id, body: t.body });
     setShowForm(true);
   }
   function handleFormChange(e) {
-    const { name, value, files } = e.target;
-    if (name === 'logoFile' && files && files[0]) {
-      const file = files[0];
-      setForm(f => ({ ...f, logoFile: file, logoFileName: file.name }));
-      // Create preview
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setLogoPreview(e.target.result);
-        // Don't add logo HTML to body - let the email controller handle it
-        setForm(f => {
-          // Clean up any existing empty logo tags first
-          let cleanBody = f.body;
-          cleanBody = cleanBody.replace(/<p>\s*<img[^>]*alt="Logo"[^>]*>\s*<\/p>/g, '');
-          cleanBody = cleanBody.replace(/<img[^>]*alt="Logo"[^>]*>/g, '');
-          
-          return { 
-            ...f, 
-            logoFile: file, 
-            logoFileName: file.name,
-            body: cleanBody
-          };
-        });
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setForm(f => ({ ...f, [name]: value }));
-    }
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: value }));
   }
   function handleQuillChange(value) {
     setForm(f => ({ ...f, body: value }));
-  }
-
-  function removeLogo() {
-    setForm(f => ({ ...f, logoFile: null, logoFileName: '' }));
-    setLogoPreview(null);
-    // Clean up any empty logo tags that might exist
-    const currentBody = form.body;
-    let cleanBody = currentBody;
-    cleanBody = cleanBody.replace(/<p>\s*<img[^>]*alt="Logo"[^>]*>\s*<\/p>/g, '');
-    cleanBody = cleanBody.replace(/<img[^>]*alt="Logo"[^>]*>/g, '');
-    setForm(f => ({ ...f, body: cleanBody }));
   }
   async function handleFormSubmit(e) {
     e.preventDefault();
@@ -141,10 +81,6 @@ export default function EmailTemplates() {
       formData.append('subject', form.subject);
       formData.append('body', form.body);
       formData.append('category', form.category);
-      
-      if (form.logoFile) {
-        formData.append('logo', form.logoFile);
-      }
       
       if (form.id) {
         await updateEmailTemplate(form.id, formData);
@@ -203,7 +139,6 @@ export default function EmailTemplates() {
                   <th className="px-4 py-2 text-left font-semibold text-green-900">Subject</th>
                   <th className="px-4 py-2 text-left font-semibold text-green-900">Preview</th>
                   <th className="px-4 py-2 text-left font-semibold text-green-900">Category</th>
-                  <th className="px-4 py-2 text-left font-semibold text-green-900">Branding</th>
                   {isAdminOrStaff && <th className="px-4 py-2 text-left font-semibold text-green-900">Actions</th>}
                 </tr>
               </thead>
@@ -214,9 +149,6 @@ export default function EmailTemplates() {
                     <td className="px-4 py-2">{t.subject}</td>
                     <td className="px-4 py-2 text-gray-600 text-sm max-w-xs break-words" dangerouslySetInnerHTML={{ __html: t.body.replace(/<[^>]+>/g, '') }} />
                     <td className="px-4 py-2">{t.category}</td>
-                                    <td className="px-4 py-2">
-                  {t.logoFile && <img src={t.logoFile} alt="logo" className="inline h-6 align-middle" />}
-                </td>
                     {isAdminOrStaff && (
                       <td className="px-4 py-2 flex flex-col gap-2">
                         <button className="text-[#2EAB2C] hover:underline flex items-center gap-1" onClick={() => openEdit(t)}>
@@ -254,9 +186,6 @@ export default function EmailTemplates() {
                 </div>
                 <div className="text-sm text-gray-700">
                   <span className="font-semibold">Category:</span> {t.category}
-                </div>
-                <div className="text-sm text-gray-700 flex items-center gap-2">
-                  {t.logoFile && <img src={t.logoFile} alt="logo" className="inline h-6 align-middle" />}
                 </div>
               </div>
             ))}
@@ -313,29 +242,6 @@ export default function EmailTemplates() {
                   />
                 </div>
               </div>
-              <div>
-                <label className="block font-semibold mb-1">Logo Image</label>
-                <input
-                  type="file"
-                  name="logoFile"
-                  accept="image/*"
-                  onChange={handleFormChange}
-                  className="w-full px-4 py-2 border rounded"
-                />
-                {logoPreview && (
-                  <div className="mt-2 flex items-center gap-2">
-                    <img src={logoPreview} alt="Logo preview" className="h-12 w-auto" />
-                    <button
-                      type="button"
-                      onClick={removeLogo}
-                      className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200"
-                    >
-                      Remove Logo
-                    </button>
-                  </div>
-                )}
-              </div>
-
               <select
                 name="category"
                 value={form.category}

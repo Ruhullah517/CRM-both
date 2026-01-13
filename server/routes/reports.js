@@ -19,6 +19,7 @@ router.get('/contract-status', authenticate, authorize('admin', 'manager', 'staf
 router.get('/recruitment-pipeline', authenticate, authorize('admin', 'manager', 'staff'), reportController.recruitmentPipelineReport);
 router.get('/invoice-revenue', authenticate, authorize('admin', 'manager', 'staff'), reportController.invoiceRevenueReport);
 router.get('/training-events', authenticate, authorize('admin', 'manager', 'staff'), reportController.trainingEventsReport);
+router.get('/mentors', authenticate, authorize('admin', 'manager', 'staff'), reportController.mentorReport);
 
 // Export endpoints (CSV/PDF)
 router.get('/export/:type', authenticate, authorize('admin', 'manager', 'staff'), reportController.exportReport);

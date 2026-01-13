@@ -3,38 +3,32 @@ const Email = require('../models/Email');
 const Contact = require('../models/Contact');
 const nodemailer = require('nodemailer');
 const { sendMail, getFromAddress } = require('../utils/mailer');
+const { getEmailContainer } = require('../utils/emailTemplates');
+const path = require('path');
+const fs = require('fs');
 
 // Helper to fill template placeholders
 function fillTemplate(str, data) {
   return str.replace(/{{\s*([\w_\d]+)\s*}}/g, (match, key) => data[key] || '');
 }
 
-// Helper to add logo to email body
-function addLogoToEmail(body, logoFile, templateId) {
-  if (!logoFile) {
-    return body;
+// Helper to get logo attachment for email (matching training/freelancer emails)
+function getLogoAttachment() {
+  // Use the company logo from the public folder (same as training/freelancer emails)
+  const logoPath = path.join(__dirname, '..', '..', 'client', 'public', 'logo-white.png');
+  
+  // Check if logo exists, otherwise return null
+  if (!fs.existsSync(logoPath)) {
+    console.warn('Logo file not found at:', logoPath);
+    return null;
   }
   
-  // Check if logoFile is a base64 data URL
-  const isBase64 = logoFile.startsWith('data:image/');
-  
-  let logoHtml;
-  if (isBase64) {
-    // For email compatibility, we need to host the image externally
-    // Use template ID instead of passing full base64 data in URL
-    const backendUrl = 'https://crm-backend-0v14.onrender.com';
-    logoHtml = `<div style="text-align: start; margin-bottom: 20px;">
-      <img src="${backendUrl}/api/email-templates/logo/template/${templateId}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
-    </div>`;
-  } else {
-    // Fallback for file paths (legacy support)
-    const backendUrl = 'https://crm-backend-0v14.onrender.com';
-    logoHtml = `<div style="text-align: start; margin-bottom: 20px;">
-      <img src="${backendUrl}${logoFile}" alt="Logo" style="max-height: 60px; max-width: 200px; height: auto; width: auto;" />
-    </div>`;
-  }
-  
-  return logoHtml + body;
+  // Use same CID as training/freelancer emails (company-logo, not email-logo)
+  return {
+    filename: 'logo-white.png',
+    path: logoPath,
+    cid: 'company-logo' // Same CID referenced in getEmailHeader()
+  };
 }
 
 
@@ -65,18 +59,24 @@ async function sendBulkEmail(req, res) {
       const subject = subjectOverride ? fillTemplate(subjectOverride, data) : fillTemplate(template.subject, data);
       let body = bodyOverride ? fillTemplate(bodyOverride, data) : fillTemplate(template.body, data);
       
-      // Add logo to email body if template has one
-      body = addLogoToEmail(body, template.logoFile, template._id);
+      // Wrap body in branded container (same as training/freelancer emails) - includes header with logo
+      // For sales/communication emails, don't show "Training & Development Services" subheading
+      body = getEmailContainer(body, false);
       
-      // Prepare email options
+      // Prepare email options with logo attachment (always include logo, same as training/freelancer emails)
       const mailOptions = {
         from: getFromAddress(),
         to: email,
         subject,
         html: body,
+        attachments: []
       };
       
-      // No need for attachments since logo is embedded directly in HTML
+      // Always add logo attachment (same as training/freelancer emails)
+      const logoAttachment = getLogoAttachment();
+      if (logoAttachment) {
+        mailOptions.attachments.push(logoAttachment);
+      }
       
       // Send email
       let status = 'sent', error = null;
@@ -133,16 +133,24 @@ async function sendIndividualEmail(req, res) {
     const subject = subjectOverride ? fillTemplate(subjectOverride, data) : fillTemplate(template.subject, data);
     let body = bodyOverride ? fillTemplate(bodyOverride, data) : fillTemplate(template.body, data);
     
-    // Add logo to email body if template has one
-    body = addLogoToEmail(body, template.logoFile, template._id);
+    // Wrap body in branded container (same as training/freelancer emails) - includes header with logo
+    // For sales/communication emails, don't show "Training & Development Services" subheading
+    body = getEmailContainer(body, false);
     
-    // Prepare email options
+    // Prepare email options with logo attachment (always include logo, same as training/freelancer emails)
     const mailOptions = {
       from: getFromAddress(),
       to: recipient.email,
       subject,
       html: body,
+      attachments: []
     };
+    
+    // Always add logo attachment (same as training/freelancer emails)
+    const logoAttachment = getLogoAttachment();
+    if (logoAttachment) {
+      mailOptions.attachments.push(logoAttachment);
+    }
     
     // Send email
     let status = 'sent', error = null;
@@ -211,16 +219,24 @@ async function sendEmailToContactsByTags(req, res) {
       const subject = subjectOverride ? fillTemplate(subjectOverride, contactData) : fillTemplate(template.subject, contactData);
       let body = bodyOverride ? fillTemplate(bodyOverride, contactData) : fillTemplate(template.body, contactData);
       
-      // Add logo to email body if template has one
-      body = addLogoToEmail(body, template.logoFile, template._id);
+      // Wrap body in branded container (same as training/freelancer emails) - includes header with logo
+      // For sales/communication emails, don't show "Training & Development Services" subheading
+      body = getEmailContainer(body, false);
       
-      // Prepare email options
+      // Prepare email options with logo attachment (always include logo, same as training/freelancer emails)
       const mailOptions = {
         from: getFromAddress(),
         to: contact.email,
         subject,
         html: body,
+        attachments: []
       };
+      
+      // Always add logo attachment (same as training/freelancer emails)
+      const logoAttachment = getLogoAttachment();
+      if (logoAttachment) {
+        mailOptions.attachments.push(logoAttachment);
+      }
       
       // Send email
       let status = 'sent', error = null;
@@ -323,6 +339,7 @@ async function getEmailStats(req, res) {
     res.json({
       totalEmails,
       sentEmails,
+      totalSent: sentEmails, // Add alias for frontend compatibility
       failedEmails,
       successRate: totalEmails > 0 ? ((sentEmails / totalEmails) * 100).toFixed(2) : 0,
       statusBreakdown: stats
@@ -349,8 +366,9 @@ async function previewEmail(req, res) {
     const subject = fillTemplate(template.subject, data);
     let body = fillTemplate(template.body, data);
     
-    // Add logo to email body if template has one
-    body = addLogoToEmail(body, template.logoFile, template._id);
+    // Wrap body in branded container (same as training/freelancer emails) - includes header with logo
+    // For sales/communication emails, don't show "Training & Development Services" subheading
+    body = getEmailContainer(body, false);
     
     res.json({
       subject,

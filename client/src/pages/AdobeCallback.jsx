@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import { SERVER_BASE_URL } from '../config/api';
+import { getFrontendUrl } from '../config/urls';
 
 export default function AdobeCallback() {
   const [searchParams] = useSearchParams();
@@ -12,9 +14,9 @@ export default function AdobeCallback() {
     if (code) {
       // Send the code to your backend to exchange for access_token
       axios
-        .post('https://crm-backend-0v14.onrender.com/api/adobe/exchange-token', {
+        .post(`${SERVER_BASE_URL}/api/adobe/exchange-token`, {
           code,
-          redirectUri: 'https://crm-both.vercel.app/adobe/callback',
+          redirectUri: `${getFrontendUrl()}/adobe/callback`,
         })
         .then((res) => {
           console.log('Adobe token saved:', res.data);

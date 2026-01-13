@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { SERVER_BASE_URL } from '../config/api';
 import {
   UserGroupIcon,
   ClockIcon,
@@ -247,14 +248,33 @@ const HRModule = () => {
     const [viewFreelancer, setViewFreelancer] = useState(null);
     const [editFreelancer, setEditFreelancer] = useState(null);
 
+    // Helper to get JWT token consistent with global axios interceptor
+    const getAuthToken = () => {
+      let token = localStorage.getItem('token');
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          if (parsed.token) token = parsed.token;
+        } catch {
+          // ignore JSON parse errors
+        }
+      }
+      return token;
+    };
+
     const handleSendForm = async (e) => {
       e.preventDefault();
       setSendFormLoading(true);
       setSendFormStatus('');
       try {
-        const res = await fetch('https://crm-backend-0v14.onrender.com/api/freelancers/send-form-link', {
+        const token = getAuthToken();
+        const res = await fetch(`${SERVER_BASE_URL}/api/freelancers/send-form-link`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
           body: JSON.stringify({ email: sendFormEmail }),
         });
         const data = await res.json();

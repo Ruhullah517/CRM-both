@@ -24,7 +24,7 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 
 // Get all staff (caseworkers, admins, managers)
-router.get('/staff', authenticate, authorize('admin', 'manager'), async (req, res) => {
+router.get('/staff', authenticate, authorize('admin', 'manager', 'staff', 'caseworker'), async (req, res) => {
   try {
     const staff = await User.find({ role: { $in: ['admin', 'manager', 'caseworker'] } }, 'name _id role');
     res.json(staff);

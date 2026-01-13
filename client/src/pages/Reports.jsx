@@ -7,7 +7,8 @@ import {
   getContractStatusReport,
   getRecruitmentPipelineReport,
   getInvoiceRevenueReport,
-  getTrainingEventsReport
+  getTrainingEventsReport,
+  getMentorReport
 } from '../services/reports';
 import { exportTrainingEvents, exportTrainingBookings, exportPaymentHistory } from '../services/exports';
 import {
@@ -36,14 +37,16 @@ export default function Reports() {
   const [recruitmentPipeline, setRecruitmentPipeline] = useState(null);
   const [invoiceRevenue, setInvoiceRevenue] = useState(null);
   const [trainingEvents, setTrainingEvents] = useState(null);
+  const [mentorReport, setMentorReport] = useState(null);
 
   useEffect(() => {
     loadAllData();
   }, []);
 
   const loadAllData = async () => {
-    setLoading(true);
-    try {
+      setLoading(true);
+      try {
+      console.log('Loading reports data...');
       const [
         casesData,
         typesData,
@@ -52,17 +55,57 @@ export default function Reports() {
         contractData,
         recruitmentData,
         invoiceData,
-        trainingData
+        trainingData,
+        mentorData
       ] = await Promise.all([
-        getCasesStatus().catch(() => ({ opened: [], closed: [] })),
-        getCaseTypeDistribution().catch(() => []),
-        getCaseloadByWorker().catch(() => []),
-        getFreelancerWorkReport().catch(() => []),
-        getContractStatusReport().catch(() => null),
-        getRecruitmentPipelineReport().catch(() => null),
-        getInvoiceRevenueReport().catch(() => null),
-        getTrainingEventsReport().catch(() => null)
+        getCasesStatus().catch((err) => {
+          console.error('Error loading cases status:', err);
+          return { opened: [], closed: [] };
+        }),
+        getCaseTypeDistribution().catch((err) => {
+          console.error('Error loading case types:', err);
+          return [];
+        }),
+        getCaseloadByWorker().catch((err) => {
+          console.error('Error loading caseload:', err);
+          return [];
+        }),
+        getFreelancerWorkReport().catch((err) => {
+          console.error('Error loading freelancer work:', err);
+          return [];
+        }),
+        getContractStatusReport().catch((err) => {
+          console.error('Error loading contract status:', err);
+          return null;
+        }),
+        getRecruitmentPipelineReport().catch((err) => {
+          console.error('Error loading recruitment pipeline:', err);
+          return null;
+        }),
+        getInvoiceRevenueReport().catch((err) => {
+          console.error('Error loading invoice revenue:', err);
+          return null;
+        }),
+        getTrainingEventsReport().catch((err) => {
+          console.error('Error loading training events:', err);
+          return null;
+        }),
+        getMentorReport().catch((err) => {
+          console.error('Error loading mentor report:', err);
+          return null;
+        })
       ]);
+      
+      console.log('Reports data loaded:', {
+        casesData,
+        typesData,
+        caseloadData,
+        freelancerData,
+        contractData,
+        recruitmentData,
+        invoiceData,
+        trainingData
+      });
       
       setCasesStatus(casesData);
       setCaseTypes(typesData);
@@ -72,11 +115,12 @@ export default function Reports() {
       setRecruitmentPipeline(recruitmentData);
       setInvoiceRevenue(invoiceData);
       setTrainingEvents(trainingData);
+      setMentorReport(mentorData);
     } catch (error) {
       console.error('Error loading reports:', error);
-    } finally {
-      setLoading(false);
-    }
+      } finally {
+        setLoading(false);
+      }
   };
 
   const tabs = [
@@ -86,6 +130,7 @@ export default function Reports() {
     { id: 'recruitment', name: 'Recruitment', icon: UserGroupIcon },
     { id: 'financial', name: 'Financial', icon: CurrencyPoundIcon },
     { id: 'training', name: 'Training', icon: AcademicCapIcon },
+    { id: 'mentors', name: 'Mentors', icon: AcademicCapIcon },
     { id: 'cases', name: 'Cases', icon: DocumentTextIcon }
   ];
 
@@ -107,18 +152,18 @@ export default function Reports() {
             <p className="mt-1 text-sm text-gray-600">Comprehensive system analytics and insights</p>
           </div>
           <div className="flex gap-2">
-            <button onClick={exportTrainingEvents} className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200 flex items-center gap-1">
+            {/* <button onClick={exportTrainingEvents} className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200 flex items-center gap-1">
               <ArrowDownTrayIcon className="w-4 h-4" />
               Training Events
-            </button>
-            <button onClick={() => exportTrainingBookings()} className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200 flex items-center gap-1">
+            </button> */}
+            {/* <button onClick={() => exportTrainingBookings()} className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200 flex items-center gap-1">
               <ArrowDownTrayIcon className="w-4 h-4" />
               Bookings
-            </button>
-            <button onClick={exportPaymentHistory} className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200 flex items-center gap-1">
+            </button> */}
+            {/* <button onClick={exportPaymentHistory} className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200 flex items-center gap-1">
               <ArrowDownTrayIcon className="w-4 h-4" />
               Payments
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
@@ -187,9 +232,9 @@ export default function Reports() {
                       <p className="text-3xl font-bold text-yellow-900">£{invoiceRevenue?.revenueStats?.totalPaid?.toLocaleString() || 0}</p>
                     </div>
                     <CurrencyPoundIcon className="w-12 h-12 text-yellow-400" />
-                  </div>
-                </div>
-              </div>
+          </div>
+        </div>
+      </div>
 
               {/* Quick Stats Grid */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -353,7 +398,7 @@ export default function Reports() {
 
               {/* Expiring Contracts Table */}
               {contractStatus.expiringContracts.length > 0 && (
-                <div>
+          <div>
                   <h4 className="text-md font-semibold mb-3 text-red-600">⚠️ Contracts Expiring Soon</h4>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -407,9 +452,9 @@ export default function Reports() {
                   <div key={stage} className="bg-white border-2 border-gray-200 p-4 rounded-lg text-center hover:border-[#2EAB2C] transition-colors">
                     <p className="text-2xl font-bold text-gray-900">{count}</p>
                     <p className="text-sm text-gray-600 mt-1">{stage}</p>
-                  </div>
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
 
               {/* Conversion Rates */}
               <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg border-2 border-green-200">
@@ -429,8 +474,8 @@ export default function Reports() {
                   <div>
                     <p className="text-sm text-gray-600">Assessment → Approval</p>
                     <p className="text-3xl font-bold text-purple-600">{recruitmentPipeline.conversionRates.assessmentToApproval}%</p>
-                  </div>
-                  <div>
+          </div>
+          <div>
                     <p className="text-sm text-gray-600">Overall Conversion</p>
                     <p className="text-3xl font-bold text-[#2EAB2C]">{recruitmentPipeline.conversionRates.overallConversion}%</p>
                   </div>
@@ -445,10 +490,10 @@ export default function Reports() {
                     <div key={status} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                       <p className="text-xl font-bold text-gray-900">{count}</p>
                       <p className="text-sm text-gray-600">{status}</p>
-                    </div>
-                  ))}
                 </div>
-              </div>
+              ))}
+            </div>
+          </div>
             </div>
           )}
 
@@ -544,8 +589,8 @@ export default function Reports() {
                 <div className="bg-red-50 p-4 rounded-lg border border-red-200 text-center">
                   <p className="text-2xl font-bold text-red-900">{trainingEvents.stats.cancelledEvents}</p>
                   <p className="text-sm text-red-600">Cancelled</p>
-                </div>
-              </div>
+        </div>
+      </div>
 
               {/* Upcoming Events */}
               {trainingEvents.upcomingEvents.length > 0 && (
@@ -573,12 +618,109 @@ export default function Reports() {
             </div>
           )}
 
+          {/* Mentors Tab */}
+          {activeTab === 'mentors' && mentorReport && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold">Mentor Analytics</h3>
+              
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 text-center">
+                  <p className="text-2xl font-bold text-blue-900">{mentorReport.stats.totalMentors}</p>
+                  <p className="text-sm text-blue-600">Total Mentors</p>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg border border-green-200 text-center">
+                  <p className="text-2xl font-bold text-green-900">{mentorReport.stats.activeMentors}</p>
+                  <p className="text-sm text-green-600">Active</p>
+                </div>
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-200 text-center">
+                  <p className="text-2xl font-bold text-purple-900">{mentorReport.stats.totalAssignments}</p>
+                  <p className="text-sm text-purple-600">Total Assignments</p>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 text-center">
+                  <p className="text-2xl font-bold text-yellow-900">{mentorReport.stats.completedAssignments}</p>
+                  <p className="text-sm text-yellow-600">Completed</p>
+                </div>
+              </div>
+
+              {/* Additional Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-center">
+                  <p className="text-2xl font-bold text-gray-900">{mentorReport.stats.activeAssignments}</p>
+                  <p className="text-sm text-gray-600">Active Assignments</p>
+                </div>
+                {/* <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200 text-center">
+                  <p className="text-2xl font-bold text-indigo-900">{mentorReport.stats.totalActivityLogs}</p>
+                  <p className="text-sm text-indigo-600">Activity Logs</p>
+                </div> */}
+                <div className="bg-pink-50 p-4 rounded-lg border border-pink-200 text-center">
+                  <p className="text-2xl font-bold text-pink-900">{mentorReport.stats.totalAssignedEnquiries}</p>
+                  <p className="text-sm text-pink-600">Assigned Enquiries</p>
+                </div>
+              </div>
+
+              {/* Mentors Table */}
+              <div>
+                <h4 className="text-md font-semibold mb-3">Mentor Details</h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mentor</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Assignments</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Active</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Completed</th>
+                        {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activity Logs</th> */}
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Enquiries</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {mentorReport.mentors.map((mentor) => (
+                        <tr key={mentor.mentorId} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{mentor.name}</div>
+                            <div className="text-xs text-gray-500">{mentor.email}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              mentor.status === 'Active' ? 'bg-green-100 text-green-800' :
+                              mentor.status === 'Inactive' ? 'bg-gray-100 text-gray-800' :
+                              'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {mentor.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {mentor.totalAssignments}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
+                            {mentor.activeAssignments}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
+                            {mentor.completedAssignments}
+                          </td>
+                          {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {mentor.totalActivityLogs}
+                          </td> */}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {mentor.assignedEnquiries}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Cases Tab */}
           {activeTab === 'cases' && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold">Case Analytics</h3>
-              
-              {/* Case Type Distribution */}
+
+      {/* Case Type Distribution */}
               <div>
                 <h4 className="text-md font-semibold mb-3">Case Type Distribution</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -586,12 +728,12 @@ export default function Reports() {
                     <div key={type.caseType} className="bg-white border border-gray-200 p-4 rounded-lg">
                       <p className="text-2xl font-bold text-gray-900">{type.count}</p>
                       <p className="text-sm text-gray-600">{type.caseType}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-              {/* Caseload by Worker */}
+      {/* Caseload by Worker */}
               <div>
                 <h4 className="text-md font-semibold mb-3">Caseload by Worker</h4>
                 <div className="overflow-x-auto">
@@ -647,8 +789,8 @@ export default function Reports() {
                       <div key={`c-${item.date}`} className="flex justify-between py-2 border-b border-gray-100 last:border-0">
                         <span className="text-sm text-gray-600">{item.date}</span>
                         <span className="text-sm font-semibold text-gray-900">{item.count}</span>
-                      </div>
-                    ))}
+            </div>
+          ))}
                   </div>
                 </div>
               </div>

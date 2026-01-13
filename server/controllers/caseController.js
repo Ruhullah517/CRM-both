@@ -155,6 +155,8 @@ async function createOrUpdateContactFromCasePerson(person, roleTag) {
       email,
       phone,
       tags: [roleTag, 'Case'],
+      // Mark where this contact originated from for Sales & Communication source filters
+      leadSource: 'case',
       notes: '',
       organizationName: '',
       organizationAddress: '',
@@ -163,6 +165,7 @@ async function createOrUpdateContactFromCasePerson(person, roleTag) {
   } else {
     if (!contact.tags.includes(roleTag)) contact.tags.push(roleTag);
     if (!contact.tags.includes('Case')) contact.tags.push('Case');
+    if (!contact.leadSource) contact.leadSource = 'case';
     if (!contact.name && name) contact.name = name;
     if (!contact.phone && phone) contact.phone = phone;
     if (!contact.email && email) contact.email = email;

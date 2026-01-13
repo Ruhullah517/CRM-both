@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { SERVER_BASE_URL } from '../config/api';
 import {
   EyeIcon,
   PencilSquareIcon,
@@ -220,7 +221,7 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => {
       {(candidate.documents || []).map((d, i) =>
         <li key={i} className="flex items-center gap-2">
           <a
-            href={`https://backendcrm.blackfostercarersalliance.co.uk${d.url}`}
+            href={`${SERVER_BASE_URL}${d.url}`}
             className="text-blue-700 hover:underline"
             target="_blank"
             rel="noopener noreferrer"
@@ -286,7 +287,7 @@ const CandidateForm = ({ candidate, onBack, onSave, mentors }) => {
     formData.append("name", newDocumentName);
 
     // Adjust the URL to your backend endpoint
-    const res = await fetch("https://backendcrm.blackfostercarersalliance.co.uk/api/candidates/upload-document", {
+    const res = await fetch("${SERVER_BASE_URL}/api/candidates/upload-document", {
       method: "POST",
       body: formData,
     });
@@ -387,7 +388,7 @@ const CandidateForm = ({ candidate, onBack, onSave, mentors }) => {
             {documents.map((d, i) => (
               <li key={i} className="flex items-center gap-2">
                 <a
-                  href={`https://backendcrm.blackfostercarersalliance.co.uk${d.url}`}
+                  href={`${SERVER_BASE_URL}${d.url}`}
                   className="text-blue-700 hover:underline"
                   target="_blank"
                   rel="noopener noreferrer"

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SERVER_BASE_URL } from '../config/api';
 import { 
   UserIcon, 
   EnvelopeIcon, 
@@ -152,7 +153,7 @@ const PublicFreelancerForm = () => {
       formDataToSend.append('type', 'freelancer');
       formDataToSend.append('submittedAt', new Date().toISOString());
 
-      const response = await fetch('https://crm-backend-0v14.onrender.com/api/recruitment/freelancer-application', {
+      const response = await fetch(`${SERVER_BASE_URL}/api/recruitment/freelancer-application`, {
         method: 'POST',
         body: formDataToSend
       });

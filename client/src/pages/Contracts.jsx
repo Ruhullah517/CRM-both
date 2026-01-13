@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getContracts, generateContract, downloadContract, deleteContract } from '../services/contracts';
+import { getContracts, generateContract, downloadContract, deleteContract, updateContractStatus } from '../services/contracts';
 import { getContractTemplates, createContractTemplate, updateContractTemplate, deleteContractTemplate } from '../services/contractTemplates';
 import {
   DocumentTextIcon,
@@ -15,6 +15,8 @@ import {
   DocumentDuplicateIcon
 } from '@heroicons/react/24/outline';
 import Loader from '../components/Loader';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
 const statuses = ['signed', 'pending', 'cancelled'];
 const statusColors = {
@@ -184,15 +186,35 @@ const TemplateModal = ({ show, onClose, template, onSave, loading }) => {
                 Template Content
               </label>
               <div className="text-xs text-gray-500 mb-2">
-                Use placeholders like {'{{'} client_name {'}}'}, {'{{'} start_date {'}}'}, {'{{'} hourly_rate {'}}'}  etc.
+                Use placeholders like {'{{'} client_name {'}}'}, {'{{'} start_date {'}}'}, {'{{'} hourly_rate {'}}'}  etc. You can use formatting tools to style your content.
               </div>
-              <textarea
+              <ReactQuill
+                theme="snow"
                 value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                rows={15}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 font-mono text-sm"
+                onChange={(value) => setFormData({ ...formData, content: value })}
+                modules={{
+                  toolbar: [
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    [{ 'font': [] }],
+                    [{ 'size': ['small', false, 'large', 'huge'] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'color': [] }, { 'background': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'align': [] }],
+                    ['link'],
+                    ['clean']
+                  ]
+                }}
+                formats={[
+                  'header', 'font', 'size',
+                  'bold', 'italic', 'underline', 'strike',
+                  'color', 'background',
+                  'list', 'bullet',
+                  'align',
+                  'link'
+                ]}
+                style={{ height: '400px', marginBottom: '50px' }}
                 placeholder="Enter your contract template content here..."
-                required
               />
         </div>
 
@@ -487,6 +509,26 @@ const Contracts = () => {
     }
   };
 
+  const handleUpdateStatus = async (contractId, newStatus) => {
+    if (!confirm(`Are you sure you want to change the status to "${newStatus}"?`)) return;
+    
+    setLoading(true);
+    try {
+      const result = await updateContractStatus(contractId, newStatus);
+      setContracts(contracts.map(contract => 
+        contract._id === contractId 
+          ? { ...contract, status: newStatus, updatedAt: new Date() }
+          : contract
+      ));
+      alert('Contract status updated successfully!');
+    } catch (error) {
+      console.error('Error updating contract status:', error);
+      alert('Error updating contract status: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDownloadContract = async (id) => {
     try {
       await downloadContract(id);
@@ -631,11 +673,24 @@ const Contracts = () => {
                       <div className="text-sm text-gray-900">{contract.roleType}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        statusColors[contract.status?.toLowerCase()] || 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {contract.status}
-                      </span>
+                      <select
+                        value={contract.status || 'draft'}
+                        onChange={(e) => handleUpdateStatus(contract._id, e.target.value)}
+                        disabled={loading}
+                        className={`text-xs font-semibold rounded-full px-2 py-1 border-0 ${
+                          statusColors[contract.status?.toLowerCase()] || 'bg-gray-100 text-gray-800'
+                        } focus:ring-2 focus:ring-blue-500 focus:outline-none`}
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="pending">Pending</option>
+                        <option value="sent">Sent</option>
+                        <option value="delivered">Delivered</option>
+                        <option value="signed">Signed</option>
+                        <option value="completed">Completed</option>
+                        <option value="declined">Declined</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="expired">Expired</option>
+                      </select>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
@@ -888,10 +943,10 @@ const Contracts = () => {
                       {new Date(selectedContract.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div>
+                  {/* <div>
                     <label className="text-sm font-medium text-gray-700">Certificate Number:</label>
                     <p className="text-sm text-gray-900">{selectedContract.certificateNumber || '-'}</p>
-                  </div>
+                  </div> */}
                 </div>
 
                 {selectedContract.filledData && Object.keys(selectedContract.filledData).length > 0 && (
@@ -912,7 +967,7 @@ const Contracts = () => {
                   </div>
                 )}
 
-                {selectedContract.generatedDocUrl && (
+                {/* {selectedContract.generatedDocUrl && (
                   <div>
                     <label className="text-sm font-medium text-gray-700">PDF Document:</label>
                     <div className="mt-2">
@@ -927,7 +982,7 @@ const Contracts = () => {
                       </a>
                     </div>
                   </div>
-                )}
+                )} */}
               </div>
               
               <div className="flex justify-end space-x-3 mt-6">

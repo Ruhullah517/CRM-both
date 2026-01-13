@@ -22,7 +22,7 @@ const {
 router.use(authenticate);
 
 // Invoice CRUD operations
-router.get('/', authorize('admin', 'manager', 'staff'), getAllInvoices);
+router.get('/', authorize('admin', 'manager', 'staff', 'caseworker'), getAllInvoices);
 router.get('/stats', authorize('admin', 'manager', 'staff'), getInvoiceStats);
 router.get('/overdue', authorize('admin', 'manager', 'staff'), getOverdueInvoices);
 router.get('/:id', authorize('admin', 'manager', 'staff'), getInvoiceById);

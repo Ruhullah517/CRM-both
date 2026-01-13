@@ -12,6 +12,7 @@ const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
 const { sendMail, getFromAddress } = require('../utils/mailer');
+const { getLogoAttachment } = require('../utils/logoAttachment');
 const {
   getEmailContainer,
   getBookingConfirmationContent,
@@ -36,6 +37,12 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+
+// Ensure logo attachments do not crash email sends in production
+const buildLogoAttachments = (extra = []) => {
+  const logo = getLogoAttachment('company-logo');
+  return logo ? [logo, ...extra] : extra;
+};
 
 // Helper function to auto-create work history entry for freelancer trainer
 const createWorkHistoryForTrainer = async (trainerId, trainingEvent) => {
@@ -658,6 +665,32 @@ const bulkImportParticipants = async (req, res) => {
     }
 
     const results = [];
+
+    // Helper to safely extract fields from various CSV header formats
+    const getField = (participant, keys, fuzzyPatterns = []) => {
+      // Exact key matches first (keys are already lowercased on the client)
+      for (const key of keys) {
+        if (participant[key] !== undefined && participant[key] !== null && String(participant[key]).trim() !== '') {
+          return String(participant[key]).trim();
+        }
+      }
+
+      // Fuzzy match: look for any key that contains one of the patterns
+      if (fuzzyPatterns.length) {
+        const lowerKeys = Object.keys(participant);
+        for (const k of lowerKeys) {
+          const lk = k.toLowerCase();
+          if (fuzzyPatterns.some(p => lk.includes(p))) {
+            const value = participant[k];
+            if (value !== undefined && value !== null && String(value).trim() !== '') {
+              return String(value).trim();
+            }
+          }
+        }
+      }
+
+      return '';
+    };
     for (const participant of participants) {
       try {
         // Convert string boolean values to actual booleans
@@ -673,11 +706,20 @@ const bulkImportParticipants = async (req, res) => {
         const booking = new TrainingBooking({
           trainingEvent: trainingEventId,
           participant: {
-            name: participant.name,
-            email: participant.email,
-            phone: participant.phone || '',
-            organization: participant.organization || '',
-            role: participant.role || ''
+            // Support multiple possible CSV header names (all lowercased on the client)
+            name: getField(participant, ['name', 'participant name', 'full name'], ['name']),
+            email: getField(participant, ['email', 'participant email', 'email address'], ['email']),
+            phone: getField(
+              participant,
+              ['phone', 'telephone', 'mobile', 'phone number', 'contact number'],
+              ['phone', 'mobile', 'tel']
+            ),
+            organization: getField(
+              participant,
+              ['organization', 'organisation', 'company', 'employer', 'organisation name'],
+              ['org', 'company', 'employer']
+            ),
+            role: getField(participant, ['role', 'position', 'job title'], ['role', 'position', 'title'])
           },
           status: participant.status || 'registered',
           bookingMethod: 'admin',
@@ -769,13 +811,7 @@ const sendBookingConfirmationEmail = async (booking, trainingEvent) => {
       to: booking.participant.email,
       subject: `Training Registration Confirmed - ${trainingEvent.title}`,
       html: getEmailContainer(getBookingConfirmationContent(booking, trainingEvent)),
-      attachments: [
-        {
-          filename: 'logo.jpg',
-          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
-          cid: 'company-logo'
-        }
-      ]
+      attachments: buildLogoAttachments()
     };
 
     await sendMail(mailOptions);
@@ -838,17 +874,12 @@ const sendInvoiceEmail = async (invoice) => {
       to: invoice.client.email,
       subject: `Invoice for Training Registration - ${invoice.invoiceNumber}`,
       html: getEmailContainer(getInvoiceEmailContent(invoice)),
-      attachments: [
-        {
-          filename: 'logo.jpg',
-          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
-          cid: 'company-logo'
-        },
+      attachments: buildLogoAttachments([
         {
           filename: `invoice-${invoice.invoiceNumber}.pdf`,
           path: pdfPath
         }
-      ]
+      ])
     };
 
     await sendMail(mailOptions);
@@ -916,7 +947,7 @@ const sendCertificateEmail = async (certificate) => {
         if (invoice) {
           invoiceInfo = `
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <h4 style="color: #007bff; margin-top: 0;">Payment Information</h4>
+              <h4 style="color: #2EAB2C; margin-top: 0;">Payment Information</h4>
               <p><strong>Invoice Number:</strong> ${invoice.invoiceNumber}</p>
               <p><strong>Amount Paid:</strong> £${invoice.total}</p>
               <p>Your invoice was sent to you at the time of registration.</p>
@@ -935,17 +966,12 @@ const sendCertificateEmail = async (certificate) => {
       to: certificate.participant.email,
       subject: `Certificate of Completion - ${certificate.courseTitle}`,
       html: getEmailContainer(getCertificateEmailContent(certificate, invoiceInfo)),
-      attachments: [
-        {
-          filename: 'logo.jpg',
-          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
-          cid: 'company-logo'
-        },
+      attachments: buildLogoAttachments([
         {
           filename: `certificate-${certificate.certificateNumber}.pdf`,
           path: pdfPath
         }
-      ]
+      ])
     };
 
     await sendMail(mailOptions);
@@ -976,15 +1002,14 @@ const generateCertificatePDF = async (certificate) => {
       const filename = `certificate-${certificate.certificateNumber}.pdf`;
       const filepath = path.join(uploadDir, filename);
 
-      // Create PDF document
+      // Create PDF document with custom dimensions matching template (1280x904)
       const doc = new PDFDocument({
-        size: 'A4',
-        layout: 'landscape',
+        size: [1280, 904], // Custom size matching template dimensions
         margins: {
-          top: 30,
-          bottom: 30,
-          left: 30,
-          right: 30
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0
         }
       });
 
@@ -992,226 +1017,88 @@ const generateCertificatePDF = async (certificate) => {
       const stream = fs.createWriteStream(filepath);
       doc.pipe(stream);
 
-      // Add white background
-      doc.rect(0, 0, doc.page.width, doc.page.height)
-        .fill('#ffffff');
-
-      // Add light gray textured background at bottom (12% of page height)
-      const grayBackgroundHeight = doc.page.height * 0.12;
-      doc.rect(0, doc.page.height - grayBackgroundHeight, doc.page.width, grayBackgroundHeight)
-        .fill('#f8f9fa');
-
-      // Add main title in top left - "Cultural Practice Power & Progress" (reduced font sizes)
-      doc.fontSize(22)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('Cultural', 40, 40);
-      
-      doc.fontSize(22)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('Practice', 40, 65);
-      
-      doc.fontSize(22)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('Power &', 40, 90);
-      
-      doc.fontSize(22)
-        .font('Helvetica-Bold')
-        .fill('#00a86b') // Green color for "Progress"
-        .text('Progress', 40, 115);
-
-      // Add Black Foster Carers Alliance logo in top right (smaller)
+      // Load and add the certificate template as background image
       try {
-        const logoPath1 = path.join(__dirname, '../uploads/logo.png');
-        const logoPath2 = path.join(__dirname, '../../client/public/logo.PNG');
-        
-        if (fs.existsSync(logoPath1)) {
-          doc.image(logoPath1, doc.page.width - 100, 40, { width: 50, height: 50 });
-        } else if (fs.existsSync(logoPath2)) {
-          doc.image(logoPath2, doc.page.width - 100, 40, { width: 50, height: 50 });
+        // Try different possible locations for the certificate template
+        const templatePaths = [
+          path.join(__dirname, '../uploads/certificate-template.jpg'),
+          path.join(__dirname, '../../client/public/certificate template.jpg'),
+          path.join(__dirname, '../uploads/certificate-template.png'),
+          path.join(__dirname, '../../client/public/certificate template.png'),
+          path.join(__dirname, '../uploads/certificate.jpg'),
+          path.join(__dirname, '../../client/public/certificate.jpg')
+        ];
+
+        let templateFound = false;
+        for (const templatePath of templatePaths) {
+          if (fs.existsSync(templatePath)) {
+            console.log('Certificate template found at:', templatePath);
+            
+            // Add the template image as background (full page - 1280x904)
+            doc.image(templatePath, 0, 0, { 
+              width: 1280, 
+              height: 904,
+              fit: [1280, 904]
+            });
+            
+            templateFound = true;
+            break;
+          }
+        }
+
+        if (!templateFound) {
+          console.log('Certificate template not found, using white background');
+          // Fallback to white background if template not found
+          doc.rect(0, 0, 1280, 904)
+            .fill('#ffffff');
         }
       } catch (error) {
-        console.log('Logo not found for certificate, using text only');
+        console.log('Error loading certificate template:', error.message);
+        // Fallback to white background
+        doc.rect(0, 0, 1280, 904)
+          .fill('#ffffff');
       }
 
-      // Add Black Foster Carers Alliance text in top right (smaller)
-      doc.fontSize(10)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('BLACK FOSTER CARERS', doc.page.width - 100, 95);
-      
-      doc.fontSize(12)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('ALLIANCE', doc.page.width - 100, 110);
+      // Get training event title from certificate
+      const eventTitle = certificate.trainingEvent ? certificate.trainingEvent.title : 'Training Event';
 
-      // Add award statement in center (moved up)
-      doc.fontSize(16)
-        .font('Helvetica')
-        .fill('#666666')
-        .text('This certificate is awarded to', 0, 180, {
-          align: 'center',
-          width: doc.page.width
-        });
+      // Add participant name ON the black line in the middle
+      doc.fontSize(48); // Increased from 32 to 48 for bigger text
+      doc.font('Helvetica-Bold');
+      doc.fillColor('#000000');
+      doc.strokeColor('#000000');
+      doc.lineWidth(1); // Added stroke for bolder appearance
+      doc.text(certificate.participant.name, 0, 500, { // Position on the black line
+        align: 'center',
+        width: 1280,
+        stroke: true, // Added stroke for bolder text
+        fill: true
+      });
 
-      // Add participant name (moved up, smaller font)
-      doc.fontSize(20)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text(certificate.participant.name, 0, 210, {
-          align: 'center',
-          width: doc.page.width
-        });
+      // Add description BELOW the black line
+      doc.fontSize(18);
+      doc.font('Helvetica-Bold');
+      doc.fillColor('#000000');
+      doc.text(eventTitle.toUpperCase(), 0, 600, { // Position below the black line
+        align: 'center',
+        width: 1280
+      });
 
-      // Add decorative line under name (moved up)
-      doc.moveTo(doc.page.width * 0.25, 235)
-        .lineTo(doc.page.width * 0.75, 235)
-        .lineWidth(1)
-        .stroke('#000000');
-
-      // Add purpose of award (moved up, smaller font)
-      doc.fontSize(14)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('FOR ATTENDING THE CULTURAL PRACTICE POWER & PROGRESS', 0, 260, {
-          align: 'center',
-          width: doc.page.width
-        });
-
-      doc.fontSize(14)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('CONFERENCE', 0, 280, {
-          align: 'center',
-          width: doc.page.width
-        });
-
-      // Add CPD Certified logo in bottom left (moved up)
-      try {
-        const cpdLogoPath1 = path.join(__dirname, '../uploads/cpd-certified-logo.png');
-        const cpdLogoPath2 = path.join(__dirname, '../uploads/cpd-logo.png');
-        const cpdLogoPath3 = path.join(__dirname, '../../client/public/cpd-certified-logo.png');
-        const cpdLogoPath4 = path.join(__dirname, '../../client/public/cpd-logo.png');
-        
-        let cpdLogoFound = false;
-        if (fs.existsSync(cpdLogoPath1)) {
-          doc.image(cpdLogoPath1, 40, doc.page.height - 70, { width: 80, height: 60 });
-          cpdLogoFound = true;
-        } else if (fs.existsSync(cpdLogoPath2)) {
-          doc.image(cpdLogoPath2, 40, doc.page.height - 70, { width: 80, height: 60 });
-          cpdLogoFound = true;
-        } else if (fs.existsSync(cpdLogoPath3)) {
-          doc.image(cpdLogoPath3, 40, doc.page.height - 70, { width: 80, height: 60 });
-          cpdLogoFound = true;
-        } else if (fs.existsSync(cpdLogoPath4)) {
-          doc.image(cpdLogoPath4, 40, doc.page.height - 70, { width: 80, height: 60 });
-          cpdLogoFound = true;
-        }
-        
-        // Fallback to text if logo not found
-        if (!cpdLogoFound) {
-          doc.fontSize(20)
-            .font('Helvetica-Bold')
-            .fill('#000000')
-            .text('CPD', 40, doc.page.height - 70);
-          
-          doc.fontSize(10)
-            .font('Helvetica-Bold')
-            .fill('#000000')
-            .text('CERTIFIED', 40, doc.page.height - 55);
-          
-          doc.fontSize(7)
-            .font('Helvetica')
-            .fill('#666666')
-            .text('The CPD Certification Service', 40, doc.page.height - 42);
-        }
-      } catch (error) {
-        console.log('CPD logo not found, using text fallback');
-        // Fallback to text
-        doc.fontSize(20)
-          .font('Helvetica-Bold')
-          .fill('#000000')
-          .text('CPD', 40, doc.page.height - 70);
-        
-        doc.fontSize(10)
-          .font('Helvetica-Bold')
-          .fill('#000000')
-          .text('CERTIFIED', 40, doc.page.height - 55);
-        
-        doc.fontSize(7)
-          .font('Helvetica')
-          .fill('#666666')
-          .text('The CPD Certification Service', 40, doc.page.height - 42);
-      }
-
-      // Add signature in bottom center (moved up)
-      doc.fontSize(14)
-        .font('Helvetica-Oblique')
-        .fill('#000000')
-        .text('Rachel Cole', 0, doc.page.height - 70, {
-          align: 'center',
-          width: doc.page.width
-        });
-
-      // Add signature line (moved up)
-      doc.moveTo(doc.page.width * 0.35, doc.page.height - 55)
-        .lineTo(doc.page.width * 0.65, doc.page.height - 55)
-        .lineWidth(1)
-        .stroke('#000000');
-
-      // Add organization name under signature (moved up, smaller font)
-      doc.fontSize(12)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('Black Foster Carers', 0, doc.page.height - 42, {
-          align: 'center',
-          width: doc.page.width
-        });
-
-      doc.fontSize(12)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text('Alliance CIC', 0, doc.page.height - 30, {
-          align: 'center',
-          width: doc.page.width
-        });
-
-      // Add date in bottom right (moved up)
+      // Add date in bottom right corner (where date should go in template)
       const currentDate = new Date();
-      const monthYear = currentDate.toLocaleDateString('en-GB', { 
+      const formattedDate = currentDate.toLocaleDateString('en-GB', { 
+        day: 'numeric',
         month: 'long', 
         year: 'numeric' 
-      }).toUpperCase();
+      });
       
-      doc.fontSize(12)
-        .font('Helvetica-Bold')
-        .fill('#000000')
-        .text(monthYear, doc.page.width - 100, doc.page.height - 45);
-
-      // Add green dotted border design element (adjusted for single page)
-      const dotRadius = 2;
-      const dotSpacing = 12;
-      const greenColor = '#00a86b';
-
-      // Vertical dots from "Progress" text down (adjusted height)
-      for (let y = 140; y <= 320; y += dotSpacing) {
-        doc.circle(80, y, dotRadius)
-          .fill(greenColor);
-      }
-
-      // Horizontal dots across bottom (adjusted position)
-      for (let x = 80; x <= doc.page.width - 80; x += dotSpacing) {
-        doc.circle(x, 320, dotRadius)
-          .fill(greenColor);
-      }
-
-      // Vertical dots up to date area (adjusted height)
-      for (let y = 320; y >= doc.page.height - 80; y -= dotSpacing) {
-        doc.circle(doc.page.width - 80, y, dotRadius)
-          .fill(greenColor);
-      }
+      doc.fontSize(16);
+      doc.font('Helvetica');
+      doc.fillColor('#000000');
+      doc.text(formattedDate, 1280 - 150, 904 - 40, { // Position in bottom right corner
+        align: 'right',
+        width: 140
+      });
 
       // Finalize PDF
       doc.end();
@@ -1539,6 +1426,7 @@ const generateMissingInvoices = async (req, res) => {
 const sendBookingLinkEmail = async (req, res) => {
   try {
     console.log('Sending booking link email...');
+    const { getFrontendUrl } = require('../config/urls');
     const { eventId, email, message } = req.body;
 
     console.log('Request body:', { eventId, email, message: message ? 'provided' : 'not provided' });
@@ -1572,7 +1460,9 @@ const sendBookingLinkEmail = async (req, res) => {
     //   }
     // });
 
-    const frontendUrl = process.env.FRONTEND_URL || 'https://crm-both.vercel.app';
+    const rawFrontendUrl = getFrontendUrl();
+    // Ensure no trailing slash to avoid double slashes in generated links
+    const frontendUrl = rawFrontendUrl.replace(/\/+$/, '');
     const bookingUrl = `${frontendUrl}/training/${trainingEvent.bookingLink}`;
     console.log('Environment variables check:');
     console.log('- FRONTEND_URL:', process.env.FRONTEND_URL);
@@ -1585,13 +1475,31 @@ const sendBookingLinkEmail = async (req, res) => {
       to: email,
       subject: `Training Event Invitation - ${trainingEvent.title}`,
       html: getEmailContainer(getBookingInvitationContent(trainingEvent, bookingUrl, message)),
-      attachments: [
-        {
-          filename: 'logo.jpg',
-          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
-          cid: 'company-logo'
-        }
-      ]
+      text: `Training Event Invitation - ${trainingEvent.title}
+
+You're invited to join our upcoming training session!
+
+${message ? `Personal Message:\n${message}\n\n` : ''}Event Details:
+- Title: ${trainingEvent.title}
+- Date: ${new Date(trainingEvent.startDate).toLocaleDateString()} - ${new Date(trainingEvent.endDate).toLocaleDateString()}
+- Time: ${new Date(trainingEvent.startDate).toLocaleTimeString()} - ${new Date(trainingEvent.endDate).toLocaleTimeString()}
+- Location: ${trainingEvent.location || 'To be confirmed'}
+- Price: ${trainingEvent.price > 0 ? `£${trainingEvent.price} ${trainingEvent.currency}` : 'Free'}
+
+Book Now:
+${bookingUrl}
+
+We look forward to seeing you at the training!
+
+Best regards,
+Black Foster Carers Alliance Training Team
+
+---
+Contact Us:
+Email: Enquiries@blackfostercarersalliance.co.uk
+Phone: 0800 001 6230
+Website: www.blackfostercarersalliance.co.uk`,
+      attachments: buildLogoAttachments()
     };
 
     console.log('Sending email to:', email);
@@ -1652,20 +1560,16 @@ const sendFeedbackRequestEmail = async (bookingId) => {
     //   }
     // });
 
-    const feedbackUrl = `${process.env.FRONTEND_URL || 'https://crm-both.vercel.app'}/feedback/${bookingId}`;
+    const { getFrontendUrl } = require('../config/urls');
+    const frontendUrl = getFrontendUrl();
+    const feedbackUrl = `${frontendUrl}/feedback/${bookingId}`;
 
     const mailOptions = {
       from: getFromAddress(),
       to: booking.participant.email,
       subject: `Feedback Request - ${booking.trainingEvent.title}`,
       html: getEmailContainer(getFeedbackRequestContent(booking)),
-      attachments: [
-        {
-          filename: 'logo.jpg',
-          path: path.join(__dirname, '..', '..', 'client', 'public', 'img1.jpg'),
-          cid: 'company-logo'
-        }
-      ]
+      attachments: buildLogoAttachments()
     };
 
     await sendMail(mailOptions);

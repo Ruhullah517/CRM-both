@@ -6,10 +6,11 @@ const path = require('path');
 const router = express.Router();
 const qs = require('qs'); // Add this at the top if not already
 const { authenticate, authorize } = require('../middleware/auth');
+const { getServerUrl } = require('../config/urls');
 
 const CLIENT_ID = process.env.ADOBE_CLIENT_ID;
 const CLIENT_SECRET = process.env.ADOBE_CLIENT_SECRET;
-const REDIRECT_URI = 'https://backendcrm.blackfostercarersalliance.co.uk/api/adobe/callback';
+const REDIRECT_URI = `${getServerUrl()}/api/adobe/callback`;
 
 // Step 1: Redirect to Adobe Sign
 router.get('/auth', (req, res) => {

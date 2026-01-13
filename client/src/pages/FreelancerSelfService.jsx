@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { SERVER_BASE_URL } from '../config/api';
 import {
   UserCircleIcon,
   DocumentCheckIcon,
@@ -9,12 +10,15 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   PaperClipIcon,
+  BriefcaseIcon,
 } from '@heroicons/react/24/outline';
 import {
   getFreelancerById,
+  getFreelancerByEmail,
   updateFreelancer,
   addComplianceDocument,
   updateFreelancerAvailability,
+  updateMyAvailability,
 } from '../services/freelancers';
 import { formatDate } from '../utils/dateUtils';
 import Loader from '../components/Loader';
@@ -26,6 +30,7 @@ const FreelancerSelfService = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('profile');
   const [saving, setSaving] = useState(false);
+  const [availabilityNotes, setAvailabilityNotes] = useState('');
   const [showComplianceModal, setShowComplianceModal] = useState(false);
   const [complianceForm, setComplianceForm] = useState({
     name: '',
@@ -35,7 +40,7 @@ const FreelancerSelfService = () => {
   });
 
   useEffect(() => {
-    if (user?.user?.id) {
+    if (user?.user?.email) {
       loadFreelancerData();
     }
   }, [user]);
@@ -43,9 +48,12 @@ const FreelancerSelfService = () => {
   const loadFreelancerData = async () => {
     setLoading(true);
     try {
-      const data = await getFreelancerById(user.user.id);
+      // Get freelancer by email instead of user ID
+      const data = await getFreelancerByEmail(user.user.email);
       setFreelancer(data);
+      setAvailabilityNotes(data.availabilityNotes || '');
     } catch (err) {
+      console.error('Failed to load freelancer data:', err);
       setError('Failed to load freelancer data');
     }
     setLoading(false);
@@ -63,21 +71,102 @@ const FreelancerSelfService = () => {
     setSaving(false);
   };
 
-  const handleUpdateAvailability = async (availability, notes) => {
+  const handleUpdateAvailability = useCallback(async (availability, notes) => {
+    if (!freelancer) {
+      setError('Freelancer profile not loaded');
+      return;
+    }
+    
+    setSaving(true);
+    setError(null);
     try {
-      await updateFreelancerAvailability(freelancer._id, {
+      const result = await updateMyAvailability({
         availability,
         availabilityNotes: notes
       });
+      
       setFreelancer(prev => ({
         ...prev,
         availability,
         availabilityNotes: notes
       }));
+      setAvailabilityNotes(notes);
     } catch (err) {
-      setError('Failed to update availability');
+      console.error('Error updating availability:', err);
+      setError('Failed to update availability: ' + (err.response?.data?.msg || err.message));
     }
-  };
+    setSaving(false);
+  }, [freelancer]);
+
+  const handleSaveAvailabilityNotes = useCallback(async () => {
+    if (freelancer) {
+      await handleUpdateAvailability(freelancer.availability, availabilityNotes);
+    }
+  }, [freelancer, availabilityNotes, handleUpdateAvailability]);
+
+  const AvailabilityTab = useMemo(() => {
+    if (!freelancer) {
+      return (
+        <div className="space-y-6">
+          <div className="bg-white shadow rounded-lg p-6">
+            <div className="text-center py-8">
+              <div className="text-gray-500">Loading freelancer profile...</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Availability Management</h3>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Current Availability</label>
+              <div className="flex space-x-4">
+                {['available', 'busy', 'unavailable'].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => handleUpdateAvailability(status, availabilityNotes)}
+                    disabled={saving}
+                    className={`px-4 py-2 rounded-md text-sm font-medium ${
+                      freelancer.availability === status
+                        ? 'bg-[#2EAB2C] text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    } disabled:opacity-50`}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Availability Notes</label>
+            <textarea
+              value={availabilityNotes}
+              onChange={(e) => setAvailabilityNotes(e.target.value)}
+              rows={3}
+              placeholder="Add any notes about your availability..."
+              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
+            />
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={handleSaveAvailabilityNotes}
+                disabled={saving}
+                className="px-4 py-2 bg-[#2EAB2C] text-white rounded-md text-sm font-medium hover:bg-green-700 disabled:opacity-50"
+              >
+                {saving ? 'Saving...' : 'Save Notes'}
+              </button>
+            </div>
+          </div>
+          </div>
+        </div>
+      </div>
+    );
+  }, [freelancer, availabilityNotes, saving, handleUpdateAvailability, handleSaveAvailabilityNotes]);
 
   const handleAddComplianceDocument = async (e) => {
     e.preventDefault();
@@ -193,46 +282,6 @@ const FreelancerSelfService = () => {
     </div>
   );
 
-  const AvailabilityTab = () => (
-    <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Availability Management</h3>
-        
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Current Availability</label>
-            <div className="flex space-x-4">
-              {['available', 'busy', 'unavailable'].map((status) => (
-                <button
-                  key={status}
-                  onClick={() => handleUpdateAvailability(status, freelancer.availabilityNotes)}
-                  className={`px-4 py-2 rounded-md text-sm font-medium ${
-                    freelancer.availability === status
-                      ? 'bg-[#2EAB2C] text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Availability Notes</label>
-            <textarea
-              value={freelancer.availabilityNotes || ''}
-              onChange={(e) => handleUpdateAvailability(freelancer.availability, e.target.value)}
-              rows={3}
-              placeholder="Add any notes about your availability..."
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-[#2EAB2C] focus:border-[#2EAB2C]"
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   const ComplianceTab = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -270,7 +319,7 @@ const FreelancerSelfService = () => {
                   <div className="flex items-center space-x-2">
                     {doc.fileUrl && (
                       <a
-                        href={`https://crm-backend-0v14.onrender.com${doc.fileUrl}`}
+                        href={`${SERVER_BASE_URL}${doc.fileUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-[#2EAB2C] hover:text-green-700"
@@ -361,9 +410,10 @@ const FreelancerSelfService = () => {
     <div className="space-y-6">
       <h3 className="text-lg font-medium text-gray-900">Work History</h3>
       
-      <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {freelancer.workHistory?.map((work, index) => (
+      {freelancer.workHistory && freelancer.workHistory.length > 0 ? (
+        <div className="bg-white shadow overflow-hidden sm:rounded-md">
+          <ul className="divide-y divide-gray-200">
+            {freelancer.workHistory.map((work, index) => (
             <li key={index}>
               <div className="px-4 py-4">
                 <div className="flex items-center justify-between">
@@ -386,14 +436,21 @@ const FreelancerSelfService = () => {
                       ? 'bg-yellow-100 text-yellow-800'
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {work.status}
+                    {work.status === 'in_progress' ? 'In Progress' : work.status}
                   </span>
                 </div>
               </div>
             </li>
-          ))}
-        </ul>
-      </div>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <div className="bg-white shadow overflow-hidden sm:rounded-md p-8 text-center">
+          <BriefcaseIcon className="mx-auto h-12 w-12 text-gray-400" />
+          <p className="mt-2 text-sm text-gray-600">No work history recorded yet.</p>
+          <p className="text-xs text-gray-500 mt-1">Your assignments will appear here once added by the administrator.</p>
+        </div>
+      )}
     </div>
   );
 
@@ -448,7 +505,7 @@ const FreelancerSelfService = () => {
 
       {/* Tab Content */}
       {activeTab === 'profile' && <ProfileTab />}
-      {activeTab === 'availability' && <AvailabilityTab />}
+      {activeTab === 'availability' && AvailabilityTab}
       {activeTab === 'compliance' && <ComplianceTab />}
       {activeTab === 'work-history' && <WorkHistoryTab />}
     </div>

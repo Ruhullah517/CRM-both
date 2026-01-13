@@ -1,7 +1,8 @@
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
 const api = axios.create({
-  baseURL: 'https://crm-backend-0v14.onrender.com/api',
+  baseURL: API_BASE_URL,
   withCredentials: false,
 });
 

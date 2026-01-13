@@ -7,47 +7,33 @@ const nodemailer = require('nodemailer');
 let cachedTransporter = null;
 
 function createTransporter() {
-    const user = 'blackfostercarersalliance@gmail.com';
-    const pass = 'fhxp oqqm zksb dngn'; // Gmail App Password
-
-    // Try multiple configurations for better compatibility
-    const configs = [
-        // Configuration 1: Gmail service (recommended by Nodemailer docs)
-        {
-            service: 'gmail',
-            auth: { user, pass },
-            connectionTimeout: 30000,
-            greetingTimeout: 15000,
-            socketTimeout: 30000,
-        },
-        // Configuration 2: SSL on port 465 (fallback)
-        {
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            auth: { user, pass },
-            connectionTimeout: 30000,
-            greetingTimeout: 15000,
-            socketTimeout: 30000,
-        },
-        // Configuration 3: TLS on port 587 (alternative)
-        {
-            host: 'smtp.gmail.com',
+    // Prefer SendGrid if API key is provided
+    if (process.env.SENDGRID_API_KEY) {
+        const transporter = nodemailer.createTransport({
+            host: 'smtp.sendgrid.net',
             port: 587,
             secure: false,
-            auth: { user, pass },
-            tls: { rejectUnauthorized: false },
+            auth: { user: 'apikey', pass: process.env.SENDGRID_API_KEY },
             connectionTimeout: 30000,
             greetingTimeout: 15000,
             socketTimeout: 30000,
-        }
-    ];
+        });
+        console.log('Mailer: Using SendGrid SMTP configuration');
+        return transporter;
+    }
 
-    // Use the first configuration for now
-    const transporter = nodemailer.createTransport(configs[0]);
+    // Fallback to Gmail (existing behavior)
+    const user = 'blackfostercarersalliance@gmail.com';
+    const pass = 'lwvx onhb nujr mqnp'; // Gmail App Password
 
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass },
+        connectionTimeout: 30000,
+        greetingTimeout: 15000,
+        socketTimeout: 30000,
+    });
     console.log('Mailer: Using Gmail service configuration');
-
     return transporter;
 }
 
@@ -73,66 +59,15 @@ async function sendMail(options) {
         hasHtml: !!options.html
     });
 
-    const user = 'blackfostercarersalliance@gmail.com';
-    const pass = 'fhxp oqqm zksb dngn';
-    
-    // Try different configurations if one fails
-    const configs = [
-        // Configuration 1: Gmail service (recommended by Nodemailer docs)
-        {
-            service: 'gmail',
-            auth: { user, pass },
-            connectionTimeout: 30000,
-            greetingTimeout: 15000,
-            socketTimeout: 30000,
-        },
-        // Configuration 2: SSL on port 465 (fallback)
-        {
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            auth: { user, pass },
-            connectionTimeout: 30000,
-            greetingTimeout: 15000,
-            socketTimeout: 30000,
-        },
-        // Configuration 3: TLS on port 587 (alternative)
-        {
-            host: 'smtp.gmail.com',
-            port: 587,
-            secure: false,
-            auth: { user, pass },
-            tls: { rejectUnauthorized: false },
-            connectionTimeout: 30000,
-            greetingTimeout: 15000,
-            socketTimeout: 30000,
-        }
-    ];
-
-    let lastError = null;
-    
-    for (let i = 0; i < configs.length; i++) {
-        try {
-            console.log(`Mailer: Trying configuration ${i + 1}/${configs.length}...`);
-            const transporter = nodemailer.createTransport(configs[i]);
-            
-            const result = await transporter.sendMail({ ...options, from: fromAddress });
-            console.log('Mailer: Email sent successfully with config', i + 1, ':', result.messageId);
-            return result;
-            
-        } catch (error) {
-            console.error(`Mailer: Configuration ${i + 1} failed:`, error.message);
-            lastError = error;
-            
-            // If it's not a timeout error, don't try other configs
-            if (error.code !== 'ETIMEDOUT' && error.code !== 'ECONNREFUSED') {
-                break;
-            }
-        }
+    try {
+        const transporter = getTransporter();
+        const result = await transporter.sendMail({ ...options, from: fromAddress });
+        console.log('Mailer: Email sent:', result.messageId || 'OK');
+        return result;
+    } catch (error) {
+        console.error('Mailer: Send failed:', error && (error.response || error.message || error));
+        throw error;
     }
-    
-    console.error('Mailer: All configurations failed');
-    throw lastError;
 }
 
 module.exports = {

@@ -29,7 +29,7 @@ const navItems = [
   // Recruitment & Foster Care Section
   { name: 'Enquiries', path: '/enquiries', roles: ['admin', 'staff'], icon: QuestionMarkCircleIcon, section: 'recruitment' },
   { name: 'Recruitment Pipeline', path: '/recruitment', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'recruitment' },
-  { name: 'Foster Carers', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'recruitment' },
+  { name: 'FCs/Mentees', path: '/candidates', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'recruitment' },
 
   // Advocacy & Case Management Section
   { name: 'Case Management', path: '/cases', roles: ['admin', 'staff', 'caseworker', 'manager'], icon: FolderOpenIcon, section: 'advocacy' },
@@ -45,13 +45,13 @@ const navItems = [
 
   // Staff & Resources Section
   { name: '👥 HR Module', path: '/hr-module', roles: ['admin', 'staff', 'manager'], icon: UserGroupIcon, section: 'staff', primary: true },
-  // { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon, section: 'staff' }, // DEPRECATED: Mentors are now managed as Freelancers in HR Module
+  { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon, section: 'staff' },
   { name: 'User Management', path: '/users', roles: ['admin'], icon: UserGroupIcon, section: 'staff' },
 
   // Communication Section
   { name: '📊 Sales & Communication', path: '/sales-communication', roles: ['admin', 'staff', 'manager'], icon: BriefcaseIcon, section: 'communication', primary: true },
   { name: '⚙️ Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'communication' },
-  { name: '⚙️ Email Automations', path: '/email-automations', roles: ['admin', 'staff'], icon: BoltIcon, section: 'communication' },
+  // { name: '⚙️ Email Automations', path: '/email-automations', roles: ['admin', 'staff'], icon: BoltIcon, section: 'communication' },
   // Legacy pages - can be removed if not needed
   // { name: 'Email Management', path: '/email-management', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },
   // { name: 'Contact Management', path: '/contact-management', roles: ['admin', 'staff'], icon: UserGroupIcon, section: 'communication' },
@@ -59,15 +59,14 @@ const navItems = [
   // Operations Section
 
   { name: 'Reports', path: '/reports', roles: ['admin', 'staff'], icon: ClipboardDocumentListIcon, section: 'operations' },
-  { name: 'GDPR Management', path: '/gdpr-management', roles: ['admin', 'manager'], icon: ShieldCheckIcon, section: 'operations' },
+  // { name: 'GDPR Management', path: '/gdpr-management', roles: ['admin', 'manager'], icon: ShieldCheckIcon, section: 'operations' },
 
   // Freelancer-specific items
   { name: 'My Cases', path: '/my-cases', roles: ['freelancer'], icon: BriefcaseIcon, section: 'personal' },
   { name: 'My Profile', path: '/my-profile', roles: ['freelancer'], icon: UserCircleIcon, section: 'personal' },
 
   // Mentor-specific items  
-  { name: 'My Cases', path: '/my-cases', roles: ['mentor'], icon: BriefcaseIcon, section: 'personal' },
-  { name: 'My Profile', path: '/my-profile', roles: ['mentor'], icon: UserCircleIcon, section: 'personal' },
+  { name: 'My Tasks', path: '/my-tasks', roles: ['mentor'], icon: ClipboardDocumentListIcon, section: 'personal' },
 
   // { name: 'Settings', path: '/settings', roles: ['admin', 'staff'], icon: Cog6ToothIcon },
 ];

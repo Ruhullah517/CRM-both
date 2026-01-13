@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SERVER_BASE_URL } from '../config/api';
 import { 
   UserIcon, 
   EnvelopeIcon, 
@@ -115,7 +116,7 @@ const PublicMentorForm = () => {
       formDataToSend.append('type', 'mentor');
       formDataToSend.append('submittedAt', new Date().toISOString());
 
-      const response = await fetch('https://crm-backend-0v14.onrender.com/api/recruitment/mentor-application', {
+      const response = await fetch(`${SERVER_BASE_URL}/api/recruitment/mentor-application`, {
         method: 'POST',
         body: formDataToSend
       });
