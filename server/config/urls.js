@@ -16,10 +16,12 @@ const URL_CONFIG = {
   FRONTEND_URL: 'http://localhost:5173/',
 
   // Backend/Server URLs
+  // SERVER_URL: 'https://crm-backend-0v14.onrender.com',
   SERVER_URL: 'https://backendcrm.blackfostercarersalliance.co.uk',
 
   // API Base URL (for internal references)
   API_BASE_URL: 'https://backendcrm.blackfostercarersalliance.co.uk/api',
+  // API_BASE_URL: 'https://crm-backend-0v14.onrender.com/api',
 };
 
 // Helper function to get frontend URL

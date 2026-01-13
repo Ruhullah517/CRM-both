@@ -105,40 +105,37 @@ const createCandidate = async (req, res) => {
   }
 };
 
-// Helper to normalise WordPress payload into our Candidate schema
-// WordPress sends data in format: fields.field_XXXXXXX.raw_value
-// Replace the field_XXXXXXX placeholders below with actual WordPress field IDs from your form
 const wpCandidateFieldMap = {
   // Basic Information
-  'fields.name.raw_value': 'name', // Common field name, may also be fields.field_XXXXXXX.raw_value
-  'fields.field_PLACEHOLDER1.raw_value': 'name', // TODO: Replace PLACEHOLDER1 with actual WP field ID for Full Name
-  'fields.email.raw_value': 'email', // Common field name
-  'fields.field_PLACEHOLDER2.raw_value': 'email', // TODO: Replace PLACEHOLDER2 with actual WP field ID for Email Address
-  'fields.field_PLACEHOLDER3.raw_value': 'phone', // TODO: Replace PLACEHOLDER3 with actual WP field ID for Telephone
-  'fields.field_PLACEHOLDER4.raw_value': 'postCode', // TODO: Replace PLACEHOLDER4 with actual WP field ID for Post Code
-  
+  'fields.name.raw_value': 'name', // Full name
+  'fields.email.raw_value': 'email', // Email address
+  'fields.field_423164f.raw_value': 'phone', // Telephone
+  'fields.field_b22750f.raw_value': 'postCode', // Post Code
+
   // Local Authority / Organisation Details
-  'fields.field_PLACEHOLDER5.raw_value': 'localAuthorityOrAgency', // TODO: Replace with WP field ID for "Local authority or fostering agency"
-  'fields.field_PLACEHOLDER6.raw_value': 'organisationName', // TODO: Replace with WP field ID for "Name of Organisation"
-  'fields.field_PLACEHOLDER7.raw_value': 'socialWorkerName', // TODO: Replace with WP field ID for "Name of Social Worker"
-  'fields.field_PLACEHOLDER8.raw_value': 'socialWorkerEmail', // TODO: Replace with WP field ID for "Social Workers Email Address"
-  'fields.field_PLACEHOLDER9.raw_value': 'socialWorkerMobile', // TODO: Replace with WP field ID for "Social Workers Mobile"
-  
+  'fields.field_2a317f5.raw_value': 'localAuthorityOrAgency', // "Local authority or fostering agency"
+  'fields.field_a63e2b1.raw_value': 'organisationName', // "Name of Organisation"
+  'fields.field_5b2c243.raw_value': 'socialWorkerName', // "Name of Social Worker"
+  'fields.field_6df0284.raw_value': 'socialWorkerEmail', // "Social Workers Email Address"
+  'fields.field_3217b0c.raw_value': 'socialWorkerMobile', // "Social Workers Mobile"
+
+  // Relationship / Role
+  'fields.field_c93bc9a.raw_value': 'mentorRequiredFor', // e.g. "Carer"
+
   // Mentoring Details
-  'fields.field_PLACEHOLDER10.raw_value': 'mentorRequiredFor', // TODO: Replace with WP field ID for "Mentor required for"
-  'fields.field_PLACEHOLDER11.raw_value': 'isCurrentlyCaring', // TODO: Replace with WP field ID for "Are you currently caring for a child or young person?"
-  'fields.field_PLACEHOLDER12.raw_value': 'isTransracialPlacement', // TODO: Replace with WP field ID for "Is this a transracial placement?"
-  'fields.field_PLACEHOLDER13.raw_value': 'ageRangeOfChild', // TODO: Replace with WP field ID for "Age range of the child / young person?"
-  'fields.field_PLACEHOLDER14.raw_value': 'childBackground', // TODO: Replace with WP field ID for child's racial/ethnic/cultural background
-  'fields.field_PLACEHOLDER15.raw_value': 'benefitsFromMentoring', // TODO: Replace with WP field ID for "What do you feel the child would benefit from most..."
-  'fields.field_PLACEHOLDER16.raw_value': 'promptedToSeekMentoring', // TODO: Replace with WP field ID for "What has prompted you to seek cultural mentoring..."
-  'fields.field_PLACEHOLDER17.raw_value': 'areasOfSupport', // TODO: Replace with WP field ID for "What areas of support are you seeking" (checkboxes/multi-select)
-  'fields.field_PLACEHOLDER18.raw_value': 'preferredMentoringApproach', // TODO: Replace with WP field ID for "Preferred mentoring approach"
-  'fields.field_PLACEHOLDER19.raw_value': 'preferredDeliveryMethod', // TODO: Replace with WP field ID for "Preferred delivery method"
-  'fields.field_PLACEHOLDER20.raw_value': 'frequencyOfSupport', // TODO: Replace with WP field ID for "Frequency of support"
-  'fields.field_PLACEHOLDER21.raw_value': 'availabilityForFollowUpCall', // TODO: Replace with WP field ID for "Your Availability for follow-up call"
-  'fields.field_PLACEHOLDER22.raw_value': 'howDidYouHear', // TODO: Replace with WP field ID for "How did you hear about us?"
-  'fields.field_PLACEHOLDER23.raw_value': 'consentToContact', // TODO: Replace with WP field ID for consent checkbox
+  'fields.field_496847a.raw_value': 'isCurrentlyCaring', // "Are you currently caring for a child or young person?"
+  'fields.field_5df29d0.raw_value': 'isTransracialPlacement', // "Is this a transracial placement?"
+  'fields.field_92c067e.raw_value': 'ageRangeOfChild', // "Age range of the child / young person?"
+  'fields.field_5f8167e.raw_value': 'childBackground', // Child's racial/ethnic/cultural background
+  'fields.field_2f9b2d3.raw_value': 'benefitsFromMentoring', // "What do you feel the child would benefit from most..."
+  'fields.field_86bdf72.raw_value': 'promptedToSeekMentoring', // "What has prompted you to seek cultural mentoring..."
+  'fields.field_e431c35.raw_value': 'areasOfSupport', // "What areas of support are you seeking" (stored as JSON string)
+  'fields.field_704b74a.raw_value': 'preferredMentoringApproach', // "Preferred mentoring approach"
+  'fields.field_2163e1a.raw_value': 'preferredDeliveryMethod', // "Preferred delivery method"
+  'fields.field_3278aac.raw_value': 'frequencyOfSupport', // "Frequency of support"
+  'fields.field_056ef3c.raw_value': 'availabilityForFollowUpCall', // Date for follow-up call
+  'fields.field_aa203a2.raw_value': 'howDidYouHear', // "How did you hear about us?"
+  'fields.field_459f42f.raw_value': 'consentToContact', // Consent checkbox
 };
 
 // Helper to support both flattened keys (e.g., "fields.field_12345.raw_value")
@@ -228,6 +225,17 @@ function transformWpCandidate(wpData) {
     val === 'on' ||
     val === 'true';
 
+  // Normalise mapped booleans if they arrived as strings
+  if (result.isCurrentlyCaring !== undefined) {
+    result.isCurrentlyCaring = toBool(result.isCurrentlyCaring);
+  }
+  if (result.isTransracialPlacement !== undefined) {
+    result.isTransracialPlacement = toBool(result.isTransracialPlacement);
+  }
+  if (result.consentToContact !== undefined) {
+    result.consentToContact = toBool(result.consentToContact);
+  }
+
   if (result.isCurrentlyCaring === undefined) {
     const raw =
       wpData['Are you currently caring for a child or young person?'] ||
@@ -272,10 +280,24 @@ function transformWpCandidate(wpData) {
     if (Array.isArray(rawAreas)) {
       result.areasOfSupport = rawAreas;
     } else if (typeof rawAreas === 'string') {
-      result.areasOfSupport = rawAreas
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const trimmed = rawAreas.trim();
+      // Try JSON first (Bit Integrations sent JSON string in payload sample)
+      if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || trimmed === '[]') {
+        try {
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) {
+            result.areasOfSupport = parsed;
+          }
+        } catch (e) {
+          // fall through to comma split
+        }
+      }
+      if (!result.areasOfSupport) {
+        result.areasOfSupport = trimmed
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
     }
   }
 

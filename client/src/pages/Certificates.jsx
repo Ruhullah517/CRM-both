@@ -15,6 +15,7 @@ const Certificates = () => {
   const [loading, setLoading] = useState(true);
   const [selectedCertificate, setSelectedCertificate] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [resendLoadingId, setResendLoadingId] = useState(null);
 
   useEffect(() => {
     fetchCertificates();
@@ -53,11 +54,14 @@ const Certificates = () => {
 
   const resendCertificateEmail = async (certificateId) => {
     try {
+      setResendLoadingId(certificateId);
       await api.post(`/training/certificates/${certificateId}/resend-email`);
       alert('Certificate email sent successfully!');
       fetchCertificates(); // Refresh the list
     } catch (error) {
       console.error('Error resending certificate email:', error);
+    } finally {
+      setResendLoadingId(null);
     }
   };
 
@@ -189,10 +193,19 @@ const Certificates = () => {
                           </button>
                           <button
                             onClick={() => resendCertificateEmail(certificate._id)}
-                            className="text-green-600 hover:text-green-900 flex items-center"
+                            className="text-green-600 hover:text-green-900 flex items-center disabled:opacity-50"
+                            disabled={resendLoadingId === certificate._id}
                           >
-                            <EnvelopeIcon className="h-4 w-4 mr-1" />
-                            Resend
+                            {resendLoadingId === certificate._id ? (
+                              <div className="w-16 h-1 bg-gray-200 rounded overflow-hidden">
+                                <div className="h-full bg-green-600 animate-pulse"></div>
+                              </div>
+                            ) : (
+                              <>
+                                <EnvelopeIcon className="h-4 w-4 mr-1" />
+                                Resend
+                              </>
+                            )}
                           </button>
                           <button
                             onClick={() => {
@@ -241,9 +254,16 @@ const Certificates = () => {
                     </button>
                     <button
                       onClick={() => resendCertificateEmail(certificate._id)}
-                      className="text-green-600 hover:text-green-900 p-1"
+                      className="text-green-600 hover:text-green-900 p-1 disabled:opacity-50"
+                      disabled={resendLoadingId === certificate._id}
                     >
-                      <EnvelopeIcon className="h-4 w-4" />
+                      {resendLoadingId === certificate._id ? (
+                        <div className="w-12 h-1 bg-gray-200 rounded overflow-hidden">
+                          <div className="h-full bg-green-600 animate-pulse"></div>
+                        </div>
+                      ) : (
+                        <EnvelopeIcon className="h-4 w-4" />
+                      )}
                     </button>
                     <button
                       onClick={() => {
