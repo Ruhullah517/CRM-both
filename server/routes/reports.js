@@ -21,7 +21,15 @@ router.get('/invoice-revenue', authenticate, authorize('admin', 'manager', 'staf
 router.get('/training-events', authenticate, authorize('admin', 'manager', 'staff'), reportController.trainingEventsReport);
 router.get('/mentors', authenticate, authorize('admin', 'manager', 'staff'), reportController.mentorReport);
 
-// Export endpoints (CSV/PDF)
+// New CSV exports for analytics tabs
+router.get('/export/freelancer-work', authenticate, authorize('admin', 'manager', 'staff'), reportController.exportFreelancerWorkReport);
+router.get('/export/recruitment-pipeline', authenticate, authorize('admin', 'manager', 'staff'), reportController.exportRecruitmentPipelineReport);
+router.get('/export/invoice-revenue', authenticate, authorize('admin', 'manager', 'staff'), reportController.exportInvoiceRevenueReport);
+router.get('/export/training-events-analytics', authenticate, authorize('admin', 'manager', 'staff'), reportController.exportTrainingEventsAnalytics);
+router.get('/export/mentors', authenticate, authorize('admin', 'manager', 'staff'), reportController.exportMentorReport);
+router.get('/export/cases-analytics', authenticate, authorize('admin', 'manager', 'staff'), reportController.exportCasesTabAnalytics);
+
+// Generic export endpoint (param route must come last)
 router.get('/export/:type', authenticate, authorize('admin', 'manager', 'staff'), reportController.exportReport);
 
 module.exports = router; 

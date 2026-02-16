@@ -12,8 +12,8 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 const URL_CONFIG = {
   // Frontend URLs
 
-  // FRONTEND_URL: 'https://crm.blackfostercarersalliance.co.uk',
-  FRONTEND_URL: 'http://localhost:5173/',
+  FRONTEND_URL: 'https://crm.blackfostercarersalliance.co.uk',
+  // FRONTEND_URL: 'http://localhost:5173/',
 
   // Backend/Server URLs
   // SERVER_URL: 'https://crm-backend-0v14.onrender.com',

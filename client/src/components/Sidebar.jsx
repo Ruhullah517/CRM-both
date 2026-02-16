@@ -44,13 +44,13 @@ const navItems = [
   { name: 'Calendar', path: '/calendar', roles: ['admin', 'staff'], icon: CalendarIcon, section: 'training' },
 
   // Staff & Resources Section
-  { name: '👥 HR Module', path: '/hr-module', roles: ['admin', 'staff', 'manager'], icon: UserGroupIcon, section: 'staff', primary: true },
-  { name: 'Mentor Management', path: '/mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon, section: 'staff' },
+  { name: 'HR Module', path: '/hr-module', roles: ['admin', 'staff', 'manager'], icon: UserGroupIcon, section: 'staff', primary: true },
+  // { name: 'Mentor Management', path: '/hr-module?tab=mentors', roles: ['admin', 'staff'], icon: AcademicCapIcon, section: 'staff' },
   { name: 'User Management', path: '/users', roles: ['admin'], icon: UserGroupIcon, section: 'staff' },
 
   // Communication Section
-  { name: '📊 Sales & Communication', path: '/sales-communication', roles: ['admin', 'staff', 'manager'], icon: BriefcaseIcon, section: 'communication', primary: true },
-  { name: '⚙️ Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'communication' },
+  { name: 'Sales & Communication', path: '/sales-communication', roles: ['admin', 'staff', 'manager'], icon: BriefcaseIcon, section: 'communication', primary: true },
+  { name: 'Email Templates', path: '/email-templates', roles: ['admin', 'staff'], icon: DocumentTextIcon, section: 'communication' },
   // { name: '⚙️ Email Automations', path: '/email-automations', roles: ['admin', 'staff'], icon: BoltIcon, section: 'communication' },
   // Legacy pages - can be removed if not needed
   // { name: 'Email Management', path: '/email-management', roles: ['admin', 'staff'], icon: EnvelopeIcon, section: 'communication' },

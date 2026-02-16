@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { SERVER_BASE_URL } from '../config/api';
 import {
@@ -15,6 +16,7 @@ import {
   XCircleIcon,
   EnvelopeIcon,
 } from '@heroicons/react/24/outline';
+import Mentors from './Mentors';
 import {
   getFreelancers,
   getExpiringCompliance,
@@ -29,6 +31,7 @@ import Loader from '../components/Loader';
 
 const HRModule = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [freelancers, setFreelancers] = useState([]);
   const [expiringCompliance, setExpiringCompliance] = useState([]);
@@ -45,6 +48,14 @@ const HRModule = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Allow deep-linking to specific HR tabs via query param:
+  // e.g. /hr-module?tab=mentors
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || '');
+    const tab = params.get('tab');
+    if (tab) setActiveTab(tab);
+  }, [location.search]);
 
   const loadData = async () => {
     setLoading(true);
@@ -1038,6 +1049,7 @@ const HRModule = () => {
           {[
             { id: 'dashboard', name: 'Dashboard', icon: ChartBarIcon },
             { id: 'freelancers', name: 'Freelancers', icon: UserGroupIcon },
+            { id: 'mentors', name: 'Mentors', icon: UserGroupIcon },
             { id: 'compliance', name: 'Compliance', icon: DocumentCheckIcon },
             { id: 'contracts', name: 'Contracts', icon: CalendarIcon },
             { id: 'work-tracking', name: 'Work Tracking', icon: ClockIcon },
@@ -1064,6 +1076,11 @@ const HRModule = () => {
       {/* Tab Content */}
       {activeTab === 'dashboard' && <DashboardTab />}
       {activeTab === 'freelancers' && <FreelancersTab />}
+      {activeTab === 'mentors' && (
+        <div className="-mx-4 sm:-mx-6 lg:-mx-8">
+          <Mentors />
+        </div>
+      )}
       {activeTab === 'compliance' && <ComplianceTab />}
       {activeTab === 'contracts' && <ContractsTab />}
       {activeTab === 'work-tracking' && <WorkTrackingTab />}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   getCasesStatus,
   getCaseTypeDistribution,
@@ -10,7 +10,20 @@ import {
   getTrainingEventsReport,
   getMentorReport
 } from '../services/reports';
-import { exportTrainingEvents, exportTrainingBookings, exportPaymentHistory } from '../services/exports';
+import {
+  exportFreelancerWork,
+  exportFreelancerWorkPdf,
+  exportRecruitmentPipeline,
+  exportRecruitmentPipelinePdf,
+  exportInvoiceRevenue,
+  exportInvoiceRevenuePdf,
+  exportTrainingAnalytics,
+  exportTrainingAnalyticsPdf,
+  exportMentorAnalytics,
+  exportMentorAnalyticsPdf,
+  exportCasesAnalytics,
+  exportCasesAnalyticsPdf
+} from '../services/exports';
 import {
   ChartBarIcon,
   UserGroupIcon,
@@ -25,6 +38,13 @@ import {
 export default function Reports() {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
+  const [freelancerLoading, setFreelancerLoading] = useState(false);
+  const [freelancerMonth, setFreelancerMonth] = useState(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    return `${year}-${month}`; // YYYY-MM
+  });
   
   // Existing data
   const [casesStatus, setCasesStatus] = useState({ opened: [], closed: [] });
@@ -38,6 +58,21 @@ export default function Reports() {
   const [invoiceRevenue, setInvoiceRevenue] = useState(null);
   const [trainingEvents, setTrainingEvents] = useState(null);
   const [mentorReport, setMentorReport] = useState(null);
+
+  const freelancerMonthOptions = useMemo(() => {
+    const options = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const value = date.toISOString().slice(0, 7); // YYYY-MM
+      const label = date.toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'long'
+      });
+      options.push({ value, label });
+    }
+    return options;
+  }, []);
 
   useEffect(() => {
     loadAllData();
@@ -70,7 +105,7 @@ export default function Reports() {
           console.error('Error loading caseload:', err);
           return [];
         }),
-        getFreelancerWorkReport().catch((err) => {
+        getFreelancerWorkReport({ month: freelancerMonth }).catch((err) => {
           console.error('Error loading freelancer work:', err);
           return [];
         }),
@@ -123,6 +158,23 @@ export default function Reports() {
       }
   };
 
+  const loadFreelancerWork = async (month) => {
+    try {
+      setFreelancerLoading(true);
+      const data = await getFreelancerWorkReport({ month });
+      setFreelancerWork(data);
+    } catch (err) {
+      console.error('Error loading freelancer work for month:', month, err);
+    } finally {
+      setFreelancerLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // When month changes, refresh freelancer work data (without global loading spinner)
+    loadFreelancerWork(freelancerMonth);
+  }, [freelancerMonth]);
+
   const tabs = [
     { id: 'overview', name: 'Overview', icon: ChartBarIcon },
     { id: 'freelancers', name: 'Freelancers', icon: UserGroupIcon },
@@ -149,7 +201,7 @@ export default function Reports() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Analytics & Reports</h1>
-            <p className="mt-1 text-sm text-gray-600">Comprehensive system analytics and insights</p>
+            <p className="mt-1 text-sm text-gray-600">Comprehensive system analytics and insights (for the last 12 months) </p>
           </div>
           <div className="flex gap-2">
             {/* <button onClick={exportTrainingEvents} className="px-3 py-1.5 bg-blue-100 text-blue-800 rounded text-sm hover:bg-blue-200 flex items-center gap-1">
@@ -292,7 +344,50 @@ export default function Reports() {
           {/* Freelancers Tab */}
           {activeTab === 'freelancers' && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold">Freelancer Work & Earnings</h3>
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <h3 className="text-lg font-semibold">Freelancer Work & Earnings per Month</h3>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">Month:</span>
+                    <select
+                      className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-[#2EAB2C]"
+                      value={freelancerMonth}
+                      onChange={(e) => setFreelancerMonth(e.target.value)}
+                      disabled={freelancerLoading}
+                    >
+                      {freelancerMonthOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => exportFreelancerWork(freelancerMonth)}
+                    disabled={freelancerLoading}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => exportFreelancerWorkPdf(freelancerMonth)}
+                    disabled={freelancerLoading}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-60"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Download PDF
+                  </button>
+                  {freelancerLoading && (
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#2EAB2C]" />
+                      <span>Loading...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
               
               {/* Summary Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -444,7 +539,27 @@ export default function Reports() {
           {/* Recruitment Tab */}
           {activeTab === 'recruitment' && recruitmentPipeline && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold">Recruitment Pipeline Analytics</h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">Recruitment Pipeline Analytics</h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={exportRecruitmentPipeline}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={exportRecruitmentPipelinePdf}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Download PDF
+                  </button>
+                </div>
+              </div>
               
               {/* Pipeline Stats */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -500,7 +615,27 @@ export default function Reports() {
           {/* Financial Tab */}
           {activeTab === 'financial' && invoiceRevenue && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold">Financial Overview</h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">Financial Overview</h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={exportInvoiceRevenue}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={exportInvoiceRevenuePdf}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Download PDF
+                  </button>
+                </div>
+              </div>
               
               {/* Revenue Stats */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -528,7 +663,7 @@ export default function Reports() {
 
               {/* Monthly Revenue */}
               <div>
-                <h4 className="text-md font-semibold mb-3">Monthly Revenue (Last 6 Months)</h4>
+                <h4 className="text-md font-semibold mb-3">Monthly Revenue (Last 12 Months)</h4>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -566,7 +701,27 @@ export default function Reports() {
           {/* Training Tab */}
           {activeTab === 'training' && trainingEvents && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold">Training Events Analytics</h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">Training Events Analytics (Last 12 months)</h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={exportTrainingAnalytics}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={exportTrainingAnalyticsPdf}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Download PDF
+                  </button>
+                </div>
+              </div>
               
               {/* Stats Grid */}
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -621,7 +776,27 @@ export default function Reports() {
           {/* Mentors Tab */}
           {activeTab === 'mentors' && mentorReport && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold">Mentor Analytics</h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">Mentor Analytics (Last 12 months)</h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={exportMentorAnalytics}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={exportMentorAnalyticsPdf}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Download PDF
+                  </button>
+                </div>
+              </div>
               
               {/* Stats Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -718,7 +893,27 @@ export default function Reports() {
           {/* Cases Tab */}
           {activeTab === 'cases' && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold">Case Analytics</h3>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold">Case Analytics</h3>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={exportCasesAnalytics}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Export CSV
+                  </button>
+                  <button
+                    type="button"
+                    onClick={exportCasesAnalyticsPdf}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-md border border-gray-300 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                    Download PDF
+                  </button>
+                </div>
+              </div>
 
       {/* Case Type Distribution */}
               <div>

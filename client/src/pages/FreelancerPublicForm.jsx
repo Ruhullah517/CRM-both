@@ -6,8 +6,10 @@ const geoOptions = [
   'North East', 'North West', 'East Midlands', 'West Midlands', 'South East', 'South West', 'London', 'Other', 'Wales', 'Scotland'
 ];
 const roleOptions = [
-  'Foster Carer', 'Kinship Carer', 'SGO', 'Interested in Fostering', 'Social Worker', 'Other'
+  'Social worker', 'Mentor', 'Administrator', 'Case worker/Assessor', 'Other'
 ];
+// Role applied for (controls which questions show). Social work Qs only for socialWorker & caseWorkerAssessor.
+const STAFF_ROLE_SOCIAL_WORK = ['socialWorker', 'caseWorkerAssessor'];
 const assessmentOptions = [
   'Fostering Panel Work', 'Adoption Assessments', 'Kinship Care Assessments', 'Special Guardianship Order (SGO) Assessments', 'Court Report Writing', 'Child Protection & Safeguarding', 'Standard of Care investigation'
 ];
@@ -34,6 +36,8 @@ const FreelancerPublicForm = () => {
     dbsCertificateUrl: '',
     currentLocation: '',
     geographicalLocation: '',
+    staffRole: 'socialWorker',
+    roleOtherSpecify: '',
     role: '',
     milesWillingToTravel: '',
     hasFormFAssessmentExperience: false,
@@ -48,6 +52,12 @@ const FreelancerPublicForm = () => {
     paymentPreferences: '',
     paymentOther: '',
     token: '',
+    mentorExperience: '',
+    mentorAreas: '',
+    caseAdminExperience: '',
+    caseAdminSystems: '',
+    otherExperience: '',
+    preferredWork: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -81,9 +91,14 @@ const FreelancerPublicForm = () => {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!form.cvUrl && !form.cvFile) {
+      alert('Please attach your CV. All applicants must submit a CV.');
+      return;
+    }
     setLoading(true);
     const data = new FormData();
     for (const key in form) {
+      if (form[key] == null || (key === 'cvFile' && !form[key]) || (key === 'dbsCertificateFile' && !form[key])) continue;
       if (Array.isArray(form[key])) {
         data.append(key, JSON.stringify(form[key]));
       } else {
@@ -129,48 +144,168 @@ const FreelancerPublicForm = () => {
         {/* Section 2: Professional Information */}
         <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
           <h3 className="text-xl font-bold mb-4 text-[#2EAB2C] flex items-center gap-2"><span className="inline-block w-2 h-2 bg-[#2EAB2C] rounded-full"></span>Professional Information</h3>
-          {/* Social Work England Registration */}
-          <div className="mb-2">
-            <span className="block mb-2 font-bold text-base mt-4">Do you have a Social Work England Registration? <span className="text-red-600 font-bold">*</span></span>
-            <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input type="radio" name="hasSocialWorkEnglandRegistration" value="false" checked={form.hasSocialWorkEnglandRegistration === false} onChange={() => setForm(f => ({ ...f, hasSocialWorkEnglandRegistration: false, socialWorkEnglandRegistrationNumber: '' }))} required className="accent-green-600" />
-              No
+          {/* Staff Role Selector – controls which questions appear. Social work Qs only for Social worker & Case worker/Assessor. */}
+          <div className="mb-4">
+            <label className="block mb-2 font-bold text-base">
+              What type of role are you applying for? <span className="text-red-600 font-bold">*</span>
             </label>
-            <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input type="radio" name="hasSocialWorkEnglandRegistration" value="true" checked={form.hasSocialWorkEnglandRegistration === true} onChange={() => setForm(f => ({ ...f, hasSocialWorkEnglandRegistration: true }))} required className="accent-green-600" />
-              Yes
-            </label>
+            <select
+              name="staffRole"
+              value={form.staffRole}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded mb-2"
+              required
+            >
+              <option value="socialWorker">Social worker</option>
+              <option value="mentor">Mentor</option>
+              <option value="administrator">Administrator</option>
+              <option value="caseWorkerAssessor">Case worker/Assessor</option>
+              <option value="other">Other: Please specify</option>
+            </select>
+            {form.staffRole === 'other' && (
+              <input
+                name="roleOtherSpecify"
+                placeholder="Please specify your role"
+                value={form.roleOtherSpecify}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded mb-2 mt-1"
+                required
+              />
+            )}
           </div>
-          {form.hasSocialWorkEnglandRegistration === true && (
-            <input name="socialWorkEnglandRegistrationNumber" placeholder="Social Work England Registration Number" value={form.socialWorkEnglandRegistrationNumber} onChange={handleChange} className="w-full px-4 py-2 border rounded mb-2" required />
+          {/* Social worker specific compliance questions – only for Social worker & Case worker/Assessor */}
+          {STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole) && (
+            <>
+              <div className="mb-2">
+                <span className="block mb-2 font-bold text-base mt-4">
+                  Do you have a Social Work England Registration? <span className="text-red-600 font-bold">*</span>
+                </span>
+                <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                  <input
+                    type="radio"
+                    name="hasSocialWorkEnglandRegistration"
+                    value="false"
+                    checked={form.hasSocialWorkEnglandRegistration === false}
+                    onChange={() =>
+                      setForm(f => ({
+                        ...f,
+                        hasSocialWorkEnglandRegistration: false,
+                        socialWorkEnglandRegistrationNumber: ''
+                      }))
+                    }
+                    required
+                    className="accent-green-600"
+                  />
+                  No
+                </label>
+                <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                  <input
+                    type="radio"
+                    name="hasSocialWorkEnglandRegistration"
+                    value="true"
+                    checked={form.hasSocialWorkEnglandRegistration === true}
+                    onChange={() =>
+                      setForm(f => ({
+                        ...f,
+                        hasSocialWorkEnglandRegistration: true
+                      }))
+                    }
+                    required
+                    className="accent-green-600"
+                  />
+                  Yes
+                </label>
+              </div>
+              {form.hasSocialWorkEnglandRegistration === true && (
+                <input
+                  name="socialWorkEnglandRegistrationNumber"
+                  placeholder="Social Work England Registration Number"
+                  value={form.socialWorkEnglandRegistrationNumber}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded mb-2"
+                  required
+                />
+              )}
+            </>
           )}
-          {/* DBS Check */}
+          {/* DBS / update system – visible for all, required only for Social worker & Case worker/Assessor */}
           <div className="mb-2">
-            <span className="block mb-2 font-bold text-base mt-4">Do you have a DBS Check? <span className="text-red-600 font-bold">*</span></span>
+            <span className="block mb-2 font-bold text-base mt-4">
+              Do you have a DBS Check? {STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole) && <span className="text-red-600 font-bold">*</span>}
+            </span>
             <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input type="radio" name="hasDBSCheck" value="true" checked={form.hasDBSCheck === true} onChange={() => setForm(f => ({ ...f, hasDBSCheck: true }))} required className="accent-green-600" />
+              <input
+                type="radio"
+                name="hasDBSCheck"
+                value="true"
+                checked={form.hasDBSCheck === true}
+                onChange={() => setForm(f => ({ ...f, hasDBSCheck: true }))}
+                required={STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole)}
+                className="accent-green-600"
+              />
               Yes
             </label>
             <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input type="radio" name="hasDBSCheck" value="false" checked={form.hasDBSCheck === false} onChange={() => setForm(f => ({ ...f, hasDBSCheck: false, isOnUpdateSystem: false, dbsCertificateFile: null }))} required className="accent-green-600" />
+              <input
+                type="radio"
+                name="hasDBSCheck"
+                value="false"
+                checked={form.hasDBSCheck === false}
+                onChange={() =>
+                  setForm(f => ({
+                    ...f,
+                    hasDBSCheck: false,
+                    isOnUpdateSystem: false,
+                    dbsCertificateFile: null
+                  }))
+                }
+                required={STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole)}
+                className="accent-green-600"
+              />
               No
             </label>
           </div>
-          {/* Update System */}
           <div className="mb-2">
             <span className="block mb-2 font-bold text-base mt-4">Are you on the update system?</span>
             <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input type="radio" name="isOnUpdateSystem" value="true" checked={form.isOnUpdateSystem === true} onChange={() => setForm(f => ({ ...f, isOnUpdateSystem: true }))} disabled={form.hasDBSCheck !== true} className="accent-green-600" />
+              <input
+                type="radio"
+                name="isOnUpdateSystem"
+                value="true"
+                checked={form.isOnUpdateSystem === true}
+                onChange={() => setForm(f => ({ ...f, isOnUpdateSystem: true }))}
+                disabled={form.hasDBSCheck !== true}
+                className="accent-green-600"
+              />
               Yes
             </label>
             <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input type="radio" name="isOnUpdateSystem" value="false" checked={form.isOnUpdateSystem === false} onChange={() => setForm(f => ({ ...f, isOnUpdateSystem: false, dbsCertificateFile: null }))} disabled={form.hasDBSCheck !== true} className="accent-green-600" />
+              <input
+                type="radio"
+                name="isOnUpdateSystem"
+                value="false"
+                checked={form.isOnUpdateSystem === false}
+                onChange={() =>
+                  setForm(f => ({
+                    ...f,
+                    isOnUpdateSystem: false,
+                    dbsCertificateFile: null
+                  }))
+                }
+                disabled={form.hasDBSCheck !== true}
+                className="accent-green-600"
+              />
               No
             </label>
           </div>
           {form.dbsCertificateUrl && (
             <div className="mb-2">
-              <a href={form.dbsCertificateUrl} target="_blank" rel="noopener noreferrer" className="text-blue-700 hover:underline">
+              <a
+                href={form.dbsCertificateUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-700 hover:underline"
+              >
                 View current DBS Certificate
               </a>
             </div>
@@ -182,10 +317,18 @@ const FreelancerPublicForm = () => {
                 <label className="inline-flex items-center px-4 py-2 bg-green-100 text-[#2EAB2C] font-semibold rounded-lg shadow cursor-pointer hover:bg-green-200 transition border border-green-300">
                   <span className="mr-2">📎</span>
                   {form.dbsCertificateFile ? 'Change file' : 'Choose file'}
-                  <input type="file" name="dbsCertificateFile" accept=".pdf,.jpg,.jpeg,.png" onChange={handleChange} className="hidden accent-green-600" />
+                  <input
+                    type="file"
+                    name="dbsCertificateFile"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleChange}
+                    className="hidden accent-green-600"
+                  />
                 </label>
                 {form.dbsCertificateFile && (
-                  <span className="text-sm text-gray-700 truncate max-w-xs">{form.dbsCertificateFile.name}</span>
+                  <span className="text-sm text-gray-700 truncate max-w-xs">
+                    {form.dbsCertificateFile.name}
+                  </span>
                 )}
               </div>
             </div>
@@ -214,10 +357,19 @@ const FreelancerPublicForm = () => {
               {roleOptions.map(opt => (
                 <label key={opt} className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
                   <input type="radio" name="role" value={opt} checked={form.role === opt} onChange={handleChange} className="accent-green-600" />
-                  {opt}
-      </label>
+                  {opt === 'Other' ? 'Other: Please specify' : opt}
+                </label>
               ))}
             </div>
+            {form.role === 'Other' && (
+              <input
+                name="roleOtherSpecify"
+                placeholder="Please specify your role"
+                value={form.roleOtherSpecify}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded mb-2 mt-2"
+              />
+            )}
           </div>
           {/* Miles Willing to Travel for Training */}
           <label className="block mb-1">Miles Willing to Travel for Training <span className="text-red-600 font-bold">*</span></label>
@@ -230,59 +382,219 @@ const FreelancerPublicForm = () => {
             <option value="nationwide">nationwide</option>
         </select>
         </div>
-        {/* Section 4: Work Experience & Skills */}
+        {/* Section 4: Work Experience & Skills (role-based) */}
         <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
-          <h3 className="text-xl font-bold mb-4 text-[#2EAB2C] flex items-center gap-2"><span className="inline-block w-2 h-2 bg-[#2EAB2C] rounded-full"></span>Work Experience & Skills</h3>
-          {/* Form F Assessments Experience */}
-          <div className="mb-2">
-            <span className="block mb-2 font-bold text-base mt-4">Do you have experience in Form F Assessments? <span className="text-red-600 font-bold">*</span></span>
-            <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input type="radio" name="hasFormFAssessmentExperience" value="true" checked={form.hasFormFAssessmentExperience === true} onChange={() => setForm(f => ({ ...f, hasFormFAssessmentExperience: true }))} required className="accent-green-600" />
-              Yes
-            </label>
-            <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input type="radio" name="hasFormFAssessmentExperience" value="false" checked={form.hasFormFAssessmentExperience === false} onChange={() => setForm(f => ({ ...f, hasFormFAssessmentExperience: false, formFAssessmentExperienceYears: '' }))} required className="accent-green-600" />
-              No
-      </label>
-          </div>
-          {form.hasFormFAssessmentExperience === true && (
+          <h3 className="text-xl font-bold mb-4 text-[#2EAB2C] flex items-center gap-2">
+            <span className="inline-block w-2 h-2 bg-[#2EAB2C] rounded-full"></span>
+            Work Experience & Skills
+          </h3>
+
+          {/* Social worker specific experience – only for Social worker & Case worker/Assessor */}
+          {STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole) && (
+            <>
+              <div className="mb-2">
+                <span className="block mb-2 font-bold text-base mt-4">
+                  Do you have experience in Form F Assessments? <span className="text-red-600 font-bold">*</span>
+                </span>
+                <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                  <input
+                    type="radio"
+                    name="hasFormFAssessmentExperience"
+                    value="true"
+                    checked={form.hasFormFAssessmentExperience === true}
+                    onChange={() => setForm(f => ({ ...f, hasFormFAssessmentExperience: true }))}
+                    required
+                    className="accent-green-600"
+                  />
+                  Yes
+                </label>
+                <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                  <input
+                    type="radio"
+                    name="hasFormFAssessmentExperience"
+                    value="false"
+                    checked={form.hasFormFAssessmentExperience === false}
+                    onChange={() =>
+                      setForm(f => ({
+                        ...f,
+                        hasFormFAssessmentExperience: false,
+                        formFAssessmentExperienceYears: ''
+                      }))
+                    }
+                    required
+                    className="accent-green-600"
+                  />
+                  No
+                </label>
+              </div>
+              {form.hasFormFAssessmentExperience === true && (
+                <div className="mb-2">
+                  <label className="block mb-1">
+                    If yes, how many years of experience? <span className="text-red-600 font-bold">*</span>
+                  </label>
+                  <select
+                    name="formFAssessmentExperienceYears"
+                    value={form.formFAssessmentExperienceYears}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border rounded mb-2"
+                    required
+                  >
+                    <option value="" disabled>
+                      Select...
+                    </option>
+                    <option value="0-1 years">0-1 years</option>
+                    <option value="2-5 years">2-5 years</option>
+                    <option value="6-10 years">6-10 years</option>
+                  </select>
+                </div>
+              )}
+              <div className="mb-2">
+                <span className="block mb-2 font-bold text-base mt-4">Other Social Work Assessment Experience</span>
+                <div className="flex flex-col gap-1">
+                  {assessmentOptions.map(opt => (
+                    <label
+                      key={opt}
+                      className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={form.otherSocialWorkAssessmentExperience.includes(opt)}
+                        onChange={() => handleArrayCheckboxChange('otherSocialWorkAssessmentExperience', opt)}
+                        className="accent-green-600"
+                      />
+                      {opt}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Mentor – experience only */}
+          {form.staffRole === 'mentor' && (
+            <>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold text-base mt-4">
+                  Tell us about your mentoring experience
+                </label>
+                <textarea
+                  name="mentorExperience"
+                  placeholder="Describe the type of mentoring you have done, who you have supported, and any relevant outcomes."
+                  value={form.mentorExperience || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded mb-2"
+                  rows={4}
+                />
+              </div>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold text-base mt-2">
+                  Areas you can mentor in
+                </label>
+                <textarea
+                  name="mentorAreas"
+                  placeholder="e.g. new foster carers, young people in care, parenting support, etc."
+                  value={form.mentorAreas || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded mb-2"
+                  rows={3}
+                />
+              </div>
+            </>
+          )}
+
+          {/* Administrator – experience only */}
+          {form.staffRole === 'administrator' && (
+            <>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold text-base mt-4">
+                  Admin / case management experience
+                </label>
+                <textarea
+                  name="caseAdminExperience"
+                  placeholder="Describe your experience with case administration, record keeping, minute taking, report preparation, etc."
+                  value={form.caseAdminExperience || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded mb-2"
+                  rows={4}
+                />
+              </div>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold text-base mt-2">
+                  Systems you have used
+                </label>
+                <input
+                  name="caseAdminSystems"
+                  placeholder="e.g. case management systems, CRMs, MS Office, Google Suite"
+                  value={form.caseAdminSystems || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded mb-2"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Other – experience only */}
+          {form.staffRole === 'other' && (
             <div className="mb-2">
-              <label className="block mb-1">If yes, how many years of experience? <span className="text-red-600 font-bold">*</span></label>
-              <select name="formFAssessmentExperienceYears" value={form.formFAssessmentExperienceYears} onChange={handleChange} className="w-full px-4 py-2 border rounded mb-2" required>
-                <option value="" disabled>Select...</option>
-                <option value="0-1 years">0-1 years</option>
-                <option value="2-5 years">2-5 years</option>
-                <option value="6-10 years">6-10 years</option>
-        </select>
+              <label className="block mb-1 font-bold text-base mt-4">
+                Tell us about your experience
+              </label>
+              <textarea
+                name="otherExperience"
+                placeholder="Describe your relevant experience for this role."
+                value={form.otherExperience || ''}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded mb-2"
+                rows={4}
+              />
             </div>
           )}
-          {/* Other Social Work Assessment Experience */}
-          <div className="mb-2">
-            <span className="block mb-2 font-bold text-base mt-4">Other Social Work Assessment Experience</span>
-            <div className="flex flex-col gap-1">
-              {assessmentOptions.map(opt => (
-                <label key={opt} className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-                  <input type="checkbox" checked={form.otherSocialWorkAssessmentExperience.includes(opt)} onChange={() => handleArrayCheckboxChange('otherSocialWorkAssessmentExperience', opt)} className="accent-green-600" />
-                  {opt}
-                </label>
-              ))}
-            </div>
-          </div>
         </div>
+
         {/* Section 5: Consideration for Work & Training */}
         <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
-          <h3 className="text-xl font-bold mb-4 text-[#2EAB2C] flex items-center gap-2"><span className="inline-block w-2 h-2 bg-[#2EAB2C] rounded-full"></span>Consideration for Work & Training</h3>
-          <div className="flex flex-wrap gap-2 mb-2">
-            <span className="block mb-2 font-bold text-base mt-4">What do you want to be considered for?</span>
-            <div className="flex flex-col gap-1">
-              {considerationOptions.map(opt => (
-                <label key={opt} className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-                  <input type="checkbox" checked={form.considerationFor.includes(opt)} onChange={() => handleArrayCheckboxChange('considerationFor', opt)} className="accent-green-600" />
-                  {opt}
-      </label>
-              ))}
+          <h3 className="text-xl font-bold mb-4 text-[#2EAB2C] flex items-center gap-2">
+            <span className="inline-block w-2 h-2 bg-[#2EAB2C] rounded-full"></span>
+            Consideration for Work & Training
+          </h3>
+          {/* Multi-select for Social worker & Case worker/Assessor; experience/work preference for others */}
+          {STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole) ? (
+            <div className="flex flex-wrap gap-2 mb-2">
+              <span className="block mb-2 font-bold text-base mt-4">
+                What do you want to be considered for?
+              </span>
+              <div className="flex flex-col gap-1">
+                {considerationOptions.map(opt => (
+                  <label
+                    key={opt}
+                    className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={form.considerationFor.includes(opt)}
+                      onChange={() => handleArrayCheckboxChange('considerationFor', opt)}
+                      className="accent-green-600"
+                    />
+                    {opt}
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mb-2">
+              <label className="block mb-1 font-bold text-base mt-2">
+                Briefly describe the type of work you would like to be considered for
+              </label>
+              <textarea
+                name="preferredWork"
+                placeholder="e.g. 1:1 mentoring, group training, admin support on cases, etc."
+                value={form.preferredWork || ''}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded mb-2"
+                rows={3}
+              />
+            </div>
+          )}
         </div>
         {/* Section 6: Additional Information */}
         <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
@@ -298,13 +610,21 @@ const FreelancerPublicForm = () => {
             </div>
           )}
           <div className="mb-2">
-            <label className="block mb-1">Upload new CV (optional)</label>
+            <label className="block mb-1">Attach your CV <span className="text-red-600 font-bold">*</span></label>
+            <p className="text-sm text-gray-600 mb-1">All applicants must attach a CV (PDF or Word).</p>
             <div className="flex items-center gap-3">
               <label className="inline-flex items-center px-4 py-2 bg-green-100 text-[#2EAB2C] font-semibold rounded-lg shadow cursor-pointer hover:bg-green-200 transition border border-green-300">
                 <span className="mr-2">📎</span>
                 {form.cvFile ? 'Change file' : 'Choose file'}
-                <input type="file" name="cvFile" accept=".pdf,.doc,.docx" onChange={handleChange} className="hidden accent-green-600" />
-      </label>
+                <input
+                  type="file"
+                  name="cvFile"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleChange}
+                  className="hidden accent-green-600"
+                  required={!form.cvUrl}
+                />
+              </label>
               {form.cvFile && (
                 <span className="text-sm text-gray-700 truncate max-w-xs">{form.cvFile.name}</span>
               )}

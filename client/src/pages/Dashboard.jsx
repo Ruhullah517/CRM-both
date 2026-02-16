@@ -22,6 +22,8 @@ import RemindersWidget from '../components/RemindersWidget';
 import ComplianceAlertsWidget from '../components/ComplianceAlertsWidget';
 import { listInvoices } from '../services/invoices';
 import api from '../services/api';
+import { AcademicCapIcon } from '@heroicons/react/24/outline';
+import { getMentorReport } from '../services/reports';
 
 export default function Dashboard() {
   const { userInfo } = useAuth();
@@ -36,7 +38,8 @@ export default function Dashboard() {
     totalCases: 0,
     totalContracts: 0,
     totalFreelancers: 0,
-    totalEnquiries: 0
+    totalEnquiries: 0,
+    totalMentors: 0
   });
 
   useEffect(() => {
@@ -65,14 +68,16 @@ export default function Dashboard() {
           freelancersData,
           enquiriesData,
           invoicesData,
-          trainingData
+          trainingData,
+          mentorData
         ] = await Promise.all([
           getCases().catch(() => []),
           getContracts().catch(() => []),
           getFreelancers().catch(() => []),
           getEnquiries().catch(() => []),
           listInvoices().catch(() => []),
-          api.get('/training/events').then(r => r.data).catch(() => [])
+          api.get('/training/events').then(r => r.data).catch(() => []),
+          getMentorReport().catch(() => null)
         ]);
 
         // Quick stats (just counts)
@@ -80,7 +85,8 @@ export default function Dashboard() {
           totalCases: casesData.length,
           totalContracts: contractsData.length,
           totalFreelancers: freelancersData.length,
-          totalEnquiries: enquiriesData.length
+          totalEnquiries: enquiriesData.length,
+          totalMentors: mentorData?.stats?.totalMentors || 0
         });
 
         // Action Items: Overdue Invoices
@@ -165,7 +171,7 @@ export default function Dashboard() {
       </div>
       
       {/* Quick Stats Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
@@ -200,6 +206,15 @@ export default function Dashboard() {
               <p className="text-3xl font-bold mt-1">{quickStats.totalEnquiries}</p>
             </div>
             <InboxIcon className="w-12 h-12 text-yellow-200" />
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-indigo-100 text-sm font-medium">Total Mentors</p>
+              <p className="text-3xl font-bold mt-1">{quickStats.totalMentors}</p>
+            </div>
+            <AcademicCapIcon className="w-12 h-12 text-indigo-200" />
           </div>
         </div>
       </div>

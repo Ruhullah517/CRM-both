@@ -9,6 +9,8 @@ const FreelancerSchema = new mongoose.Schema({
   isOnWhatsApp: Boolean,
 
   // Section 2: Professional Information
+  staffRole: String,              // socialWorker | mentor | administrator | caseWorkerAssessor | other
+  roleOtherSpecify: String,       // when staffRole is 'other'
   hasSocialWorkEnglandRegistration: Boolean,
   socialWorkEnglandRegistrationNumber: String,
   hasDBSCheck: Boolean,
@@ -26,6 +28,12 @@ const FreelancerSchema = new mongoose.Schema({
   hasFormFAssessmentExperience: Boolean,
   formFAssessmentExperienceYears: String,
   otherSocialWorkAssessmentExperience: [String],
+  mentorExperience: String,
+  mentorAreas: String,
+  caseAdminExperience: String,
+  caseAdminSystems: String,
+  otherExperience: String,
+  preferredWork: String,
 
   // Section 5: Consideration for Work & Training
   considerationFor: [String], // e.g., ["Initial Assessment", "Form F", "Training"]

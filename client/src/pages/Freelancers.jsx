@@ -34,6 +34,8 @@ const roles = ['Trainer', 'Mentor'];
 const statuses = ['Active', 'Inactive'];
 const availabilities = ['Available', 'Unavailable'];
 
+const STAFF_ROLE_SOCIAL_WORK = ['socialWorker', 'caseWorkerAssessor'];
+
 const statusColors = {
   Active: 'bg-green-100 text-[#2EAB2C]',
   Inactive: 'bg-gray-200 text-gray-800',
@@ -352,7 +354,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
                 : 'text-gray-600 hover:text-[#2EAB2C]'
             }`}
           >
-            {tab.replace('-', ' ')}
+            {tab === 'hr' ? 'Rates and contract info' : tab.replace(/-/g, ' ')}
           </button>
         ))}
       </div>
@@ -389,7 +391,7 @@ const FreelancerDetail = ({ freelancer, onBack, onEdit, onDelete, backendBaseUrl
         </div>
       )}
 
-      {/* HR Tab */}
+      {/* Rates and contract info Tab */}
       {activeTab === 'hr' && (
         <div className="space-y-6">
           {/* CRM Login Access Section */}
@@ -1186,6 +1188,8 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
     isOnWhatsApp: freelancer?.isOnWhatsApp || false,
 
     // Section 2: Professional Information
+    staffRole: freelancer?.staffRole || 'socialWorker',
+    roleOtherSpecify: freelancer?.roleOtherSpecify || '',
     hasSocialWorkEnglandRegistration: freelancer?.hasSocialWorkEnglandRegistration || false,
     socialWorkEnglandRegistrationNumber: freelancer?.socialWorkEnglandRegistrationNumber || '',
     hasDBSCheck: freelancer?.hasDBSCheck || false,
@@ -1196,7 +1200,7 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
     // Section 3: Location & Availability
     currentLocation: freelancer?.currentLocation || '',
     geographicalLocation: freelancer?.geographicalLocation || '',
-    role: freelancer?.role || '',
+    role: ['Social worker', 'Mentor', 'Administrator', 'Case worker/Assessor', 'Other'].includes(freelancer?.role) ? freelancer.role : (freelancer?.role || ''),
     milesWillingToTravel: freelancer?.milesWillingToTravel || '',
 
     // Section 4: Work Experience & Skills
@@ -1252,6 +1256,13 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
       return [];
     })(),
 
+    mentorExperience: freelancer?.mentorExperience || '',
+    mentorAreas: freelancer?.mentorAreas || '',
+    caseAdminExperience: freelancer?.caseAdminExperience || '',
+    caseAdminSystems: freelancer?.caseAdminSystems || '',
+    otherExperience: freelancer?.otherExperience || '',
+    preferredWork: freelancer?.preferredWork || '',
+
     // Section 6: Additional Information
     qualificationsAndTraining: freelancer?.qualificationsAndTraining || '',
     additionalInfo: freelancer?.additionalInfo || '',
@@ -1271,7 +1282,7 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
     'North East', 'North West', 'East Midlands', 'West Midlands', 'South East', 'South West', 'London', 'Other', 'Wales', 'Scotland'
   ];
   const roleOptions = [
-    'Foster Carer', 'Kinship Carer', 'SGO', 'Interested in Fostering', 'Social Worker', 'Other'
+    'Social worker', 'Mentor', 'Administrator', 'Case worker/Assessor', 'Other'
   ];
   const assessmentOptions = [
     'Fostering Panel Work', 'Adoption Assessments', 'Kinship Care Assessments', 'Special Guardianship Order (SGO) Assessments', 'Court Report Writing', 'Child Protection & Safeguarding', 'Standard of Care investigation'
@@ -1479,47 +1490,75 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
         {/* Section 2: Professional Information */}
         <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
           <h3 className="text-xl font-bold mb-4 text-[#2EAB2C] flex items-center gap-2"><span className="inline-block w-2 h-2 bg-[#2EAB2C] rounded-full"></span>Professional Information</h3>
-          {/* Social Work England Registration */}
-          <div className="mb-2">
-            <span className="block mb-2 font-bold text-base mt-4">Do you have a Social Work England Registration? <span className="text-red-600 font-bold">*</span></span>
-            <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input
-                type="radio"
-                name="hasSocialWorkEnglandRegistration"
-                value="false"
-                checked={form.hasSocialWorkEnglandRegistration === false}
-                onChange={() => setForm(f => ({ ...f, hasSocialWorkEnglandRegistration: false, socialWorkEnglandRegistrationNumber: '' }))}
-                required
-                className="accent-green-600"
-              />
-              No
-            </label>
-            <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input
-                type="radio"
-                name="hasSocialWorkEnglandRegistration"
-                value="true"
-                checked={form.hasSocialWorkEnglandRegistration === true}
-                onChange={() => setForm(f => ({ ...f, hasSocialWorkEnglandRegistration: true }))}
-                required
-                className="accent-green-600"
-              />
-              Yes
-            </label>
-          </div>
-          {form.hasSocialWorkEnglandRegistration === true && (
-            <input
-              name="socialWorkEnglandRegistrationNumber"
-              placeholder="Social Work England Registration Number"
-              value={form.socialWorkEnglandRegistrationNumber}
+          {/* Staff Role – Social work questions only for Social worker & Case worker/Assessor */}
+          <div className="mb-4">
+            <label className="block mb-2 font-bold text-base">What type of role are you applying for?</label>
+            <select
+              name="staffRole"
+              value={form.staffRole}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded mb-2"
-              required
-            />
+            >
+              <option value="socialWorker">Social worker</option>
+              <option value="mentor">Mentor</option>
+              <option value="administrator">Administrator</option>
+              <option value="caseWorkerAssessor">Case worker/Assessor</option>
+              <option value="other">Other: Please specify</option>
+            </select>
+            {form.staffRole === 'other' && (
+              <input
+                name="roleOtherSpecify"
+                placeholder="Please specify your role"
+                value={form.roleOtherSpecify}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded mb-2 mt-1"
+              />
+            )}
+          </div>
+          {STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole) && (
+            <>
+              <div className="mb-2">
+                <span className="block mb-2 font-bold text-base mt-4">Do you have a Social Work England Registration? <span className="text-red-600 font-bold">*</span></span>
+                <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                  <input
+                    type="radio"
+                    name="hasSocialWorkEnglandRegistration"
+                    value="false"
+                    checked={form.hasSocialWorkEnglandRegistration === false}
+                    onChange={() => setForm(f => ({ ...f, hasSocialWorkEnglandRegistration: false, socialWorkEnglandRegistrationNumber: '' }))}
+                    required
+                    className="accent-green-600"
+                  />
+                  No
+                </label>
+                <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                  <input
+                    type="radio"
+                    name="hasSocialWorkEnglandRegistration"
+                    value="true"
+                    checked={form.hasSocialWorkEnglandRegistration === true}
+                    onChange={() => setForm(f => ({ ...f, hasSocialWorkEnglandRegistration: true }))}
+                    required
+                    className="accent-green-600"
+                  />
+                  Yes
+                </label>
+              </div>
+              {form.hasSocialWorkEnglandRegistration === true && (
+                <input
+                  name="socialWorkEnglandRegistrationNumber"
+                  placeholder="Social Work England Registration Number"
+                  value={form.socialWorkEnglandRegistrationNumber}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded mb-2"
+                  required
+                />
+              )}
+            </>
           )}
-          {/* DBS Check */}
+          {/* DBS Check – required only for Social worker & Case worker/Assessor */}
           <div className="mb-2">
-            <span className="block mb-2 font-bold text-base mt-4">Do you have a DBS Check? <span className="text-red-600 font-bold">*</span></span>
+            <span className="block mb-2 font-bold text-base mt-4">Do you have a DBS Check? {STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole) && <span className="text-red-600 font-bold">*</span>}</span>
             <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
               <input
                 type="radio"
@@ -1527,7 +1566,7 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
                 value="true"
                 checked={form.hasDBSCheck === true}
                 onChange={() => setForm(f => ({ ...f, hasDBSCheck: true }))}
-                required
+                required={STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole)}
                 className="accent-green-600"
               />
               Yes
@@ -1539,7 +1578,7 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
                 value="false"
                 checked={form.hasDBSCheck === false}
                 onChange={() => setForm(f => ({ ...f, hasDBSCheck: false, isOnUpdateSystem: false, dbsCertificateFile: null }))}
-                required
+                required={STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole)}
                 className="accent-green-600"
               />
               No
@@ -1639,10 +1678,19 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
                     onChange={handleChange}
                     className="accent-green-600"
                   />
-                  {opt}
+                  {opt === 'Other' ? 'Other: Please specify' : opt}
                 </label>
               ))}
             </div>
+            {form.role === 'Other' && (
+              <input
+                name="roleOtherSpecify"
+                placeholder="Please specify your role"
+                value={form.roleOtherSpecify}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded mb-2 mt-2"
+              />
+            )}
           </div>
           {/* Miles Willing to Travel for Training */}
           <label className="block mb-1">Miles Willing to Travel for Training <span className="text-red-600 font-bold">*</span></label>
@@ -1664,89 +1712,168 @@ const FreelancerForm = ({ freelancer, onBack, onSave, loading }) => {
         {/* Section 4: Work Experience & Skills */}
         <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
           <h3 className="text-xl font-bold mb-4 text-[#2EAB2C] flex items-center gap-2"><span className="inline-block w-2 h-2 bg-[#2EAB2C] rounded-full"></span>Work Experience & Skills</h3>
-          {/* Form F Assessments Experience */}
-          <div className="mb-2">
-            <span className="block mb-2 font-bold text-base mt-4">Do you have experience in Form F Assessments? <span className="text-red-600 font-bold">*</span></span>
-            <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input
-                type="radio"
-                name="hasFormFAssessmentExperience"
-                value="true"
-                checked={form.hasFormFAssessmentExperience === true}
-                onChange={() => setForm(f => ({ ...f, hasFormFAssessmentExperience: true }))}
-                required
-                className="accent-green-600"
-              />
-              Yes
-            </label>
-            <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-              <input
-                type="radio"
-                name="hasFormFAssessmentExperience"
-                value="false"
-                checked={form.hasFormFAssessmentExperience === false}
-                onChange={() => setForm(f => ({ ...f, hasFormFAssessmentExperience: false, formFAssessmentExperienceYears: '' }))}
-                required
-                className="accent-green-600"
-              />
-              No
-            </label>
-          </div>
-          {form.hasFormFAssessmentExperience === true && (
-            <div className="mb-2">
-              <label className="block mb-1">If yes, how many years of experience? <span className="text-red-600 font-bold">*</span></label>
-              <select
-                name="formFAssessmentExperienceYears"
-                value={form.formFAssessmentExperienceYears}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border rounded mb-2"
-                required
-              >
-                <option value="" disabled>Select...</option>
-                <option value="0-1 years">0-1 years</option>
-                <option value="2-5 years">2-5 years</option>
-                <option value="6-10 years">6-10 years</option>
-              </select>
-            </div>
-          )}
-          {/* Other Social Work Assessment Experience */}
-          <div className="mb-2">
-            <span className="block mb-2 font-bold text-base mt-4">Other Social Work Assessment Experience</span>
-            <div className="flex flex-col gap-1">
-              {assessmentOptions.map(opt => (
-                <label key={opt} className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+          {STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole) && (
+            <>
+              <div className="mb-2">
+                <span className="block mb-2 font-bold text-base mt-4">Do you have experience in Form F Assessments? <span className="text-red-600 font-bold">*</span></span>
+                <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
                   <input
-                    type="checkbox"
-                    checked={form.otherSocialWorkAssessmentExperience.includes(opt)}
-                    onChange={() => handleArrayCheckboxChange('otherSocialWorkAssessmentExperience', opt)}
+                    type="radio"
+                    name="hasFormFAssessmentExperience"
+                    value="true"
+                    checked={form.hasFormFAssessmentExperience === true}
+                    onChange={() => setForm(f => ({ ...f, hasFormFAssessmentExperience: true }))}
+                    required
                     className="accent-green-600"
                   />
-                  {opt}
+                  Yes
                 </label>
-              ))}
+                <label className="inline-flex items-center ml-6 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                  <input
+                    type="radio"
+                    name="hasFormFAssessmentExperience"
+                    value="false"
+                    checked={form.hasFormFAssessmentExperience === false}
+                    onChange={() => setForm(f => ({ ...f, hasFormFAssessmentExperience: false, formFAssessmentExperienceYears: '' }))}
+                    required
+                    className="accent-green-600"
+                  />
+                  No
+                </label>
+              </div>
+              {form.hasFormFAssessmentExperience === true && (
+                <div className="mb-2">
+                  <label className="block mb-1">If yes, how many years of experience? <span className="text-red-600 font-bold">*</span></label>
+                  <select
+                    name="formFAssessmentExperienceYears"
+                    value={form.formFAssessmentExperienceYears}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border rounded mb-2"
+                    required
+                  >
+                    <option value="" disabled>Select...</option>
+                    <option value="0-1 years">0-1 years</option>
+                    <option value="2-5 years">2-5 years</option>
+                    <option value="6-10 years">6-10 years</option>
+                  </select>
+                </div>
+              )}
+              <div className="mb-2">
+                <span className="block mb-2 font-bold text-base mt-4">Other Social Work Assessment Experience</span>
+                <div className="flex flex-col gap-1">
+                  {assessmentOptions.map(opt => (
+                    <label key={opt} className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                      <input
+                        type="checkbox"
+                        checked={form.otherSocialWorkAssessmentExperience.includes(opt)}
+                        onChange={() => handleArrayCheckboxChange('otherSocialWorkAssessmentExperience', opt)}
+                        className="accent-green-600"
+                      />
+                      {opt}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+          {form.staffRole === 'mentor' && (
+            <>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold text-base mt-4">Tell us about your mentoring experience</label>
+                <textarea
+                  name="mentorExperience"
+                  placeholder="Describe the type of mentoring you have done, who you have supported, and any relevant outcomes."
+                  value={form.mentorExperience || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded mb-2"
+                  rows={4}
+                />
+              </div>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold text-base mt-2">Areas you can mentor in</label>
+                <textarea
+                  name="mentorAreas"
+                  placeholder="e.g. new foster carers, young people in care, parenting support, etc."
+                  value={form.mentorAreas || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded mb-2"
+                  rows={3}
+                />
+              </div>
+            </>
+          )}
+          {form.staffRole === 'administrator' && (
+            <>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold text-base mt-4">Admin / case management experience</label>
+                <textarea
+                  name="caseAdminExperience"
+                  placeholder="Describe your experience with case administration, record keeping, minute taking, report preparation, etc."
+                  value={form.caseAdminExperience || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded mb-2"
+                  rows={4}
+                />
+              </div>
+              <div className="mb-2">
+                <label className="block mb-1 font-bold text-base mt-2">Systems you have used</label>
+                <input
+                  name="caseAdminSystems"
+                  placeholder="e.g. case management systems, CRMs, MS Office, Google Suite"
+                  value={form.caseAdminSystems || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border rounded mb-2"
+                />
+              </div>
+            </>
+          )}
+          {form.staffRole === 'other' && (
+            <div className="mb-2">
+              <label className="block mb-1 font-bold text-base mt-4">Tell us about your experience</label>
+              <textarea
+                name="otherExperience"
+                placeholder="Describe your relevant experience for this role."
+                value={form.otherExperience || ''}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded mb-2"
+                rows={4}
+              />
             </div>
-          </div>
+          )}
         </div>
         {/* Section 5: Consideration for Work & Training */}
         <div className="bg-white rounded-xl shadow p-6 mb-2 border-t-4 border-[#2EAB2C]">
           <h3 className="text-xl font-bold mb-4 text-[#2EAB2C] flex items-center gap-2"><span className="inline-block w-2 h-2 bg-[#2EAB2C] rounded-full"></span>Consideration for Work & Training</h3>
-          <div className="flex flex-wrap gap-2 mb-2">
-            <span className="block mb-2 font-bold text-base mt-4">What do you want to be considered for?
-            </span>
-            <div className="flex flex-col gap-1">
-              {considerationOptions.map(opt => (
-                <label key={opt} className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
-                  <input
-                    type="checkbox"
-                    checked={form.considerationFor.includes(opt)}
-                    onChange={() => handleArrayCheckboxChange('considerationFor', opt)}
-                    className="accent-green-600"
-                  />
-                  {opt}
-                </label>
-              ))}
+          {STAFF_ROLE_SOCIAL_WORK.includes(form.staffRole) ? (
+            <div className="flex flex-wrap gap-2 mb-2">
+              <span className="block mb-2 font-bold text-base mt-4">What do you want to be considered for?</span>
+              <div className="flex flex-col gap-1">
+                {considerationOptions.map(opt => (
+                  <label key={opt} className="flex items-center gap-2 font-normal hover:bg-green-50 rounded px-2 py-1 cursor-pointer transition">
+                    <input
+                      type="checkbox"
+                      checked={form.considerationFor.includes(opt)}
+                      onChange={() => handleArrayCheckboxChange('considerationFor', opt)}
+                      className="accent-green-600"
+                    />
+                    {opt}
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="mb-2">
+              <label className="block mb-1 font-bold text-base mt-2">Briefly describe the type of work you would like to be considered for</label>
+              <textarea
+                name="preferredWork"
+                placeholder="e.g. 1:1 mentoring, group training, admin support on cases, etc."
+                value={form.preferredWork || ''}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border rounded mb-2"
+                rows={3}
+              />
+            </div>
+          )}
 
           {/* Roles Assignment (for assignment in system) */}
           <div className="flex flex-wrap gap-2 mb-2 mt-6 pt-6 border-t border-gray-200">

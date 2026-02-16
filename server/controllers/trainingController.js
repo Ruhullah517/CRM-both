@@ -902,27 +902,6 @@ const sendCertificateEmail = async (certificate) => {
   try {
     console.log('Starting to send certificate email for certificate:', certificate.certificateNumber);
 
-    // Create transporter (you'll need to configure this with your email service)
-    // const transporter = nodemailer.createTransport({
-    //   service: 'gmail',
-    //   auth: {
-    //     user: 'ruhullah517@gmail.com',
-    //     pass: 'vrcf pvht mrxd rnmq', // Use your App Password here (no spaces)
-    //   }
-    // });
-
-    // const transporter = nodemailer.createTransport({
-    //   host: "smtp.hostinger.com",  // Hostinger SMTP server
-    //   port: 587,                   // TLS port
-    //   secure: false,               // Use TLS
-    //   auth: {
-    //     user: "hello@blackfostercarersalliance.co.uk", // Your Hostinger email
-    //     pass: process.env.HOSTINGER_EMAIL_PASSWORD || "IYght8061" // Use environment variable
-    //   },
-    //   tls: {
-    //     ciphers: "SSLv3"
-    //   }
-    // });
     
     // Check if certificate PDF exists, if not regenerate it
     let pdfPath = path.join(__dirname, '..', certificate.certificateUrl.replace('/uploads/', 'uploads/'));
@@ -1019,35 +998,62 @@ const generateCertificatePDF = async (certificate) => {
 
       // Load and add the certificate template as background image
       try {
-        // Try different possible locations for the certificate template
-        const templatePaths = [
+        const { getServerUrl } = require('../config/urls');
+        const serverUrl = getServerUrl();
+        
+        // Priority order: Production URL > Environment variable > Local files
+        const templateSources = [
+          // Priority 1: Production URL (always try this first)
+          `${serverUrl}/uploads/certificate-template.jpeg`,
+          // Priority 2: Environment variable override
+          process.env.CERTIFICATE_TEMPLATE_URL,
+          // Priority 3: Local file paths (fallbacks)
+          path.join(__dirname, '../uploads/certificate-template.jpeg'),
           path.join(__dirname, '../uploads/certificate-template.jpg'),
           path.join(__dirname, '../../client/public/certificate template.jpg'),
           path.join(__dirname, '../uploads/certificate-template.png'),
           path.join(__dirname, '../../client/public/certificate template.png'),
           path.join(__dirname, '../uploads/certificate.jpg'),
           path.join(__dirname, '../../client/public/certificate.jpg')
-        ];
+        ].filter(Boolean); // Remove any undefined/null values
 
         let templateFound = false;
-        for (const templatePath of templatePaths) {
-          if (fs.existsSync(templatePath)) {
-            console.log('Certificate template found at:', templatePath);
+        for (const templateSource of templateSources) {
+          try {
+            // Check if it's a URL or local file path
+            const isUrl = templateSource.startsWith('http://') || templateSource.startsWith('https://');
             
-            // Add the template image as background (full page - 1280x904)
-            doc.image(templatePath, 0, 0, { 
-              width: 1280, 
-              height: 904,
-              fit: [1280, 904]
-            });
-            
-            templateFound = true;
-            break;
+            if (isUrl) {
+              // Try to use URL directly (PDFKit supports URLs)
+              console.log('Attempting to load certificate template from URL:', templateSource);
+              doc.image(templateSource, 0, 0, { 
+                width: 1280, 
+                height: 904,
+                fit: [1280, 904]
+              });
+              console.log('Certificate template loaded successfully from URL');
+              templateFound = true;
+              break;
+            } else if (fs.existsSync(templateSource)) {
+              // Local file path
+              console.log('Certificate template found at:', templateSource);
+              doc.image(templateSource, 0, 0, { 
+                width: 1280, 
+                height: 904,
+                fit: [1280, 904]
+              });
+              templateFound = true;
+              break;
+            }
+          } catch (sourceError) {
+            // Continue to next source if this one fails
+            console.log(`Failed to load template from ${templateSource}:`, sourceError.message);
+            continue;
           }
         }
 
         if (!templateFound) {
-          console.log('Certificate template not found, using white background');
+          console.log('Certificate template not found in any location, using white background');
           // Fallback to white background if template not found
           doc.rect(0, 0, 1280, 904)
             .fill('#ffffff');

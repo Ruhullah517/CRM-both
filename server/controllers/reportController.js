@@ -9,20 +9,159 @@ const TrainingEvent = require('../models/TrainingEvent');
 const Mentor = require('../models/Mentor');
 const MentorActivity = require('../models/MentorActivity');
 const { Parser } = require('json2csv');
+const PDFDocument = require('pdfkit');
 
-// Open/Closed cases by date
+// Helper to get default 1-year date range
+const getDefaultDateRange = (start, end) => {
+  let startDate = start ? new Date(start) : null;
+  let endDate = end ? new Date(end) : null;
+
+  // If no explicit range provided, default to last 12 months
+  if (!startDate && !endDate) {
+    const now = new Date();
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(now.getFullYear() - 1);
+    startDate = oneYearAgo;
+    endDate = now;
+  }
+
+  return { startDate, endDate };
+};
+
+// Helper to send tabular data as a simple PDF (title + table)
+// Renders a basic grid with borders; uses smaller font sizes to fit content.
+const sendTableAsPdf = (res, title, rows, filename) => {
+  // Minimal side margins so the table gets more width; smaller top/bottom for more vertical space
+  const doc = new PDFDocument({
+    size: 'A4',
+    margins: { top: 30, bottom: 30, left: 20, right: 20 }
+  });
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+  doc.pipe(res);
+
+  const left = doc.page.margins.left;
+  const right = doc.page.width - doc.page.margins.right;
+  const pageWidth = right - left;
+  const lineWidth = 0.25;
+
+  // Smaller title and body text
+  doc.fontSize(12).text(title, { align: 'left' });
+  doc.moveDown(0.5);
+
+  if (!rows || rows.length === 0) {
+    doc.fontSize(9).text('No data available for this report.', { align: 'left' });
+    doc.end();
+    return;
+  }
+
+  const columns = Object.keys(rows[0]);
+  const colWidth = pageWidth / columns.length;
+  const cellPadding = 3;
+
+  let y = doc.y;
+
+  const ensureSpaceForRow = (rowHeight) => {
+    if (y + rowHeight > doc.page.height - doc.page.margins.bottom) {
+      doc.addPage();
+      y = doc.page.margins.top;
+    }
+  };
+
+  const drawRowBorder = (rowTop, rowHeight) => {
+    doc.lineWidth(lineWidth).strokeColor('#333');
+    // Top
+    doc.moveTo(left, rowTop).lineTo(right, rowTop).stroke();
+    // Bottom
+    doc.moveTo(left, rowTop + rowHeight).lineTo(right, rowTop + rowHeight).stroke();
+    // Vertical lines between columns
+    for (let i = 0; i <= columns.length; i++) {
+      const x = left + i * colWidth;
+      doc.moveTo(x, rowTop).lineTo(x, rowTop + rowHeight).stroke();
+    }
+  };
+
+  doc.fontSize(8);
+
+  // Header row
+  const headerLabels = columns.map(col => col.charAt(0).toUpperCase() + col.slice(1));
+  const headerHeight = Math.max(
+    14,
+    ...headerLabels.map(label => doc.heightOfString(label, { width: colWidth - cellPadding * 2 }))
+  ) + cellPadding * 2;
+
+  ensureSpaceForRow(headerHeight);
+  const headerTop = y;
+  drawRowBorder(headerTop, headerHeight);
+
+  columns.forEach((col, idx) => {
+    const label = headerLabels[idx];
+    const x = left + idx * colWidth + cellPadding;
+    doc.text(label, x, y + cellPadding, {
+      width: colWidth - cellPadding * 2,
+      align: 'left'
+    });
+  });
+  y += headerHeight;
+
+  // Data rows
+  rows.forEach(row => {
+    const normalized = {};
+    let rowHeight = 0;
+
+    columns.forEach(col => {
+      let value = row[col];
+      if (value === null || value === undefined) value = '';
+      if (typeof value === 'number') {
+        value = Number.isFinite(value) ? value.toString() : '';
+      } else if (value instanceof Date) {
+        value = value.toISOString();
+      } else if (typeof value === 'object') {
+        value = JSON.stringify(value);
+      }
+      const text = String(value);
+      normalized[col] = text;
+      const h = doc.heightOfString(text, { width: colWidth - cellPadding * 2 });
+      if (h > rowHeight) rowHeight = h;
+    });
+
+    rowHeight += cellPadding * 2;
+    ensureSpaceForRow(rowHeight);
+
+    const rowTop = y;
+    drawRowBorder(rowTop, rowHeight);
+
+    columns.forEach((col, idx) => {
+      const x = left + idx * colWidth + cellPadding;
+      doc.text(normalized[col], x, y + cellPadding, {
+        width: colWidth - cellPadding * 2,
+        align: 'left'
+      });
+    });
+
+    y += rowHeight;
+  });
+
+  doc.end();
+};
+
+// Open/Closed cases by date (defaults to last year)
 const casesStatusReport = async (req, res) => {
   try {
     const { start, end } = req.query;
+    const { startDate, endDate } = getDefaultDateRange(start, end);
+
     const matchOpened = {};
     const matchClosed = {};
-    if (start) {
-      matchOpened['keyDates.opened'] = { $gte: new Date(start) };
-      matchClosed['keyDates.closed'] = { $gte: new Date(start) };
+    if (startDate) {
+      matchOpened['keyDates.opened'] = { $gte: startDate };
+      matchClosed['keyDates.closed'] = { $gte: startDate };
     }
-    if (end) {
-      matchOpened['keyDates.opened'] = { ...(matchOpened['keyDates.opened'] || {}), $lte: new Date(end) };
-      matchClosed['keyDates.closed'] = { ...(matchClosed['keyDates.closed'] || {}), $lte: new Date(end) };
+    if (endDate) {
+      matchOpened['keyDates.opened'] = { ...(matchOpened['keyDates.opened'] || {}), $lte: endDate };
+      matchClosed['keyDates.closed'] = { ...(matchClosed['keyDates.closed'] || {}), $lte: endDate };
     }
     // Opened cases by date
     const opened = await Case.aggregate([
@@ -251,13 +390,15 @@ const timeLoggedReport = async (req, res) => {
   }
 };
 
-// Invoiceable hours summary
+// Invoiceable hours summary (defaults to last year)
 const invoiceableHoursReport = async (req, res) => {
   try {
     const { start, end } = req.query;
+    const { startDate, endDate } = getDefaultDateRange(start, end);
+
     const match = { invoiceableHours: { $ne: null, $ne: '00:00' } };
-    if (start) match['keyDates.opened'] = { $gte: new Date(start) };
-    if (end) match['keyDates.opened'] = { ...(match['keyDates.opened'] || {}), $lte: new Date(end) };
+    if (startDate) match['keyDates.opened'] = { $gte: startDate };
+    if (endDate) match['keyDates.opened'] = { ...(match['keyDates.opened'] || {}), $lte: endDate };
     // By case type and caseworker
     const summary = await Case.aggregate([
       { $match: match },
@@ -378,39 +519,623 @@ const exportReport = async (req, res) => {
   }
 };
 
+// ---- New analytics export helpers (CSV only) ----
+
+// Export freelancer work (month-aware, matches Freelancers tab)
+const exportFreelancerWorkReport = async (req, res) => {
+  try {
+    const { month } = req.query; // YYYY-MM
+    let monthStart = null;
+    let monthEnd = null;
+
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      const [year, mon] = month.split('-').map(Number);
+      monthStart = new Date(year, mon - 1, 1);
+      monthEnd = new Date(year, mon, 1);
+    }
+
+    const freelancers = await Freelancer.find({ status: 'approved' });
+
+    const result = buildFreelancerWorkReport(freelancers, monthStart, monthEnd)
+      .map(row => ({
+        ...row,
+        roles: (row.roles || []).join('; ')
+      }))
+      .filter(row => row.totalHours > 0 || row.totalEarnings > 0 || row.totalAssignments > 0);
+
+    // Define fields explicitly so json2csv works even when result is empty
+    // (exclude completedHours and completedEarnings as requested)
+    const fields = [
+      'freelancerId',
+      'name',
+      'email',
+      'hourlyRate',
+      'dailyRate',
+      'availability',
+      'totalAssignments',
+      'completedAssignments',
+      'inProgressAssignments',
+      'totalHours',
+      'totalEarnings',
+      'roles'
+    ];
+    const format = (req.query.format || 'csv').toLowerCase();
+
+    if (format === 'pdf') {
+      const headingBase = 'Freelancer Work & Earnings';
+      let heading = headingBase;
+      if (month && /^\d{4}-\d{2}$/.test(month)) {
+        const [year, mon] = month.split('-').map(Number);
+        const label = new Date(year, mon - 1, 1).toLocaleDateString('en-GB', {
+          year: 'numeric',
+          month: 'long'
+        });
+        heading = `${headingBase} - ${label}`;
+      }
+      const suffix = req.query.month ? `_${req.query.month}` : '';
+      const filename = `freelancer-work${suffix}.pdf`;
+      return sendTableAsPdf(res, heading, result || [], filename);
+    }
+
+    const parser = new Parser({ fields });
+    const csvBody = parser.parse(result || []);
+
+    // Human-readable month heading
+    let heading = 'Freelancer Work & Earnings';
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      const [year, mon] = month.split('-').map(Number);
+      const label = new Date(year, mon - 1, 1).toLocaleDateString('en-GB', {
+        year: 'numeric',
+        month: 'long'
+      });
+      heading = `${heading} - ${label}`;
+    }
+    const csv = `${heading}\n${csvBody}`;
+    res.header('Content-Type', 'text/csv');
+    const suffix = req.query.month ? `_${req.query.month}` : '';
+    res.attachment(`freelancer-work${suffix}.csv`);
+    return res.send(csv);
+  } catch (error) {
+    console.error('Error exporting freelancer work report:', error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Export recruitment pipeline – detailed report for all enquiries
+const exportRecruitmentPipelineReport = async (req, res) => {
+  try {
+    // Pull all enquiries in the recruitment pipeline with key linked info
+    const enquiries = await Enquiry.find()
+      .populate('assigned_to', 'name email')
+      .populate('assignedAssessor', 'fullName email')
+      .populate('assignedMentor', 'name email')
+      .populate('mentorAllocation.mentorId', 'name email');
+
+    const rows = (enquiries || []).map(enquiry => {
+      const assignedUser = enquiry.assigned_to || {};
+      const assessor = enquiry.assignedAssessor || {};
+      const mentor = enquiry.assignedMentor || enquiry.mentorAllocation?.mentorId || {};
+
+      const submissionDateStr = enquiry.submission_date
+        ? new Date(enquiry.submission_date).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          })
+        : '';
+
+      const initialAssessmentDateStr = enquiry.initialAssessment?.assessmentDate
+        ? new Date(enquiry.initialAssessment.assessmentDate).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          })
+        : '';
+
+      const fullAssessmentDateStr = enquiry.fullAssessment?.assessmentDate
+        ? new Date(enquiry.fullAssessment.assessmentDate).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          })
+        : '';
+
+      const mentorStartDateStr = enquiry.mentorAllocation?.startDate
+        ? new Date(enquiry.mentorAllocation.startDate).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          })
+        : '';
+
+      return {
+        enquiryId: enquiry._id,
+        fullName: enquiry.full_name,
+        email: enquiry.email_address,
+        telephone: enquiry.telephone || '',
+        location: enquiry.location || '',
+        postCode: enquiry.post_code || '',
+        submissionDate: submissionDateStr,
+        pipelineStage: enquiry.pipelineStage || '',
+        status: enquiry.status || '',
+        typeOfEnquiry: enquiry.type_of_enquiry || '',
+        source: enquiry.source || '',
+        assignedToName: assignedUser.name || '',
+        assignedToEmail: assignedUser.email || '',
+        assessorName: assessor.fullName || assessor.name || '',
+        assessorEmail: assessor.email || '',
+        mentorName: mentor.name || '',
+        mentorEmail: mentor.email || '',
+        initialAssessmentResult: enquiry.initialAssessment?.result || '',
+        initialAssessmentDate: initialAssessmentDateStr,
+        fullAssessmentResult: enquiry.fullAssessment?.result || '',
+        fullAssessmentDate: fullAssessmentDateStr,
+        mentorAllocationStatus: enquiry.mentorAllocation?.status || '',
+        mentorAllocationStartDate: mentorStartDateStr,
+        statusReason: enquiry.statusReason || ''
+      };
+    });
+
+    const fields = [
+      'enquiryId',
+      'fullName',
+      'email',
+      'telephone',
+      'location',
+      'postCode',
+      'submissionDate',
+      'pipelineStage',
+      'status',
+      'typeOfEnquiry',
+      'source',
+      'assignedToName',
+      'assignedToEmail',
+      'assessorName',
+      'assessorEmail',
+      'mentorName',
+      'mentorEmail',
+      'initialAssessmentResult',
+      'initialAssessmentDate',
+      'fullAssessmentResult',
+      'fullAssessmentDate',
+      'mentorAllocationStatus',
+      'mentorAllocationStartDate',
+      'statusReason'
+    ];
+    const format = (req.query.format || 'csv').toLowerCase();
+
+    if (format === 'pdf') {
+      const heading = 'Recruitment Pipeline – detailed enquiries report';
+      return sendTableAsPdf(res, heading, rows || [], 'recruitment-pipeline.pdf');
+    }
+
+    const parser = new Parser({ fields });
+    const csvBody = parser.parse(rows || []);
+
+    const heading = 'Recruitment Pipeline – detailed enquiries report';
+    const csv = `${heading}\n${csvBody}`;
+    res.header('Content-Type', 'text/csv');
+    res.attachment('recruitment-pipeline.csv');
+    return res.send(csv);
+  } catch (error) {
+    console.error('Error exporting recruitment pipeline report:', error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Export invoice & revenue analytics (matches Financial tab, last 12 months)
+const exportInvoiceRevenueReport = async (req, res) => {
+  try {
+    // Reuse same default 12-month window as invoiceRevenueReport
+    const { start, end } = req.query;
+    const { startDate, endDate } = getDefaultDateRange(start, end);
+
+    const dateMatch = {};
+    if (startDate || endDate) {
+      dateMatch.issuedDate = {};
+      if (startDate) dateMatch.issuedDate.$gte = startDate;
+      if (endDate) dateMatch.issuedDate.$lte = endDate;
+    }
+
+    const rows = [];
+    // Detailed invoice rows only (one per invoice in the same window)
+    const invoices = await Invoice.find(dateMatch).sort({ issuedDate: -1 });
+    invoices.forEach(inv => {
+      const issuedDateStr = inv.issuedDate
+        ? new Date(inv.issuedDate).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          })
+        : '';
+      const dueDateStr = inv.dueDate
+        ? new Date(inv.dueDate).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          })
+        : '';
+
+      rows.push({
+        section: 'invoice',
+        invoiceNumber: inv.invoiceNumber,
+        clientName: inv.client?.name || '',
+        status: inv.status,
+        issuedDate: issuedDateStr,
+        dueDate: dueDateStr,
+        total: inv.total,
+        currency: inv.currency || 'GBP'
+      });
+    });
+
+    // Explicit fields (invoice detail only) so json2csv works even when rows is empty
+    const fields = [
+      'section',
+      'invoiceNumber',
+      'clientName',
+      'status',
+      'issuedDate',
+      'dueDate',
+      'total',
+      'currency'
+    ];
+    const format = (req.query.format || 'csv').toLowerCase();
+
+    // Heading to reflect last 12 months window up to current month
+    const now = new Date();
+    const currentMonthLabel = now.toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'long'
+    });
+    const heading = `Financial overview - Last 12 months from ${currentMonthLabel}`;
+
+    if (format === 'pdf') {
+      return sendTableAsPdf(res, heading, rows || [], 'invoice-revenue.pdf');
+    }
+
+    const parser = new Parser({ fields });
+    const csvBody = parser.parse(rows || []);
+
+    const csv = `${heading}\n${csvBody}`;
+    res.header('Content-Type', 'text/csv');
+    res.attachment('invoice-revenue.csv');
+    return res.send(csv);
+  } catch (error) {
+    console.error('Error exporting invoice revenue report:', error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Export training events analytics
+const exportTrainingEventsAnalytics = async (req, res) => {
+  try {
+    const result = await trainingEventsReport({ query: req.query }, { json: d => d }) || {};
+    const stats = result.stats || {};
+    const upcomingEvents = result.upcomingEvents || [];
+
+    const rows = [];
+    // Stats
+    Object.entries(stats).forEach(([key, value]) => {
+      rows.push({ section: 'stats', metric: key, value });
+    });
+    // Upcoming events
+    upcomingEvents.forEach(ev => {
+      const startDateStr = ev.startDate
+        ? new Date(ev.startDate).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          })
+        : '';
+      const endDateStr = ev.endDate
+        ? new Date(ev.endDate).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          })
+        : '';
+
+      rows.push({
+        section: 'upcoming',
+        eventId: ev.eventId,
+        title: ev.title,
+        status: 'upcoming',
+        startDate: startDateStr,
+        endDate: endDateStr,
+        location: ev.location,
+        trainer: ev.trainer,
+        maxParticipants: ev.maxParticipants,
+        price: ev.price
+      });
+    });
+
+    // All events (including draft/completed/cancelled) for full visibility
+    const allEvents = await TrainingEvent.find().populate('trainer', 'name');
+    allEvents.forEach(event => {
+      const startDateStr = event.startDate
+        ? new Date(event.startDate).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          })
+        : '';
+      const endDateStr = event.endDate
+        ? new Date(event.endDate).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: '2-digit',
+            year: '2-digit'
+          })
+        : '';
+
+      rows.push({
+        section: 'event',
+        eventId: event._id,
+        title: event.title,
+        status: event.status,
+        startDate: startDateStr,
+        endDate: endDateStr,
+        location: event.location,
+        trainer: event.trainer?.name || 'Not assigned',
+        maxParticipants: event.maxParticipants,
+        price: event.price
+      });
+    });
+
+    // Explicit fields so json2csv works even when rows is empty
+    const fields = [
+      'section',
+      'metric',
+      'value',
+      'eventId',
+      'title',
+      'status',
+      'startDate',
+      'endDate',
+      'location',
+      'trainer',
+      'maxParticipants',
+      'price'
+    ];
+    const format = (req.query.format || 'csv').toLowerCase();
+
+    if (format === 'pdf') {
+      const heading = 'Training Events Analytics';
+      return sendTableAsPdf(res, heading, rows || [], 'training-events-analytics.pdf');
+    }
+
+    const parser = new Parser({ fields });
+    const csv = parser.parse(rows || []);
+    res.header('Content-Type', 'text/csv');
+    res.attachment('training-events-analytics.csv');
+    return res.send(csv);
+  } catch (error) {
+    console.error('Error exporting training events analytics:', error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Export mentor analytics
+const exportMentorReport = async (req, res) => {
+  try {
+    const mentors = await Mentor.find();
+
+    // Build the same per-mentor report structure as mentorReport
+    const report = await Promise.all(mentors.map(async (mentor) => {
+      const assignments = await MentorActivity.find({
+        mentorId: mentor._id,
+        activityType: 'assignment'
+      }).populate('enquiryId', 'full_name status');
+
+      const assignmentIds = assignments.map(a => a._id);
+      const logs = await MentorActivity.find({
+        mentorId: mentor._id,
+        parentAssignmentId: { $in: assignmentIds },
+        activityType: 'assignment_log'
+      });
+
+      const enquiries = await Enquiry.find({
+        'mentorAllocation.mentorId': mentor._id
+      });
+
+      const activeAssignments = assignments.filter(a => a.status === 'active' || !a.status);
+      const completedAssignments = assignments.filter(a => a.status === 'completed');
+
+      return {
+        mentorId: mentor._id,
+        name: mentor.name,
+        email: mentor.email,
+        phone: mentor.phone,
+        status: mentor.status || 'Active',
+        specialization: mentor.specialization || '',
+        totalAssignments: assignments.length,
+        activeAssignments: activeAssignments.length,
+        completedAssignments: completedAssignments.length,
+        totalActivityLogs: logs.length,
+        assignedEnquiries: enquiries.length,
+        skills: mentor.skills || []
+      };
+    }));
+
+    const sortedReport = report.sort((a, b) => b.totalAssignments - a.totalAssignments);
+
+    const rows = [];
+    // Mentor rows only
+    sortedReport.forEach(m => {
+      rows.push({
+        section: 'mentor',
+        mentorId: m.mentorId,
+        name: m.name,
+        email: m.email,
+        phone: m.phone,
+        status: m.status,
+        specialization: m.specialization,
+        totalAssignments: m.totalAssignments,
+        activeAssignments: m.activeAssignments,
+        completedAssignments: m.completedAssignments,
+        totalActivityLogs: m.totalActivityLogs,
+        assignedEnquiries: m.assignedEnquiries
+      });
+    });
+
+    // Explicit fields so json2csv works even when rows is empty
+    const fields = [
+      'section',
+      'mentorId',
+      'name',
+      'email',
+      'phone',
+      'status',
+      'specialization',
+      'totalAssignments',
+      'activeAssignments',
+      'completedAssignments',
+      'totalActivityLogs',
+      'assignedEnquiries'
+    ];
+    const format = (req.query.format || 'csv').toLowerCase();
+
+    // Heading for mentor analytics
+    const heading = 'Mentor Analytics (summary and mentor details)';
+
+    if (format === 'pdf') {
+      return sendTableAsPdf(res, heading, rows || [], 'mentor-analytics.pdf');
+    }
+
+    const parser = new Parser({ fields });
+    const csvBody = parser.parse(rows || []);
+
+    const csv = `${heading}\n${csvBody}`;
+    res.header('Content-Type', 'text/csv');
+    res.attachment('mentor-analytics.csv');
+    return res.send(csv);
+  } catch (error) {
+    console.error('Error exporting mentor report:', error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Export combined Cases tab analytics (type distribution, caseload, opened/closed)
+const exportCasesTabAnalytics = async (req, res) => {
+  try {
+    const casesStatus = await casesStatusReport({ query: req.query }, { json: d => d }) || {};
+    const types = await caseTypeDistribution({ query: req.query }, { json: d => d }) || [];
+    const caseload = await caseloadByWorker({ query: req.query }, { json: d => d }) || [];
+
+    const rows = [];
+    (types || []).forEach(t => {
+      rows.push({ section: 'case-type-distribution', caseType: t.caseType, count: t.count });
+    });
+    (caseload || []).forEach(w => {
+      rows.push({
+        section: 'caseload-by-worker',
+        userId: w.userId,
+        name: w.name,
+        email: w.email,
+        isLead: w.isLead,
+        count: w.count
+      });
+    });
+    (casesStatus.opened || []).forEach(o => {
+      rows.push({ section: 'cases-opened', date: o.date, count: o.count });
+    });
+    (casesStatus.closed || []).forEach(c => {
+      rows.push({ section: 'cases-closed', date: c.date, count: c.count });
+    });
+
+    // Explicit fields so json2csv works even when rows is empty
+    const fields = [
+      'section',
+      'caseType',
+      'userId',
+      'name',
+      'email',
+      'isLead',
+      'date',
+      'count'
+    ];
+    const format = (req.query.format || 'csv').toLowerCase();
+
+    // Heading for cases analytics
+    const heading = 'Cases Analytics (types, caseload, opened/closed)';
+
+    if (format === 'pdf') {
+      return sendTableAsPdf(res, heading, rows || [], 'cases-analytics.pdf');
+    }
+
+    const parser = new Parser({ fields });
+    const csvBody = parser.parse(rows || []);
+
+    const csv = `${heading}\n${csvBody}`;
+    res.header('Content-Type', 'text/csv');
+    res.attachment('cases-analytics.csv');
+    return res.send(csv);
+  } catch (error) {
+    console.error('Error exporting cases analytics:', error);
+    res.status(500).send('Server error');
+  }
+};
+
+// Helper to compute freelancer work stats (optionally month-filtered)
+const buildFreelancerWorkReport = (freelancers, monthStart, monthEnd) => {
+  return freelancers.map(freelancer => {
+    const workHistory = freelancer.workHistory || [];
+
+    // Filter assignments whose date range overlaps the month window
+    const filteredHistory = monthStart && monthEnd
+      ? workHistory.filter(w => {
+          if (!w.startDate && !w.endDate) return false;
+          const start = w.startDate ? new Date(w.startDate) : null;
+          const end = w.endDate ? new Date(w.endDate) : null;
+          // overlap: (start < monthEnd) && (end == null || end >= monthStart)
+          if (start && start >= monthEnd) return false;
+          if (end && end < monthStart) return false;
+          return true;
+        })
+      : workHistory;
+
+    const completedWork = filteredHistory.filter(w => w.status === 'completed');
+    const inProgressWork = filteredHistory.filter(w => w.status === 'in_progress');
+
+    const totalHours = filteredHistory.reduce((sum, w) => sum + (w.hours || 0), 0);
+    const totalEarnings = filteredHistory.reduce((sum, w) => sum + (w.totalAmount || 0), 0);
+    const completedHours = completedWork.reduce((sum, w) => sum + (w.hours || 0), 0);
+    const completedEarnings = completedWork.reduce((sum, w) => sum + (w.totalAmount || 0), 0);
+
+    return {
+      freelancerId: freelancer._id,
+      name: freelancer.fullName,
+      email: freelancer.email,
+      hourlyRate: freelancer.hourlyRate || 0,
+      dailyRate: freelancer.dailyRate || 0,
+      availability: freelancer.availability,
+      totalAssignments: filteredHistory.length,
+      completedAssignments: completedWork.length,
+      inProgressAssignments: inProgressWork.length,
+      totalHours,
+      completedHours,
+      totalEarnings,
+      completedEarnings,
+      roles: freelancer.roles || []
+    };
+  });
+};
+
 // Freelancer work hours and earnings report
 const freelancerWorkReport = async (req, res) => {
   try {
+    const { month } = req.query; // Expected format: YYYY-MM
+    let monthStart = null;
+    let monthEnd = null;
+
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      const [year, mon] = month.split('-').map(Number);
+      monthStart = new Date(year, mon - 1, 1);
+      monthEnd = new Date(year, mon, 1); // first day of next month (exclusive)
+    }
+
     const freelancers = await Freelancer.find({ status: 'approved' });
-    
-    const report = freelancers.map(freelancer => {
-      const workHistory = freelancer.workHistory || [];
-      const completedWork = workHistory.filter(w => w.status === 'completed');
-      const inProgressWork = workHistory.filter(w => w.status === 'in_progress');
-      
-      const totalHours = workHistory.reduce((sum, w) => sum + (w.hours || 0), 0);
-      const totalEarnings = workHistory.reduce((sum, w) => sum + (w.totalAmount || 0), 0);
-      const completedHours = completedWork.reduce((sum, w) => sum + (w.hours || 0), 0);
-      const completedEarnings = completedWork.reduce((sum, w) => sum + (w.totalAmount || 0), 0);
-      
-      return {
-        freelancerId: freelancer._id,
-        name: freelancer.fullName,
-        email: freelancer.email,
-        hourlyRate: freelancer.hourlyRate || 0,
-        dailyRate: freelancer.dailyRate || 0,
-        availability: freelancer.availability,
-        totalAssignments: workHistory.length,
-        completedAssignments: completedWork.length,
-        inProgressAssignments: inProgressWork.length,
-        totalHours,
-        completedHours,
-        totalEarnings,
-        completedEarnings,
-        roles: freelancer.roles || []
-      };
-    });
-    
+    const report = buildFreelancerWorkReport(freelancers, monthStart, monthEnd);
+
     res.json(report);
   } catch (error) {
     console.error(error);
@@ -484,21 +1209,15 @@ const recruitmentPipelineReport = async (req, res) => {
       total: enquiries.length
     };
     
-    const statusBreakdown = {
-      Active: 0,
-      Paused: 0,
-      Approved: 0,
-      Rejected: 0,
-      Withdrawn: 0
-    };
+    const statusBreakdown = {};
     
     enquiries.forEach(enquiry => {
-      // Count by stage
-      if (enquiry.stage) {
-        pipelineStats[enquiry.stage] = (pipelineStats[enquiry.stage] || 0) + 1;
+      // Count by pipeline stage (use unified pipelineStage field)
+      if (enquiry.pipelineStage) {
+        pipelineStats[enquiry.pipelineStage] = (pipelineStats[enquiry.pipelineStage] || 0) + 1;
       }
       
-      // Count by status
+      // Count by status (use raw status string so "New Enquiry" shows explicitly)
       if (enquiry.status) {
         statusBreakdown[enquiry.status] = (statusBreakdown[enquiry.status] || 0) + 1;
       }
@@ -531,10 +1250,20 @@ const recruitmentPipelineReport = async (req, res) => {
   }
 };
 
-// Invoice and revenue analytics
+// Invoice and revenue analytics (defaults to last year)
 const invoiceRevenueReport = async (req, res) => {
   try {
-    const invoices = await Invoice.find();
+    const { start, end } = req.query;
+    const { startDate, endDate } = getDefaultDateRange(start, end);
+
+    const dateMatch = {};
+    if (startDate || endDate) {
+      dateMatch.issuedDate = {};
+      if (startDate) dateMatch.issuedDate.$gte = startDate;
+      if (endDate) dateMatch.issuedDate.$lte = endDate;
+    }
+
+    const invoices = await Invoice.find(dateMatch);
     
     const revenueStats = {
       totalInvoiced: 0,
@@ -582,9 +1311,12 @@ const invoiceRevenueReport = async (req, res) => {
         monthlyRevenue[monthKey].count++;
       }
     });
-    
-    const monthlyData = Object.values(monthlyRevenue).sort((a, b) => b.month.localeCompare(a.month)).slice(0, 6);
-    
+
+    // Sort by month descending and take last 12 months
+    const monthlyData = Object.values(monthlyRevenue)
+      .sort((a, b) => b.month.localeCompare(a.month))
+      .slice(0, 12);
+
     res.json({
       revenueStats,
       monthlyRevenue: monthlyData
@@ -595,10 +1327,20 @@ const invoiceRevenueReport = async (req, res) => {
   }
 };
 
-// Training events analytics
+// Training events analytics (defaults to last year for completed stats)
 const trainingEventsReport = async (req, res) => {
   try {
-    const events = await TrainingEvent.find().populate('trainer', 'name');
+    const { start, end } = req.query;
+    const { startDate, endDate } = getDefaultDateRange(start, end);
+
+    const dateMatch = {};
+    if (startDate || endDate) {
+      dateMatch.startDate = {};
+      if (startDate) dateMatch.startDate.$gte = startDate;
+      if (endDate) dateMatch.startDate.$lte = endDate;
+    }
+
+    const events = await TrainingEvent.find(dateMatch).populate('trainer', 'name');
     const now = new Date();
     
     const stats = {
@@ -733,5 +1475,12 @@ module.exports = {
   recruitmentPipelineReport,
   invoiceRevenueReport,
   trainingEventsReport,
-  mentorReport
+  mentorReport,
+  // New CSV export helpers for analytics tabs
+  exportFreelancerWorkReport,
+  exportRecruitmentPipelineReport,
+  exportInvoiceRevenueReport,
+  exportTrainingEventsAnalytics,
+  exportMentorReport,
+  exportCasesTabAnalytics
 }; 

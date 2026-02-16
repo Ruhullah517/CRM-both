@@ -50,7 +50,6 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
               <th className="px-4 py-2">Mentor</th>
               <th className="px-4 py-2">Deadline</th>
               <th className="px-4 py-2"></th>
-              <th className="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -78,13 +77,6 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
                   <button onClick={() => onSelect(c)} className="px-3 py-1 rounded bg-black text-white font-semibold hover:bg-gray-600">
                     View
                   </button>
-                </td>
-                <td className="px-4 py-2">
-                  {!c.fromEnquiry && (
-                    <button onClick={() => onDelete(c)} className="px-3 py-1 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200">
-                      Delete
-                    </button>
-                  )}
                 </td>
               </tr>
             ))}
@@ -124,14 +116,6 @@ const CandidateList = ({ onSelect, onAdd, candidates, onDelete }) => {
               >
                 View
               </button>
-              {!c.fromEnquiry && (
-                <button
-                  onClick={() => onDelete(c)}
-                  className="flex-1 px-3 py-2 rounded bg-red-100 text-red-700 font-semibold hover:bg-red-200"
-                >
-                  Delete
-                </button>
-              )}
             </div>
           </div>
         ))}
@@ -193,6 +177,152 @@ const CandidateDetail = ({ candidate, onBack, onEdit }) => {
     )}
     
     <div className="mb-2"><span className="font-semibold">Deadline:</span> {formatDate(candidate.deadline)}</div>
+
+    {/* WordPress Cultural Mentoring (Mentee) Details */}
+    {(candidate.source === 'wordpress_mentoring_form' ||
+      candidate.localAuthorityOrAgency ||
+      candidate.organisationName ||
+      candidate.socialWorkerName ||
+      candidate.socialWorkerEmail ||
+      candidate.socialWorkerMobile ||
+      candidate.mentorRequiredFor ||
+      candidate.isCurrentlyCaring !== undefined ||
+      candidate.isTransracialPlacement !== undefined ||
+      candidate.ageRangeOfChild ||
+      candidate.childBackground ||
+      candidate.benefitsFromMentoring ||
+      candidate.promptedToSeekMentoring ||
+      (Array.isArray(candidate.areasOfSupport) && candidate.areasOfSupport.length > 0) ||
+      candidate.preferredMentoringApproach ||
+      candidate.preferredDeliveryMethod ||
+      candidate.frequencyOfSupport ||
+      candidate.availabilityForFollowUpCall ||
+      candidate.howDidYouHear) && (
+      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+        <h3 className="font-semibold mb-2">Cultural Mentoring Request Details</h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+          {candidate.source && (
+            <div className="md:col-span-2">
+              <span className="font-semibold">Source:</span> {candidate.source}
+            </div>
+          )}
+
+          {candidate.localAuthorityOrAgency && (
+            <div className="md:col-span-2">
+              <span className="font-semibold">Local Authority / Agency:</span> {candidate.localAuthorityOrAgency}
+            </div>
+          )}
+          {candidate.organisationName && (
+            <div className="md:col-span-2">
+              <span className="font-semibold">Organisation:</span> {candidate.organisationName}
+            </div>
+          )}
+
+          {(candidate.socialWorkerName || candidate.socialWorkerEmail || candidate.socialWorkerMobile) && (
+            <div className="md:col-span-2">
+              <div className="font-semibold mb-1">Social Worker</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                {candidate.socialWorkerName && (
+                  <div><span className="font-semibold">Name:</span> {candidate.socialWorkerName}</div>
+                )}
+                {candidate.socialWorkerEmail && (
+                  <div><span className="font-semibold">Email:</span> {candidate.socialWorkerEmail}</div>
+                )}
+                {candidate.socialWorkerMobile && (
+                  <div><span className="font-semibold">Mobile:</span> {candidate.socialWorkerMobile}</div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {candidate.mentorRequiredFor && (
+            <div className="md:col-span-2">
+              <span className="font-semibold">Mentor required for:</span> {candidate.mentorRequiredFor}
+            </div>
+          )}
+
+          {candidate.isCurrentlyCaring !== undefined && (
+            <div>
+              <span className="font-semibold">Currently caring:</span> {candidate.isCurrentlyCaring ? 'Yes' : 'No'}
+            </div>
+          )}
+          {candidate.isTransracialPlacement !== undefined && (
+            <div>
+              <span className="font-semibold">Transracial placement:</span> {candidate.isTransracialPlacement ? 'Yes' : 'No'}
+            </div>
+          )}
+
+          {candidate.ageRangeOfChild && (
+            <div>
+              <span className="font-semibold">Age range of child:</span> {candidate.ageRangeOfChild}
+            </div>
+          )}
+          {candidate.childBackground && (
+            <div className="md:col-span-2">
+              <span className="font-semibold">Child background:</span> {candidate.childBackground}
+            </div>
+          )}
+
+          {candidate.benefitsFromMentoring && (
+            <div className="md:col-span-2">
+              <span className="font-semibold">Benefit from mentoring:</span> {candidate.benefitsFromMentoring}
+            </div>
+          )}
+          {candidate.promptedToSeekMentoring && (
+            <div className="md:col-span-2">
+              <span className="font-semibold">Prompted to seek mentoring:</span> {candidate.promptedToSeekMentoring}
+            </div>
+          )}
+
+          {Array.isArray(candidate.areasOfSupport) && candidate.areasOfSupport.length > 0 && (
+            <div className="md:col-span-2">
+              <div className="font-semibold mb-1">Areas of support</div>
+              <div className="flex flex-wrap gap-2">
+                {candidate.areasOfSupport.map((a, idx) => (
+                  <span key={idx} className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
+                    {a}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {candidate.preferredMentoringApproach && (
+            <div>
+              <span className="font-semibold">Preferred approach:</span> {candidate.preferredMentoringApproach}
+            </div>
+          )}
+          {candidate.preferredDeliveryMethod && (
+            <div>
+              <span className="font-semibold">Delivery method:</span> {candidate.preferredDeliveryMethod}
+            </div>
+          )}
+          {candidate.frequencyOfSupport && (
+            <div>
+              <span className="font-semibold">Frequency:</span> {candidate.frequencyOfSupport}
+            </div>
+          )}
+
+          {candidate.availabilityForFollowUpCall && (
+            <div className="md:col-span-2">
+              <span className="font-semibold">Availability for follow-up call:</span> {candidate.availabilityForFollowUpCall}
+            </div>
+          )}
+          {candidate.howDidYouHear && (
+            <div className="md:col-span-2">
+              <span className="font-semibold">How did you hear about us:</span> {candidate.howDidYouHear}
+            </div>
+          )}
+
+          {candidate.consentToContact !== undefined && (
+            <div className="md:col-span-2">
+              <span className="font-semibold">Consent to contact:</span> {candidate.consentToContact ? 'Yes' : 'No'}
+            </div>
+          )}
+        </div>
+      </div>
+    )}
     
     <h3 className="font-semibold mt-4 mb-1">Notes</h3>
     <ul className="mb-2 list-disc ml-6 text-sm">

@@ -95,9 +95,42 @@ const generateContract = async (req, res) => {
     // Generate PDF with new professional multi-page structure
     const pdfDoc = await PDFDocument.create();
 
-    // Get standard A4 page dimensions (595.28 x 841.89 points)
-    const width = 595.28;
-    const height = 841.89;
+    // Try to load front/back template pages (PDFs) provided in uploads
+    const loadTemplatePage = async (fileBaseName) => {
+      const candidatePaths = [
+        path.join(__dirname, '../uploads/contracts', fileBaseName),
+        path.join(__dirname, '../uploads', fileBaseName),
+      ];
+
+      for (const candidate of candidatePaths) {
+        if (fs.existsSync(candidate)) {
+          const bytes = fs.readFileSync(candidate);
+          const templateDoc = await PDFDocument.load(bytes);
+          const [page] = await pdfDoc.copyPages(templateDoc, [0]);
+          console.log('Loaded contract template page from:', candidate);
+          return page;
+        }
+      }
+
+      console.warn('Contract template page not found for:', fileBaseName);
+      return null;
+    };
+
+    const coverTemplatePage = await loadTemplatePage('contract_front_template.pdf');
+    const backTemplatePage = await loadTemplatePage('contract_back_template.pdf');
+
+    // Default to A4 if templates are different/missing
+    let width = 595.28;
+    let height = 841.89;
+
+    if (coverTemplatePage) {
+      width = coverTemplatePage.getWidth();
+      height = coverTemplatePage.getHeight();
+      pdfDoc.addPage(coverTemplatePage);
+    } else if (backTemplatePage) {
+      width = backTemplatePage.getWidth();
+      height = backTemplatePage.getHeight();
+    }
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -136,87 +169,7 @@ const generateContract = async (req, res) => {
       console.error('Error loading logo:', error);
     }
 
-    // Helper to wrap text within a max width for headings
-    const wrapText = (fontToUse, text, fontSize, maxWidth) => {
-      const words = text.split(' ');
-      const lines = [];
-      let currentLine = '';
-
-      words.forEach((word) => {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        const testWidth = fontToUse.widthOfTextAtSize(testLine, fontSize);
-        if (testWidth > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = word;
-        } else {
-          currentLine = testLine;
-        }
-      });
-
-      if (currentLine) lines.push(currentLine);
-      return lines;
-    };
-
-    // PAGE 1 - COVER PAGE
-    const coverPage = pdfDoc.addPage();
-
-    // Background color for cover page
-    coverPage.drawRectangle({
-      x: 0,
-      y: 0,
-      width: width,
-      height: height,
-      color: rgb(0.875, 0.392, 0.239), // #df643d
-    });
-
-    // Centered logo at the top (larger and wider size)
-    if (logoImage) {
-      const logoWidth = 380; // Increased width for more prominent appearance
-      const logoHeight = 100; // Keep height proportional
-      const logoX = (width - logoWidth) / 2;
-      const logoY = height - 200;
-      coverPage.drawImage(logoImage, {
-        x: logoX,
-        y: logoY,
-        width: logoWidth,
-        height: logoHeight,
-      });
-    }
-
-    // Contract title (centered, uppercase) - Use template name
-    const contractTitle = (template.name || filledData?.contract_title || name || 'Service Level Agreement').toUpperCase();
-    const titleFontSize = 24; // Reduced size for better fit
-    const titleMaxWidth = width - 120; // Keep 60pt margin on each side
-    const titleLines = wrapText(boldFont, contractTitle, titleFontSize, titleMaxWidth);
-
-    // Starting Y position for the title block
-    let titleY = height - 380;
-    titleLines.forEach((line) => {
-      const lineWidth = boldFont.widthOfTextAtSize(line, titleFontSize);
-      coverPage.drawText(line, {
-        x: (width - lineWidth) / 2,
-        y: titleY,
-        size: titleFontSize,
-        font: boldFont,
-        color: rgb(0, 0, 0),
-      });
-      titleY -= titleFontSize + 6; // line spacing
-    });
-
-    // Optional subtitle
-    // const subtitle = 'Black Foster Carers Alliance';
-    // const subtitleWidth = font.widthOfTextAtSize(subtitle, 16);
-    // coverPage.drawText(subtitle, {
-    //   x: (width - subtitleWidth) / 2,
-    //   y: height - 430, 
-    //   size: 16,
-    //   font: font,
-    //   color: rgb(0, 0, 0),
-    // });
-
-    // No footer on cover page (as requested)
-
-    // PAGE 2 - n (CONTENT PAGES)
+    // PAGE 1+ - CONTENT PAGES (middle pages)
     const contentPage = pdfDoc.addPage();
 
     // Background for content pages
@@ -375,59 +328,10 @@ const generateContract = async (req, res) => {
     // Render main content with margin below heading
     renderContent(contentPage, filledContent, height - 170); // Increased margin below heading
 
-    // FINAL PAGE - CONTACT PAGE
-    const contactPage = pdfDoc.addPage();
-
-    // Background color for contact page
-    contactPage.drawRectangle({
-      x: 0,
-      y: 0,
-      width: width,
-      height: height,
-      color: rgb(0.875, 0.392, 0.239), // #df643d
-    });
-
-    // "Reach out to us" heading (left aligned, larger, white)
-    const contactHeading = 'Reach out to us';
-    contactPage.drawText(contactHeading, {
-      x: 50, // Left aligned
-      y: height - 200,
-      size: 32, // Increased from 24 for more prominence
-      font: boldFont,
-      color: rgb(1, 1, 1), // White color
-    });
-
-    // Contact details with ASCII symbols and left alignment (white text)
-    const contactDetails = [
-      { icon: '[T]', text: '0800 001 6230' },
-      { icon: '[E]', text: 'Enquiries@blackfostercarersalliance.co.uk' },
-      { icon: '[C]', text: 'Blackfostercarersalliance' },
-      { icon: '[W]', text: 'www.blackfostercarersalliance.co.uk' }
-    ];
-
-    let contactY = height - 280;
-    contactDetails.forEach((detail, index) => {
-      // Draw icon
-      contactPage.drawText(detail.icon, {
-        x: 50, // Left aligned
-        y: contactY,
-        size: 18,
-        font: boldFont,
-        color: rgb(1, 1, 1), // White color
-      });
-
-      // Draw text
-      contactPage.drawText(detail.text, {
-        x: 100, // Position text to the right of icon
-        y: contactY,
-        size: 16,
-        font: font,
-        color: rgb(1, 1, 1), // White color
-      });
-      contactY -= 50; // Increased spacing for better readability
-    });
-
-    // No footer on contact page (as requested)
+    // FINAL PAGE - BACK TEMPLATE (if provided)
+    if (backTemplatePage) {
+      pdfDoc.addPage(backTemplatePage);
+    }
 
     const pdfBytes = await pdfDoc.save();
 
@@ -748,6 +652,37 @@ const updateContractStatus = async (req, res) => {
 // Delete a generated contract
 const deleteGeneratedContract = async (req, res) => {
   try {
+    const contract = await GeneratedContract.findById(req.params.id);
+    if (!contract) {
+      return res.status(404).json({ msg: 'Contract not found' });
+    }
+
+    // Best-effort: delete generated contract PDF file (if it exists)
+    // We store the URL in generatedDocUrl; it may be absolute or relative.
+    try {
+      if (contract.generatedDocUrl) {
+        let filePath = contract.generatedDocUrl;
+
+        if (filePath.startsWith('http')) {
+          const url = new URL(filePath);
+          filePath = url.pathname;
+        }
+
+        if (filePath.startsWith('/')) filePath = filePath.slice(1);
+
+        const fileName = filePath.split('/').pop();
+        if (fileName) {
+          const absPath = path.join(__dirname, '../uploads/contracts', fileName);
+          if (fs.existsSync(absPath)) {
+            fs.unlinkSync(absPath);
+          }
+        }
+      }
+    } catch (error) {
+      // Don't block deletion if file cleanup fails
+      console.warn('Failed to delete contract PDF file:', error.message);
+    }
+
     await GeneratedContract.findByIdAndDelete(req.params.id);
     res.json({ msg: 'Contract deleted' });
   } catch (error) {

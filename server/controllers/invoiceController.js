@@ -188,9 +188,37 @@ const deleteInvoice = async (req, res) => {
       return res.status(404).json({ msg: 'Invoice not found' });
     }
 
-    // Allow deletion of draft and paid invoices
-    if (invoice.status !== 'draft' && invoice.status !== 'paid') {
-      return res.status(400).json({ msg: 'Only draft and paid invoices can be deleted' });
+    // Best-effort: delete generated PDF file (if it exists)
+    // Filename convention used by generateInvoicePDFFile(): invoice-<invoiceNumber>.pdf
+    try {
+      const pdfPath = path.join('uploads', 'invoices', `invoice-${invoice.invoiceNumber}.pdf`);
+      if (fs.existsSync(pdfPath)) {
+        fs.unlinkSync(pdfPath);
+      }
+    } catch (error) {
+      // Don't block invoice deletion if file cleanup fails
+      console.warn('Failed to delete invoice PDF file:', error.message);
+    }
+
+    // Allow deletion even if the invoice is unpaid (e.g. sent/overdue/pending).
+    // If the invoice is linked to training bookings, clear the invoice reference
+    // to avoid leaving bookings pointing at a deleted invoice.
+    if (invoice.relatedTrainingEvent) {
+      await TrainingBooking.updateMany(
+        {
+          trainingEvent: invoice.relatedTrainingEvent,
+          'payment.invoiceId': invoice._id
+        },
+        {
+          $set: {
+            'payment.status': 'pending',
+            'payment.paidAt': null
+          },
+          $unset: {
+            'payment.invoiceId': 1
+          }
+        }
+      );
     }
 
     await Invoice.findByIdAndDelete(req.params.id);

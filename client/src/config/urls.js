@@ -8,8 +8,8 @@
 // URL Configuration
 export const URL_CONFIG = {
   // Hardcoded production URLs (single source of truth)
-  // FRONTEND_URL: 'https://crm.blackfostercarersalliance.co.uk',
-  FRONTEND_URL: 'http://localhost:5173/',
+  FRONTEND_URL: 'https://crm.blackfostercarersalliance.co.uk',
+  // FRONTEND_URL: 'http://localhost:5173/',
   SERVER_URL: 'https://backendcrm.blackfostercarersalliance.co.uk',
   // SERVER_URL: 'https://crm-backend-0v14.onrender.com',
   // SERVER_URL: 'http://localhost:5000',

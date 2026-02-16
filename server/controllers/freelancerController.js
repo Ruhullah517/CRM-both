@@ -7,6 +7,7 @@ const { sendMail, getFromAddress } = require('../utils/mailer');
 const FreelancerFormToken = require('../models/FreelancerFormToken');
 const Contact = require('../models/Contact');
 const { getEmailContainer } = require('../utils/emailTemplates');
+const { getLogoAttachment } = require('../utils/logoAttachment');
 const path = require('path');
 
 // List all freelancers
@@ -59,6 +60,12 @@ function parseArrayField(val) {
   return [];
 }
 
+function toBoolean(val) {
+  if (val === true || val === 'true') return true;
+  if (val === false || val === 'false') return false;
+  return false;
+}
+
 // Create a new freelancer
 const createFreelancer = async (req, res) => {
   try {
@@ -86,13 +93,15 @@ const createFreelancer = async (req, res) => {
       homeAddress: req.body.homeAddress,
       email: req.body.email,
       mobileNumber: req.body.mobileNumber,
-      isOnWhatsApp: req.body.isOnWhatsApp,
+      isOnWhatsApp: toBoolean(req.body.isOnWhatsApp),
 
       // Section 2: Professional Information
-      hasSocialWorkEnglandRegistration: req.body.hasSocialWorkEnglandRegistration,
+      staffRole: req.body.staffRole,
+      roleOtherSpecify: req.body.roleOtherSpecify,
+      hasSocialWorkEnglandRegistration: toBoolean(req.body.hasSocialWorkEnglandRegistration),
       socialWorkEnglandRegistrationNumber: req.body.socialWorkEnglandRegistrationNumber,
-      hasDBSCheck: req.body.hasDBSCheck,
-      isOnUpdateSystem: req.body.isOnUpdateSystem,
+      hasDBSCheck: toBoolean(req.body.hasDBSCheck),
+      isOnUpdateSystem: toBoolean(req.body.isOnUpdateSystem),
       dbsCertificateUrl,
       dbsCertificateFileName,
 
@@ -103,9 +112,15 @@ const createFreelancer = async (req, res) => {
       milesWillingToTravel: req.body.milesWillingToTravel,
 
       // Section 4: Work Experience & Skills
-      hasFormFAssessmentExperience: req.body.hasFormFAssessmentExperience,
+      hasFormFAssessmentExperience: toBoolean(req.body.hasFormFAssessmentExperience),
       formFAssessmentExperienceYears: req.body.formFAssessmentExperienceYears,
       otherSocialWorkAssessmentExperience: req.body.otherSocialWorkAssessmentExperience,
+      mentorExperience: req.body.mentorExperience,
+      mentorAreas: req.body.mentorAreas,
+      caseAdminExperience: req.body.caseAdminExperience,
+      caseAdminSystems: req.body.caseAdminSystems,
+      otherExperience: req.body.otherExperience,
+      preferredWork: req.body.preferredWork,
 
       // Section 5: Consideration for Work & Training
       considerationFor: req.body.considerationFor,
@@ -167,13 +182,15 @@ const updateFreelancer = async (req, res) => {
       homeAddress: req.body.homeAddress,
       email: req.body.email,
       mobileNumber: req.body.mobileNumber,
-      isOnWhatsApp: req.body.isOnWhatsApp,
+      isOnWhatsApp: toBoolean(req.body.isOnWhatsApp),
 
       // Section 2: Professional Information
-      hasSocialWorkEnglandRegistration: req.body.hasSocialWorkEnglandRegistration,
+      staffRole: req.body.staffRole,
+      roleOtherSpecify: req.body.roleOtherSpecify,
+      hasSocialWorkEnglandRegistration: toBoolean(req.body.hasSocialWorkEnglandRegistration),
       socialWorkEnglandRegistrationNumber: req.body.socialWorkEnglandRegistrationNumber,
-      hasDBSCheck: req.body.hasDBSCheck,
-      isOnUpdateSystem: req.body.isOnUpdateSystem,
+      hasDBSCheck: toBoolean(req.body.hasDBSCheck),
+      isOnUpdateSystem: toBoolean(req.body.isOnUpdateSystem),
       dbsCertificateUrl,
       dbsCertificateFileName,
 
@@ -184,9 +201,15 @@ const updateFreelancer = async (req, res) => {
       milesWillingToTravel: req.body.milesWillingToTravel,
 
       // Section 4: Work Experience & Skills
-      hasFormFAssessmentExperience: req.body.hasFormFAssessmentExperience,
+      hasFormFAssessmentExperience: toBoolean(req.body.hasFormFAssessmentExperience),
       formFAssessmentExperienceYears: req.body.formFAssessmentExperienceYears,
       otherSocialWorkAssessmentExperience: req.body.otherSocialWorkAssessmentExperience,
+      mentorExperience: req.body.mentorExperience,
+      mentorAreas: req.body.mentorAreas,
+      caseAdminExperience: req.body.caseAdminExperience,
+      caseAdminSystems: req.body.caseAdminSystems,
+      otherExperience: req.body.otherExperience,
+      preferredWork: req.body.preferredWork,
 
       // Section 5: Consideration for Work & Training
       considerationFor: req.body.considerationFor,
@@ -245,6 +268,13 @@ const sendFreelancerFormLink = async (req, res) => {
     const link = `${frontendUrl}/freelancer-form/${token}`;
     await FreelancerFormToken.create({ email, token });
 
+    // Get logo attachment if available (handles production paths gracefully)
+    const logoAttachment = getLogoAttachment('company-logo');
+    const attachments = [];
+    if (logoAttachment) {
+      attachments.push(logoAttachment);
+    }
+
     await sendMail({
       from: getFromAddress(),
       to: email,
@@ -283,19 +313,21 @@ const sendFreelancerFormLink = async (req, res) => {
           <p style="color: #333; font-weight: bold; margin: 0;">Best regards,<br>Black Foster Carers Alliance Team</p>
         </div>
       `),
-      attachments: [
-        {
-          filename: 'logo-white.png',
-          path: path.join(__dirname, '..', '..', 'client', 'public', 'logo-white.png'),
-          cid: 'company-logo'
-        }
-      ]
+      attachments
     });
 
     res.json({ message: 'Form link sent successfully' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Failed to send form link' });
+    console.error('Error sending freelancer form link:', err);
+    console.error('Error details:', {
+      message: err.message,
+      stack: err.stack,
+      email: req.body?.email
+    });
+    res.status(500).json({ 
+      message: 'Failed to send form link',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 };
 
@@ -336,10 +368,7 @@ const submitFreelancerPublicForm = async (req, res) => {
     return res.status(400).json({ message: 'Invalid or expired link' });
   }
 
-  // Save freelancer using existing createFreelancer logic
-  // (Assume req.body contains all necessary fields, and file uploads are handled as in createFreelancer)
   try {
-    // You may want to DRY this by calling createFreelancer, but for now, copy the logic
     let dbsCertificateUrl = req.body.dbsCertificateUrl;
     let dbsCertificateFileName = req.body.dbsCertificateFileName;
     let cvUrl = req.body.cvUrl;
@@ -355,26 +384,39 @@ const submitFreelancerPublicForm = async (req, res) => {
         cvFileName = req.files.cvFile[0].originalname;
       }
     }
+    if (!cvUrl || !cvFileName) {
+      return res.status(400).json({ message: 'All applicants must attach a CV. Please upload your CV and try again.' });
+    }
+
     const freelancer = new Freelancer({
       fullName: req.body.fullName,
       homeAddress: req.body.homeAddress,
       email: req.body.email,
       mobileNumber: req.body.mobileNumber,
-      isOnWhatsApp: req.body.isOnWhatsApp,
-      hasSocialWorkEnglandRegistration: req.body.hasSocialWorkEnglandRegistration,
+      isOnWhatsApp: toBoolean(req.body.isOnWhatsApp),
+      staffRole: req.body.staffRole,
+      roleOtherSpecify: req.body.roleOtherSpecify,
+      hasSocialWorkEnglandRegistration: toBoolean(req.body.hasSocialWorkEnglandRegistration),
       socialWorkEnglandRegistrationNumber: req.body.socialWorkEnglandRegistrationNumber,
-      hasDBSCheck: req.body.hasDBSCheck,
-      isOnUpdateSystem: req.body.isOnUpdateSystem,
+      hasDBSCheck: toBoolean(req.body.hasDBSCheck),
+      isOnUpdateSystem: toBoolean(req.body.isOnUpdateSystem),
       dbsCertificateUrl,
       dbsCertificateFileName,
       currentLocation: req.body.currentLocation,
       geographicalLocation: req.body.geographicalLocation,
       role: req.body.role,
       milesWillingToTravel: req.body.milesWillingToTravel,
-      hasFormFAssessmentExperience: req.body.hasFormFAssessmentExperience,
+      hasFormFAssessmentExperience: toBoolean(req.body.hasFormFAssessmentExperience),
       formFAssessmentExperienceYears: req.body.formFAssessmentExperienceYears,
-      otherSocialWorkAssessmentExperience: req.body.otherSocialWorkAssessmentExperience,
-      considerationFor: req.body.considerationFor,
+      otherSocialWorkAssessmentExperience: parseArrayField(req.body.otherSocialWorkAssessmentExperience),
+      mentorExperience: req.body.mentorExperience,
+      mentorAreas: req.body.mentorAreas,
+      caseAdminExperience: req.body.caseAdminExperience,
+      caseAdminSystems: req.body.caseAdminSystems,
+      otherExperience: req.body.otherExperience,
+      preferredWork: req.body.preferredWork,
+      considerationFor: parseArrayField(req.body.considerationFor),
+      roles: parseArrayField(req.body.roles),
       qualificationsAndTraining: req.body.qualificationsAndTraining,
       additionalInfo: req.body.additionalInfo,
       professionalReferences: req.body.professionalReferences,
@@ -382,7 +424,6 @@ const submitFreelancerPublicForm = async (req, res) => {
       cvFileName,
       paymentPreferences: req.body.paymentPreferences,
       paymentOther: req.body.paymentOther,
-      // Legacy fields
       name: req.body.name,
       roleLegacy: req.body.roleLegacy,
       status: req.body.status,

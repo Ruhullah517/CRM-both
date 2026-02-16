@@ -4,32 +4,15 @@ const Contact = require('../models/Contact');
 const nodemailer = require('nodemailer');
 const { sendMail, getFromAddress } = require('../utils/mailer');
 const { getEmailContainer } = require('../utils/emailTemplates');
-const path = require('path');
-const fs = require('fs');
+const { getLogoAttachment } = require('../utils/logoAttachment');
 
 // Helper to fill template placeholders
 function fillTemplate(str, data) {
   return str.replace(/{{\s*([\w_\d]+)\s*}}/g, (match, key) => data[key] || '');
 }
 
-// Helper to get logo attachment for email (matching training/freelancer emails)
-function getLogoAttachment() {
-  // Use the company logo from the public folder (same as training/freelancer emails)
-  const logoPath = path.join(__dirname, '..', '..', 'client', 'public', 'logo-white.png');
-  
-  // Check if logo exists, otherwise return null
-  if (!fs.existsSync(logoPath)) {
-    console.warn('Logo file not found at:', logoPath);
-    return null;
-  }
-  
-  // Use same CID as training/freelancer emails (company-logo, not email-logo)
-  return {
-    filename: 'logo-white.png',
-    path: logoPath,
-    cid: 'company-logo' // Same CID referenced in getEmailHeader()
-  };
-}
+// Note: logo is embedded via CID "company-logo" in `utils/emailTemplates`.
+// We resolve it via `utils/logoAttachment` so production can use server/uploads or env overrides.
 
 
 
@@ -73,7 +56,7 @@ async function sendBulkEmail(req, res) {
       };
       
       // Always add logo attachment (same as training/freelancer emails)
-      const logoAttachment = getLogoAttachment();
+      const logoAttachment = getLogoAttachment('company-logo');
       if (logoAttachment) {
         mailOptions.attachments.push(logoAttachment);
       }
@@ -147,7 +130,7 @@ async function sendIndividualEmail(req, res) {
     };
     
     // Always add logo attachment (same as training/freelancer emails)
-    const logoAttachment = getLogoAttachment();
+    const logoAttachment = getLogoAttachment('company-logo');
     if (logoAttachment) {
       mailOptions.attachments.push(logoAttachment);
     }
@@ -233,7 +216,7 @@ async function sendEmailToContactsByTags(req, res) {
       };
       
       // Always add logo attachment (same as training/freelancer emails)
-      const logoAttachment = getLogoAttachment();
+      const logoAttachment = getLogoAttachment('company-logo');
       if (logoAttachment) {
         mailOptions.attachments.push(logoAttachment);
       }
